@@ -58,6 +58,18 @@ struct ResultView: View {
                         }
                         .buttonStyle(.bordered)
                         .tint(.white.opacity(0.8))
+
+                        Button {
+                            viewModel.toggleFavoriteForLatest()
+                        } label: {
+                            Label(
+                                viewModel.isLatestFavorite ? "Favorited" : "Favorite",
+                                systemImage: viewModel.isLatestFavorite ? "star.fill" : "star"
+                            )
+                            .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.bordered)
+                        .tint(viewModel.isLatestFavorite ? .yellow : .white.opacity(0.8))
                     }
 
                     TextField("Refine request", text: $viewModel.refinementText)

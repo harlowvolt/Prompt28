@@ -9,12 +9,15 @@ final class GenerateViewModel: ObservableObject {
     @Published private(set) var isGenerating = false
     @Published private(set) var latestResult: GenerateResponse?
     @Published private(set) var latestInput: String = ""
+    @Published private(set) var latestHistoryItemID: UUID?
+    @Published private(set) var isLatestFavorite = false
     @Published var errorMessage: String?
 
     private let apiClient: APIClient
     private let authManager: AuthManager
     private let historyStore: HistoryStore
     private let preferencesStore: PreferencesStore
+    private var cancellables: Set<AnyCancellable> = []
 
     init(
         apiClient: APIClient,
@@ -27,6 +30,15 @@ final class GenerateViewModel: ObservableObject {
         self.historyStore = historyStore
         self.preferencesStore = preferencesStore
         self.selectedMode = preferencesStore.preferences.selectedMode
+
+        historyStore.$items
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] items in
+                self?.syncLatestFavoriteState(items: items)
+            }
+            .store(in: &cancellables)
+
+        syncLatestFavoriteState(items: historyStore.items)
     }
 
     var canGenerate: Bool {
@@ -79,6 +91,8 @@ final class GenerateViewModel: ObservableObject {
             guard !promptText.isEmpty else {
                 errorMessage = "The server returned an empty result. Please try again."
                 latestResult = nil
+                latestHistoryItemID = nil
+                isLatestFavorite = false
                 return
             }
 
@@ -93,6 +107,11 @@ final class GenerateViewModel: ObservableObject {
                     template: response.template
                 )
                 historyStore.add(item)
+                latestHistoryItemID = item.id
+                isLatestFavorite = item.favorite
+            } else {
+                latestHistoryItemID = nil
+                isLatestFavorite = false
             }
 
             await authManager.refreshMe()
@@ -112,6 +131,8 @@ final class GenerateViewModel: ObservableObject {
         selectedMode = item.mode
         inputText = item.input
         latestInput = item.input
+        latestHistoryItemID = item.id
+        isLatestFavorite = item.favorite
         latestResult = GenerateResponse(
             professional: item.professional,
             template: item.template,
@@ -120,5 +141,40 @@ final class GenerateViewModel: ObservableObject {
             plan: .starter
         )
         errorMessage = nil
+    }
+
+    func toggleFavoriteForLatest() {
+        guard let latestResult else { return }
+
+        if let id = latestHistoryItemID {
+            historyStore.toggleFavorite(id: id)
+            return
+        }
+
+        let fallbackInput = latestInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        let item = PromptHistoryItem(
+            mode: selectedMode,
+            input: fallbackInput.isEmpty ? latestResult.professional : fallbackInput,
+            professional: latestResult.professional,
+            template: latestResult.template,
+            favorite: true
+        )
+        historyStore.add(item)
+        latestHistoryItemID = item.id
+        isLatestFavorite = true
+    }
+
+    private func syncLatestFavoriteState(items: [PromptHistoryItem]) {
+        guard let id = latestHistoryItemID else {
+            isLatestFavorite = false
+            return
+        }
+
+        if let item = items.first(where: { $0.id == id }) {
+            isLatestFavorite = item.favorite
+        } else {
+            latestHistoryItemID = nil
+            isLatestFavorite = false
+        }
     }
 }
