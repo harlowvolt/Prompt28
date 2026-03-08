@@ -81,6 +81,14 @@ struct RootView: View {
                     Label("Trending", systemImage: "flame.fill")
                 }
                 .tag(MainTab.trending)
+
+            tabContent {
+                SettingsView()
+            }
+                .tabItem {
+                    Label("Settings", systemImage: "gearshape.fill")
+                }
+                .tag(MainTab.settings)
         }
     }
 

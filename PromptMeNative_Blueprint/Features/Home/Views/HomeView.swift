@@ -1,28 +1,11 @@
 import SwiftUI
 
 struct HomeView: View {
-    private enum ActiveSheet: Identifiable {
-        case history
-        case typePrompt
-        case settings
-
-        var id: String {
-            switch self {
-            case .history:
-                return "history"
-            case .typePrompt:
-                return "typePrompt"
-            case .settings:
-                return "settings"
-            }
-        }
-    }
-
     @ObservedObject private var appEnvironment: AppEnvironment
     @StateObject private var orbEngine = OrbEngine.makeDefault()
     @StateObject private var generateViewModel: GenerateViewModel
 
-    @State private var activeSheet: ActiveSheet?
+    @State private var showTypePrompt = false
     @State private var showCopiedToast = false
 
     init(appEnvironment: AppEnvironment) {
@@ -38,163 +21,63 @@ struct HomeView: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            let compactHeight = proxy.size.height < 760
-            let narrowWidth = proxy.size.width < 380
-            let headerToOrb: CGFloat = compactHeight ? 20 : 28
-            let orbHeight = min(360, max(278, proxy.size.height * (compactHeight ? 0.35 : 0.40)))
-            let orbToTranscript: CGFloat = compactHeight ? 20 : 28
-            let transcriptToResult: CGFloat = compactHeight ? 22 : 30
-            let bottomProtectedInset = max(proxy.safeAreaInsets.bottom + 74, 98)
-
+        NavigationStack {
             ZStack {
                 PromptTheme.backgroundGradient
                 .ignoresSafeArea()
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Prompt28")
-                                .font(.system(size: compactHeight ? 31 : 35, weight: .semibold, design: .rounded))
-                                .foregroundStyle(PromptTheme.paleLilacWhite)
+                VStack(spacing: 0) {
+                    Spacer(minLength: 0)
 
-                            Text(greetingLine)
-                                .font(.system(size: compactHeight ? 16 : 17, weight: .medium, design: .rounded))
-                                .foregroundStyle(PromptTheme.softLilac.opacity(0.9))
-                                .lineLimit(1)
+                    OrbView(engine: orbEngine) { finalText in
+                        Task {
+                            orbEngine.markGenerating()
+                            await generateViewModel.generateFromOrb(text: finalText)
 
-                            if let subtitle = greetingSubtitle {
-                                Text(subtitle)
-                                    .font(.system(size: 13, weight: .medium, design: .rounded))
-                                    .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
-                                    .lineLimit(1)
+                            if let error = generateViewModel.errorMessage {
+                                orbEngine.markFailure(error)
+                            } else {
+                                orbEngine.markSuccess()
                             }
                         }
-                        .frame(maxWidth: .infinity, alignment: .leading)
-
-                        Spacer(minLength: compactHeight ? 14 : 16)
-
-                        if narrowWidth {
-                            VStack(alignment: .leading, spacing: 12) {
-                                HStack(spacing: 10) {
-                                    Text("Home")
-                                        .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                        .foregroundStyle(PromptTheme.paleLilacWhite)
-
-                                    Spacer(minLength: 8)
-
-                                    topActionIconButton(systemImage: "gearshape.fill") {
-                                        activeSheet = .settings
-                                    }
-                                }
-
-                                HStack(spacing: 10) {
-                                    topActionButton(title: "Type", systemImage: "keyboard") {
-                                        activeSheet = .typePrompt
-                                    }
-
-                                    topActionButton(title: "History", systemImage: "clock.arrow.circlepath") {
-                                        activeSheet = .history
-                                    }
-
-                                    Spacer(minLength: 0)
-                                }
-                            }
-                            .frame(maxWidth: .infinity, alignment: .leading)
-                        } else {
-                            HStack(spacing: 10) {
-                                Text("Home")
-                                    .font(.system(size: 20, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(PromptTheme.paleLilacWhite)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.95)
-                                    .layoutPriority(1)
-
-                                Spacer(minLength: 8)
-
-                                topActionIconButton(systemImage: "gearshape.fill") {
-                                    activeSheet = .settings
-                                }
-
-                                topActionButton(title: "Type", systemImage: "keyboard") {
-                                    activeSheet = .typePrompt
-                                }
-
-                                topActionButton(title: "History", systemImage: "clock.arrow.circlepath") {
-                                    activeSheet = .history
-                                }
-                            }
-                        }
-
-                        Spacer(minLength: headerToOrb)
-
-                        OrbView(engine: orbEngine) { finalText in
-                            Task {
-                                orbEngine.markGenerating()
-                                await generateViewModel.generateFromOrb(text: finalText)
-
-                                if let error = generateViewModel.errorMessage {
-                                    orbEngine.markFailure(error)
-                                } else {
-                                    orbEngine.markSuccess()
-                                }
-                            }
-                        }
-                        .frame(maxWidth: .infinity)
-                        .frame(height: orbHeight)
-
-                        Spacer(minLength: orbToTranscript)
-
-                        statusTranscriptCard
-
-                        Spacer(minLength: transcriptToResult)
-
-                        ResultView(viewModel: generateViewModel)
-
-                        if let errorMessage = generateViewModel.errorMessage {
-                            Spacer(minLength: 12)
-                            errorBanner(text: errorMessage)
-                        }
-
-                        Color.clear
-                            .frame(height: bottomProtectedInset)
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, compactHeight ? 16 : 22)
+                    .frame(maxWidth: 430)
+
+                    transcriptText
+                        .padding(.top, 14)
+
+                    Spacer(minLength: 18)
+
+                    ResultView(viewModel: generateViewModel)
+
+                    if let errorMessage = generateViewModel.errorMessage {
+                        errorBanner(text: errorMessage)
+                            .padding(.top, 12)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 10)
+            }
+        }
+        .navigationTitle("PROMPT²⁸")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .topBarTrailing) {
+                Button {
+                    showTypePrompt = true
+                } label: {
+                    Image(systemName: "keyboard")
                 }
             }
         }
-        .sheet(item: $activeSheet) { sheet in
-            switch sheet {
-            case .history:
-                HistoryView { item in
-                    generateViewModel.restoreFromHistory(item)
-                    orbEngine.markSuccess()
-                    activeSheet = nil
-                }
-                .environmentObject(appEnvironment)
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-            case .typePrompt:
-                NavigationStack {
-                    TypePromptView(viewModel: generateViewModel)
-                        .navigationTitle("Type Prompt")
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Done") {
-                                    activeSheet = nil
-                                }
-                            }
-                        }
-                }
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-            case .settings:
-                NavigationStack {
-                    SettingsView()
-                }
-            }
+        .navigationDestination(isPresented: $showTypePrompt) {
+            TypePromptView(viewModel: generateViewModel)
+                .navigationTitle("Type Prompt")
+                .navigationBarTitleDisplayMode(.inline)
+        }
+        .safeAreaInset(edge: .bottom) {
+            Color.clear
+                .frame(height: 8)
         }
         .overlay(alignment: .bottom) {
             if showCopiedToast {
@@ -225,93 +108,20 @@ struct HomeView: View {
         }
     }
 
-    private func topActionButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Label(title, systemImage: systemImage)
-                .font(.system(size: 14, weight: .semibold))
-                .lineLimit(1)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(PromptTheme.glassFill, in: Capsule())
-                .overlay(
-                    Capsule()
-                    .stroke(PromptTheme.glassStroke, lineWidth: 1)
-                )
-                .fixedSize(horizontal: true, vertical: false)
-        }
-            .foregroundStyle(PromptTheme.softLilac)
-        .buttonStyle(.plain)
-    }
-
-    private func topActionIconButton(systemImage: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemImage)
-                .font(.system(size: 15, weight: .semibold))
-                .padding(.horizontal, 12)
-                .padding(.vertical, 10)
-                .background(PromptTheme.glassFill, in: Capsule())
-                .overlay(
-                    Capsule()
-                        .stroke(PromptTheme.glassStroke, lineWidth: 1)
-                )
-        }
-        .foregroundStyle(PromptTheme.softLilac)
-        .buttonStyle(.plain)
-    }
-
-    private var statusTranscriptCard: some View {
-        let status = homeStatusText
-        let transcript = activeTranscriptText
-
-        return VStack(alignment: .leading, spacing: 10) {
-            Text("Status")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(PromptTheme.softLilac.opacity(0.7))
-
-            Text(status)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
+    private var transcriptText: some View {
+        VStack(spacing: 6) {
+            Text(homeStatusText)
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundStyle(statusTint)
-                .frame(maxWidth: .infinity, alignment: .leading)
 
-            Text("Transcript")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(PromptTheme.softLilac.opacity(0.7))
-
-            Text(transcript)
-                .font(.system(size: 15, weight: .regular, design: .rounded))
-                .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.94))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .lineSpacing(2)
+            Text(activeTranscriptText)
+                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.9))
+                .multilineTextAlignment(.center)
+                .lineSpacing(1.5)
+                .frame(maxWidth: .infinity)
                 .textSelection(.enabled)
         }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(PromptTheme.glassFill)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(PromptTheme.glassStroke, lineWidth: 1)
-                )
-        )
-    }
-
-    private var greetingLine: String {
-        let rawName = appEnvironment.authManager.currentUser?.name ?? ""
-        let cleaned = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        if let first = cleaned.split(separator: " ").first, !first.isEmpty {
-            return "Welcome back, \(first)"
-        }
-
-        return "What do you want to make today?"
-    }
-
-    private var greetingSubtitle: String? {
-        if generateViewModel.latestPromptText.isEmpty {
-            return "Speak naturally and Prompt28 will craft it professionally."
-        }
-
-        return "Refine, favorite, or share your latest result."
     }
 
     private var homeStatusText: String {
