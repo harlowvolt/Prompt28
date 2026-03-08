@@ -115,9 +115,7 @@ struct HomeView: View {
 
                         Spacer(minLength: orbToTranscript)
 
-                        if !orbEngine.finalTranscript.isEmpty {
-                            transcriptCard(text: orbEngine.finalTranscript)
-                        }
+                        statusTranscriptCard
 
                         Spacer(minLength: transcriptToResult)
 
@@ -202,16 +200,29 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
-    private func transcriptCard(text: String) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
+    private var statusTranscriptCard: some View {
+        let status = homeStatusText
+        let transcript = activeTranscriptText
+
+        return VStack(alignment: .leading, spacing: 10) {
+            Text("Status")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.55))
+
+            Text(status)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .foregroundStyle(statusTint)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
             Text("Transcript")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.55))
 
-            Text(text)
-                .font(.system(size: 16, weight: .regular, design: .rounded))
-                .foregroundStyle(.white)
+            Text(transcript)
+                .font(.system(size: 15, weight: .regular, design: .rounded))
+                .foregroundStyle(.white.opacity(0.95))
                 .frame(maxWidth: .infinity, alignment: .leading)
+                .lineSpacing(2)
                 .textSelection(.enabled)
         }
         .padding(16)
@@ -223,6 +234,75 @@ struct HomeView: View {
                         .stroke(Color.white.opacity(0.12), lineWidth: 1)
                 )
         )
+    }
+
+    private var homeStatusText: String {
+        if let error = generateViewModel.errorMessage,
+           !error.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            if error.localizedCaseInsensitiveContains("sign in") || error.localizedCaseInsensitiveContains("unauthorized") {
+                return "Auth required"
+            }
+            return "Error"
+        }
+
+        if generateViewModel.isGenerating || orbEngine.state == .generating || orbEngine.state == .transcribing {
+            return "Processing"
+        }
+
+        if orbEngine.isRecording || orbEngine.state == .listening {
+            return "Listening"
+        }
+
+        switch orbEngine.state {
+        case .failure(let message):
+            return message.localizedCaseInsensitiveContains("no speech") ? "No speech detected" : "Error"
+        case .success:
+            return "Ready"
+        default:
+            return "Tap to speak"
+        }
+    }
+
+    private var activeTranscriptText: String {
+        if let error = generateViewModel.errorMessage,
+           !error.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            return error
+        }
+
+        let live = orbEngine.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        if orbEngine.isRecording, !live.isEmpty {
+            return live
+        }
+
+        let finalized = orbEngine.finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !finalized.isEmpty {
+            return finalized
+        }
+
+        if generateViewModel.isGenerating {
+            return "Sending your input to Prompt28..."
+        }
+
+        let latest = generateViewModel.latestInput.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !latest.isEmpty {
+            return latest
+        }
+
+        return "Tap the orb and speak your prompt. Your live transcript and final text will appear here."
+    }
+
+    private var statusTint: Color {
+        let status = homeStatusText
+        if status == "Error" || status == "No speech detected" || status == "Auth required" {
+            return .red.opacity(0.9)
+        }
+        if status == "Listening" {
+            return .teal
+        }
+        if status == "Processing" {
+            return .mint
+        }
+        return .white
     }
 
     private func errorBanner(text: String) -> some View {
