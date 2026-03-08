@@ -18,6 +18,11 @@ struct HomeView: View {
     @State private var activeSheet: ActiveSheet?
     @State private var showCopiedToast = false
 
+    private let idleBottomPadding: CGFloat = 24
+    private let resultTopSpacing: CGFloat = 24
+    private let orbToTranscriptSpacing: CGFloat = 16
+    private let transcriptToResultSpacing: CGFloat = 18
+
     init(appEnvironment: AppEnvironment) {
         self._generateViewModel = StateObject(
             wrappedValue: GenerateViewModel(
@@ -33,48 +38,92 @@ struct HomeView: View {
         NavigationStack {
             ZStack {
                 PromptTheme.backgroundGradient
-                .ignoresSafeArea()
+                    .ignoresSafeArea()
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        Spacer(minLength: 60)
+                GeometryReader { proxy in
+                    let orbHeight = min(proxy.size.height * 0.42, 420)
+                    let compactOrbHeight = min(proxy.size.height * 0.32, 320)
+                    let bottomSafeSpacer = proxy.safeAreaInsets.bottom + idleBottomPadding
 
-                        OrbView(engine: orbEngine) { finalText in
-                            Task {
-                                orbEngine.markGenerating()
-                                await generateViewModel.generateFromOrb(text: finalText)
+                    Group {
+                        if hasResult {
+                            VStack(spacing: 0) {
+                                Spacer(minLength: resultTopSpacing)
 
-                                if let error = generateViewModel.errorMessage {
-                                    orbEngine.markFailure(error)
-                                } else {
-                                    orbEngine.markSuccess()
+                                OrbView(engine: orbEngine) { finalText in
+                                    Task {
+                                        orbEngine.markGenerating()
+                                        await generateViewModel.generateFromOrb(text: finalText)
+
+                                        if let error = generateViewModel.errorMessage {
+                                            orbEngine.markFailure(error)
+                                        } else {
+                                            orbEngine.markSuccess()
+                                        }
+                                    }
+                                }
+                                .frame(maxWidth: 420)
+                                .frame(height: compactOrbHeight)
+
+                                Spacer(minLength: orbToTranscriptSpacing)
+
+                                Text(primaryTranscriptText)
+                                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                                    .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.94))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 24)
+                                    .textSelection(.enabled)
+
+                                Spacer(minLength: transcriptToResultSpacing)
+
+                                ScrollView(showsIndicators: false) {
+                                    VStack(spacing: 12) {
+                                        ResultView(viewModel: generateViewModel)
+
+                                        if let errorMessage = generateViewModel.errorMessage {
+                                            errorBanner(text: errorMessage)
+                                        }
+
+                                        Color.clear
+                                            .frame(height: bottomSafeSpacer)
+                                    }
+                                    .padding(.horizontal, 20)
                                 }
                             }
+                        } else {
+                            VStack(spacing: 0) {
+                                Spacer(minLength: 0)
+
+                                OrbView(engine: orbEngine) { finalText in
+                                    Task {
+                                        orbEngine.markGenerating()
+                                        await generateViewModel.generateFromOrb(text: finalText)
+
+                                        if let error = generateViewModel.errorMessage {
+                                            orbEngine.markFailure(error)
+                                        } else {
+                                            orbEngine.markSuccess()
+                                        }
+                                    }
+                                }
+                                .frame(maxWidth: 420)
+                                .frame(height: orbHeight)
+
+                                Spacer(minLength: orbToTranscriptSpacing)
+
+                                Text(primaryTranscriptText)
+                                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                                    .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.94))
+                                    .multilineTextAlignment(.center)
+                                    .padding(.horizontal, 24)
+                                    .textSelection(.enabled)
+
+                                Spacer(minLength: bottomSafeSpacer)
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(minHeight: proxy.size.height, maxHeight: .infinity)
                         }
-                        .frame(maxWidth: .infinity)
-                        .frame(maxHeight: 380)
-
-                        Spacer(minLength: 30)
-
-                        Text(activeTranscriptText)
-                            .font(.system(size: 16, weight: .regular, design: .rounded))
-                            .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.94))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal, 24)
-                            .textSelection(.enabled)
-
-                        Spacer(minLength: 40)
-
-                        ResultView(viewModel: generateViewModel)
-
-                        if let errorMessage = generateViewModel.errorMessage {
-                            Spacer(minLength: 12)
-                            errorBanner(text: errorMessage)
-                        }
-
-                        Spacer(minLength: 40)
                     }
-                    .padding(.horizontal, 20)
                 }
             }
             .navigationTitle("PROMPT²⁸")
@@ -138,7 +187,11 @@ struct HomeView: View {
         }
     }
 
-    private var activeTranscriptText: String {
+    private var hasResult: Bool {
+        !generateViewModel.latestPromptText.isEmpty
+    }
+
+    private var primaryTranscriptText: String {
         if let error = generateViewModel.errorMessage,
            !error.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             return error
@@ -163,7 +216,15 @@ struct HomeView: View {
             return latest
         }
 
-        return "Tap the orb and speak your prompt. Your live transcript and final text will appear here."
+        if generateViewModel.isGenerating || orbEngine.state == .transcribing || orbEngine.state == .generating {
+            return "Processing..."
+        }
+
+        if orbEngine.isRecording || orbEngine.state == .listening {
+            return "Listening..."
+        }
+
+        return "Tap to speak"
     }
 
     private func errorBanner(text: String) -> some View {

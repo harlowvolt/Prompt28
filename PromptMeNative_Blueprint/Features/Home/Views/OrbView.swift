@@ -47,13 +47,6 @@ struct OrbView: View {
             }
             .buttonStyle(.plain)
 
-            Text(liveTranscriptText)
-                .font(.footnote)
-                .foregroundStyle(.white.opacity(0.72))
-                .multilineTextAlignment(.center)
-                .lineLimit(2)
-                .padding(.horizontal, 24)
-
             if !engine.permissionMessage.isEmpty {
                 VStack(spacing: 8) {
                     Text(engine.permissionMessage)
@@ -95,25 +88,6 @@ struct OrbView: View {
             return .processing
         case .failure:
             return .error
-        }
-    }
-
-    private var statusText: String {
-        switch engine.state {
-        case .idle:
-            return "Tap to speak"
-        case .listening:
-            return "Listening..."
-        case .transcribing:
-            return "Processing..."
-        case .ready(let text):
-            return text
-        case .generating:
-            return "Generating prompt..."
-        case .success:
-            return "Done"
-        case .failure(let message):
-            return message
         }
     }
 
@@ -328,13 +302,6 @@ struct OrbView: View {
         "mic"
     }
 
-    private var liveTranscriptText: String {
-        if engine.isRecording {
-            let partial = engine.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-            return partial.isEmpty ? "Listening..." : partial
-        }
-        return statusText
-    }
 }
 
 private enum OrbVisualState {
