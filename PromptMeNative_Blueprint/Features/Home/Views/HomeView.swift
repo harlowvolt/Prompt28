@@ -42,7 +42,7 @@ struct HomeView: View {
             let orbHeight = min(360, max(278, proxy.size.height * (compactHeight ? 0.35 : 0.40)))
             let orbToTranscript: CGFloat = compactHeight ? 20 : 28
             let transcriptToResult: CGFloat = compactHeight ? 22 : 30
-            let bottomProtectedInset = max(proxy.safeAreaInsets.bottom + 150, 182)
+            let bottomProtectedInset = max(proxy.safeAreaInsets.bottom + 74, 98)
 
             ZStack {
                 LinearGradient(

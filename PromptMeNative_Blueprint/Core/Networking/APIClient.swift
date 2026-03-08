@@ -50,7 +50,14 @@ final class APIClient {
 
         switch httpResponse.statusCode {
         case 401:
-            throw NetworkError.unauthorized
+            let isSessionScoped = endpoint.auth != .none
+            let defaultMessage = isSessionScoped
+                ? "Session expired. Please sign in again."
+                : "Invalid email or password."
+            throw NetworkError.unauthorized(
+                message: apiError?.error ?? defaultMessage,
+                sessionExpired: isSessionScoped
+            )
         case 403:
             throw NetworkError.forbidden(message: message)
         case 404:

@@ -116,10 +116,10 @@ final class GenerateViewModel: ObservableObject {
 
             await authManager.refreshMe()
         } catch {
-            if case NetworkError.unauthorized = error {
-                authManager.logout()
-            }
             if let network = error as? NetworkError {
+                if network.isSessionExpired {
+                    authManager.logout()
+                }
                 errorMessage = network.errorDescription
             } else {
                 errorMessage = error.localizedDescription

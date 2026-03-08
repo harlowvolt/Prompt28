@@ -1,10 +1,18 @@
 import SwiftUI
 
+enum AuthInputField: Hashable {
+    case name
+    case email
+    case password
+    case googleToken
+}
+
 struct EmailAuthView: View {
     @Binding var isSignup: Bool
     @Binding var name: String
     @Binding var email: String
     @Binding var password: String
+    @FocusState.Binding var focusedField: AuthInputField?
     let isLoading: Bool
     let canSubmit: Bool
     let onSubmit: () async -> Void
@@ -21,6 +29,12 @@ struct EmailAuthView: View {
                 TextField("Name", text: $name)
                     .textInputAutocapitalization(.words)
                     .autocorrectionDisabled(true)
+                    .textContentType(.name)
+                    .focused($focusedField, equals: .name)
+                    .submitLabel(.next)
+                    .onSubmit {
+                        focusedField = .email
+                    }
                     .textFieldStyle(.roundedBorder)
             }
 
@@ -28,12 +42,40 @@ struct EmailAuthView: View {
                 .keyboardType(.emailAddress)
                 .textInputAutocapitalization(.never)
                 .autocorrectionDisabled(true)
+                .textContentType(.emailAddress)
+                .focused($focusedField, equals: .email)
+                .submitLabel(.next)
+                .onSubmit {
+                    focusedField = .password
+                }
                 .textFieldStyle(.roundedBorder)
 
             SecureField("Password (min 6)", text: $password)
+                .textContentType(isSignup ? .newPassword : .password)
+                .focused($focusedField, equals: .password)
+                .submitLabel(canSubmit ? .go : .done)
+                .onSubmit {
+                    if canSubmit {
+                        focusedField = nil
+                        Task { await onSubmit() }
+                    } else {
+                        focusedField = nil
+                    }
+                }
                 .textFieldStyle(.roundedBorder)
 
+            HStack {
+                Spacer()
+                Button("Dismiss Keyboard") {
+                    focusedField = nil
+                }
+                .font(.footnote.weight(.semibold))
+                .opacity(focusedField == nil ? 0 : 1)
+                .animation(.easeInOut(duration: 0.15), value: focusedField)
+            }
+
             Button {
+                focusedField = nil
                 Task { await onSubmit() }
             } label: {
                 HStack {
@@ -45,6 +87,7 @@ struct EmailAuthView: View {
                 }
                 .frame(maxWidth: .infinity)
             }
+            .id("authSubmitButton")
             .buttonStyle(.borderedProminent)
             .disabled(isLoading || !canSubmit)
         }

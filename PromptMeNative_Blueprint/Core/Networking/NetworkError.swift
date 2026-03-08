@@ -4,7 +4,7 @@ enum NetworkError: LocalizedError {
     case malformedURL
     case missingAuthToken
     case missingAdminKey
-    case unauthorized
+    case unauthorized(message: String, sessionExpired: Bool)
     case forbidden(message: String)
     case notFound(message: String)
     case rateLimited(message: String)
@@ -20,8 +20,8 @@ enum NetworkError: LocalizedError {
             return "Authentication token is missing."
         case .missingAdminKey:
             return "Admin key is missing."
-        case .unauthorized:
-            return "Session expired. Please log in again."
+        case .unauthorized(let message, _):
+            return message
         case .forbidden(let message):
             return message
         case .notFound(let message):
@@ -34,6 +34,15 @@ enum NetworkError: LocalizedError {
             return "Failed to decode server response."
         case .transport(let message):
             return message
+        }
+    }
+
+    var isSessionExpired: Bool {
+        switch self {
+        case .unauthorized(_, let sessionExpired):
+            return sessionExpired
+        default:
+            return false
         }
     }
 }

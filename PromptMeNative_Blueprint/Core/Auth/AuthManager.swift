@@ -41,6 +41,15 @@ final class AuthManager: ObservableObject {
             self.currentUser = user
         } catch {
             clearSession()
+            if let networkError = error as? NetworkError {
+                if networkError.isSessionExpired {
+                    lastError = "Session expired. Please sign in again."
+                } else {
+                    lastError = networkError.errorDescription
+                }
+            } else {
+                lastError = error.localizedDescription
+            }
         }
     }
 
@@ -53,7 +62,7 @@ final class AuthManager: ObservableObject {
             let response = try await apiClient.register(RegisterRequest(email: email, password: password, name: name))
             try storeSession(response)
         } catch {
-            lastError = error.localizedDescription
+            handleAuthFailure(error)
         }
     }
 
@@ -66,7 +75,7 @@ final class AuthManager: ObservableObject {
             let response = try await apiClient.login(LoginRequest(email: email, password: password))
             try storeSession(response)
         } catch {
-            lastError = error.localizedDescription
+            handleAuthFailure(error)
         }
     }
 
@@ -79,7 +88,7 @@ final class AuthManager: ObservableObject {
             let response = try await apiClient.googleAuth(GoogleAuthRequest(credential: credential))
             try storeSession(response)
         } catch {
-            lastError = error.localizedDescription
+            handleAuthFailure(error)
         }
     }
 
@@ -93,7 +102,7 @@ final class AuthManager: ObservableObject {
             let response = try await apiClient.appleAuth(request)
             try storeSession(response)
         } catch {
-            lastError = error.localizedDescription
+            handleAuthFailure(error)
         }
     }
 
@@ -103,10 +112,15 @@ final class AuthManager: ObservableObject {
         do {
             currentUser = try await apiClient.me(token: token)
         } catch {
-            if case NetworkError.unauthorized = error {
+            if let networkError = error as? NetworkError, networkError.isSessionExpired {
                 clearSession()
+                lastError = "Session expired. Please sign in again."
             } else {
-                lastError = error.localizedDescription
+                if let networkError = error as? NetworkError {
+                    lastError = networkError.errorDescription
+                } else {
+                    lastError = error.localizedDescription
+                }
             }
         }
     }
@@ -125,5 +139,18 @@ final class AuthManager: ObservableObject {
         keychain.delete(tokenKey)
         token = nil
         currentUser = nil
+    }
+
+    private func handleAuthFailure(_ error: Error) {
+        if let networkError = error as? NetworkError {
+            if networkError.isSessionExpired {
+                clearSession()
+                lastError = "Session expired. Please sign in again."
+            } else {
+                lastError = networkError.errorDescription
+            }
+        } else {
+            lastError = error.localizedDescription
+        }
     }
 }
