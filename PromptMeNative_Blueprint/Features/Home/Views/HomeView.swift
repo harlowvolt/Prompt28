@@ -2,7 +2,7 @@ import SwiftUI
 
 struct HomeView: View {
     @ObservedObject private var appEnvironment: AppEnvironment
-    @StateObject private var orbEngine: OrbEngine
+    @StateObject private var orbEngine = OrbEngine.makeDefault()
     @StateObject private var generateViewModel: GenerateViewModel
 
     @State private var showHistory = false
@@ -10,7 +10,6 @@ struct HomeView: View {
 
     init(appEnvironment: AppEnvironment) {
         self._appEnvironment = ObservedObject(wrappedValue: appEnvironment)
-        self._orbEngine = StateObject(wrappedValue: OrbEngine.makeDefault())
         self._generateViewModel = StateObject(
             wrappedValue: GenerateViewModel(
                 apiClient: appEnvironment.apiClient,

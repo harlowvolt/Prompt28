@@ -3,8 +3,8 @@
 <plist version="1.0">
 <dict>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Prompt28 uses the microphone so you can speak into the orb and generate prompts hands-free.</string>
+	<string>This app needs microphone access to capture spoken prompts.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Prompt28 uses speech recognition so you can speak your prompt instead of typing.</string>
+	<string>This app uses speech recognition to convert your voice into prompts.</string>
 </dict>
 </plist>

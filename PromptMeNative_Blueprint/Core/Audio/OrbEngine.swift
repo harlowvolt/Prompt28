@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import CoreGraphics
+import Dispatch
 
 @MainActor
 final class OrbEngine: ObservableObject {
@@ -30,7 +31,16 @@ final class OrbEngine: ObservableObject {
     }
 
     static func makeDefault() -> OrbEngine {
-        OrbEngine(speech: SpeechRecognizerService(locale: .current))
+        let speech = SpeechRecognizer()
+        let engine = OrbEngine(speech: speech)
+
+        DispatchQueue.global(qos: .userInitiated).async {
+            DispatchQueue.main.async {
+                speech.requestPermissions()
+            }
+        }
+
+        return engine
     }
 
     var needsPermissionSettingsAction: Bool {
