@@ -162,7 +162,7 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
 
     private func requestMicrophonePermission() async -> Bool {
         await withCheckedContinuation { continuation in
-            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+            AVAudioApplication.requestRecordPermission { granted in
                 continuation.resume(returning: granted)
             }
         }
