@@ -6,6 +6,7 @@ struct HomeView: View {
     @StateObject private var generateViewModel: GenerateViewModel
 
     @State private var showHistory = false
+    @State private var showTypeInput = false
     @State private var showCopiedToast = false
 
     init(appEnvironment: AppEnvironment) {
@@ -45,6 +46,18 @@ struct HomeView: View {
                                 .foregroundStyle(.white)
 
                             Spacer()
+
+                            Button {
+                                showTypeInput = true
+                            } label: {
+                                Label("Type", systemImage: "keyboard")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 10)
+                                    .background(.white.opacity(0.1), in: Capsule())
+                            }
+                            .foregroundStyle(.white)
+                            .buttonStyle(.plain)
 
                             Button {
                                 showHistory = true
@@ -106,6 +119,22 @@ struct HomeView: View {
             }
             .environmentObject(appEnvironment)
             .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+        .sheet(isPresented: $showTypeInput) {
+            NavigationStack {
+                TypePromptView(viewModel: generateViewModel)
+                    .navigationTitle("Type Prompt")
+                    .navigationBarTitleDisplayMode(.inline)
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Done") {
+                                showTypeInput = false
+                            }
+                        }
+                    }
+            }
+            .presentationDetents([.medium, .large])
             .presentationDragIndicator(.visible)
         }
         .overlay(alignment: .bottom) {

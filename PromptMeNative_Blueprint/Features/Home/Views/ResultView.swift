@@ -6,7 +6,30 @@ struct ResultView: View {
 
     var body: some View {
         Group {
-            if let result = viewModel.latestResult {
+            if viewModel.isGenerating {
+                HStack(spacing: 12) {
+                    ProgressView()
+                        .tint(.white)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Generating Prompt")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(.white)
+                        Text("Sending your transcript to Prompt28...")
+                            .font(.footnote)
+                            .foregroundStyle(.white.opacity(0.72))
+                    }
+                    Spacer()
+                }
+                .padding(16)
+                .background(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .fill(Color.white.opacity(0.07))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                        )
+                )
+            } else if let result = viewModel.latestResult {
                 VStack(alignment: .leading, spacing: 14) {
                     HStack {
                         Text("Generated Prompt")
