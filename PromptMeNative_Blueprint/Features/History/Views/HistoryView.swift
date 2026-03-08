@@ -2,10 +2,23 @@ import SwiftUI
 import UIKit
 
 struct HistoryView: View {
+	private enum ActiveSheet: Identifiable {
+		case rename(PromptHistoryItem)
+		case detail(PromptHistoryItem)
+
+		var id: String {
+			switch self {
+			case .rename(let item):
+				return "rename-\(item.id.uuidString)"
+			case .detail(let item):
+				return "detail-\(item.id.uuidString)"
+			}
+		}
+	}
+
 	@EnvironmentObject private var env: AppEnvironment
 	@StateObject private var viewModel = HistoryViewModel()
-	@State private var renameItem: PromptHistoryItem?
-	@State private var selectedItem: PromptHistoryItem?
+	@State private var activeSheet: ActiveSheet?
 	@State private var renameText = ""
 	@State private var showClearAllConfirm = false
 	@State private var showCopiedToast = false
@@ -46,13 +59,13 @@ struct HistoryView: View {
 						if let onSelect {
 							onSelect(item)
 						} else {
-							selectedItem = item
+							activeSheet = .detail(item)
 						}
 					}
 					.padding(.vertical, 4)
 					.swipeActions(edge: .leading, allowsFullSwipe: false) {
 						Button("Rename") {
-							renameItem = item
+							activeSheet = .rename(item)
 							renameText = item.customName ?? ""
 						}
 						.tint(.blue)
@@ -81,81 +94,83 @@ struct HistoryView: View {
 					viewModel.clearAll()
 				}
 			}
-			.sheet(item: $renameItem) { item in
-				NavigationStack {
-					Form {
-						TextField("Custom title", text: $renameText)
-					}
-					.navigationTitle("Rename")
-					.toolbar {
-						ToolbarItem(placement: .cancellationAction) {
-							Button("Cancel") {
-								renameItem = nil
+			.sheet(item: $activeSheet) { sheet in
+				switch sheet {
+				case .rename(let item):
+					NavigationStack {
+						Form {
+							TextField("Custom title", text: $renameText)
+						}
+						.navigationTitle("Rename")
+						.toolbar {
+							ToolbarItem(placement: .cancellationAction) {
+								Button("Cancel") {
+									activeSheet = nil
+								}
+							}
+							ToolbarItem(placement: .confirmationAction) {
+								Button("Save") {
+									viewModel.rename(item, to: renameText)
+									activeSheet = nil
+								}
 							}
 						}
-						ToolbarItem(placement: .confirmationAction) {
-							Button("Save") {
-								viewModel.rename(item, to: renameText)
-								renameItem = nil
-							}
-						}
 					}
-				}
-			}
-			.sheet(item: $selectedItem) { item in
-				NavigationStack {
-					ScrollView {
-						VStack(alignment: .leading, spacing: 16) {
-							Text(item.customName ?? item.input)
-								.font(.title3.weight(.semibold))
+				case .detail(let item):
+					NavigationStack {
+						ScrollView {
+							VStack(alignment: .leading, spacing: 16) {
+								Text(item.customName ?? item.input)
+									.font(.title3.weight(.semibold))
 
-							Text(item.professional)
-								.font(.body)
-								.textSelection(.enabled)
-
-							if !item.template.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-								Divider()
-								Text("Template")
-									.font(.caption.weight(.semibold))
-									.foregroundStyle(.secondary)
-								Text(item.template)
-									.font(.footnote)
-									.foregroundStyle(.secondary)
+								Text(item.professional)
+									.font(.body)
 									.textSelection(.enabled)
-							}
 
-							HStack(spacing: 10) {
-								Button("Copy") {
-									UIPasteboard.general.string = item.professional
-									showCopiedToast = true
-									DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-										showCopiedToast = false
+								if !item.template.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+									Divider()
+									Text("Template")
+										.font(.caption.weight(.semibold))
+										.foregroundStyle(.secondary)
+									Text(item.template)
+										.font(.footnote)
+										.foregroundStyle(.secondary)
+										.textSelection(.enabled)
+								}
+
+								HStack(spacing: 10) {
+									Button("Copy") {
+										UIPasteboard.general.string = item.professional
+										showCopiedToast = true
+										DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+											showCopiedToast = false
+										}
 									}
-								}
-								.buttonStyle(.borderedProminent)
+									.buttonStyle(.borderedProminent)
 
-								ShareLink(item: item.professional) {
-									Label("Share", systemImage: "square.and.arrow.up")
-								}
-								.buttonStyle(.bordered)
-
-								Button(item.favorite ? "Unfavorite" : "Favorite") {
-									viewModel.toggleFavorite(item)
-									if let updated = viewModel.items.first(where: { $0.id == item.id }) {
-										selectedItem = updated
+									ShareLink(item: item.professional) {
+										Label("Share", systemImage: "square.and.arrow.up")
 									}
+									.buttonStyle(.bordered)
+
+									Button(item.favorite ? "Unfavorite" : "Favorite") {
+										viewModel.toggleFavorite(item)
+										if let updated = viewModel.items.first(where: { $0.id == item.id }) {
+											activeSheet = .detail(updated)
+										}
+									}
+									.buttonStyle(.bordered)
 								}
-								.buttonStyle(.bordered)
 							}
+							.padding()
 						}
-						.padding()
-					}
-					.navigationTitle("History Item")
-					.navigationBarTitleDisplayMode(.inline)
-					.toolbar {
-						ToolbarItem(placement: .cancellationAction) {
-							Button("Done") {
-								selectedItem = nil
+						.navigationTitle("History Item")
+						.navigationBarTitleDisplayMode(.inline)
+						.toolbar {
+							ToolbarItem(placement: .cancellationAction) {
+								Button("Done") {
+									activeSheet = nil
+								}
 							}
 						}
 					}

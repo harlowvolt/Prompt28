@@ -7,12 +7,13 @@ struct RootView: View {
     init() {
         let appearance = UITabBarAppearance()
         appearance.configureWithTransparentBackground()
-        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
-        appearance.backgroundColor = UIColor.black.withAlphaComponent(0.25)
-        appearance.shadowColor = UIColor.clear
+        appearance.backgroundEffect = UIBlurEffect(style: .systemThinMaterialDark)
+        appearance.backgroundColor = UIColor.black.withAlphaComponent(0.12)
+        appearance.shadowColor = UIColor.white.withAlphaComponent(0.08)
 
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
+        UITabBar.appearance().isTranslucent = true
     }
 
     var body: some View {

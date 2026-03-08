@@ -1,12 +1,25 @@
 import SwiftUI
 
 struct HomeView: View {
+    private enum ActiveSheet: Identifiable {
+        case history
+        case typePrompt
+
+        var id: String {
+            switch self {
+            case .history:
+                return "history"
+            case .typePrompt:
+                return "typePrompt"
+            }
+        }
+    }
+
     @ObservedObject private var appEnvironment: AppEnvironment
     @StateObject private var orbEngine = OrbEngine.makeDefault()
     @StateObject private var generateViewModel: GenerateViewModel
 
-    @State private var showHistory = false
-    @State private var showTypeInput = false
+    @State private var activeSheet: ActiveSheet?
     @State private var showCopiedToast = false
 
     init(appEnvironment: AppEnvironment) {
@@ -24,11 +37,11 @@ struct HomeView: View {
     var body: some View {
         GeometryReader { proxy in
             let compactHeight = proxy.size.height < 760
-            let headerToOrb: CGFloat = compactHeight ? 18 : 26
-            let orbHeight = min(420, max(330, proxy.size.height * (compactHeight ? 0.43 : 0.47)))
-            let orbToTranscript: CGFloat = compactHeight ? 14 : 20
-            let transcriptToResult: CGFloat = compactHeight ? 16 : 22
-            let bottomBreathing = max(proxy.safeAreaInsets.bottom + 70, 92)
+            let headerToOrb: CGFloat = compactHeight ? 12 : 18
+            let orbHeight = min(390, max(300, proxy.size.height * (compactHeight ? 0.40 : 0.44)))
+            let orbToTranscript: CGFloat = compactHeight ? 18 : 24
+            let transcriptToResult: CGFloat = compactHeight ? 20 : 26
+            let bottomBreathing = max(proxy.safeAreaInsets.bottom + 110, 132)
 
             ZStack {
                 LinearGradient(
@@ -44,29 +57,36 @@ struct HomeView: View {
                             Text("Prompt28")
                                 .font(.system(size: compactHeight ? 30 : 34, weight: .semibold, design: .rounded))
                                 .foregroundStyle(.white)
+                                .lineLimit(1)
+                                .minimumScaleFactor(0.85)
+                                .layoutPriority(1)
 
                             Spacer()
 
                             Button {
-                                showTypeInput = true
+                                activeSheet = .typePrompt
                             } label: {
                                 Label("Type", systemImage: "keyboard")
                                     .font(.system(size: 14, weight: .semibold))
+                                    .lineLimit(1)
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 10)
                                     .background(.white.opacity(0.1), in: Capsule())
+                                    .fixedSize(horizontal: true, vertical: false)
                             }
                             .foregroundStyle(.white)
                             .buttonStyle(.plain)
 
                             Button {
-                                showHistory = true
+                                activeSheet = .history
                             } label: {
                                 Label("History", systemImage: "clock.arrow.circlepath")
                                     .font(.system(size: 14, weight: .semibold))
+                                    .lineLimit(1)
                                     .padding(.horizontal, 14)
                                     .padding(.vertical, 10)
                                     .background(.white.opacity(0.1), in: Capsule())
+                                    .fixedSize(horizontal: true, vertical: false)
                             }
                             .foregroundStyle(.white)
                             .buttonStyle(.plain)
@@ -111,31 +131,33 @@ struct HomeView: View {
                 }
             }
         }
-        .sheet(isPresented: $showHistory) {
-            HistoryView { item in
-                generateViewModel.restoreFromHistory(item)
-                orbEngine.markSuccess()
-                showHistory = false
-            }
-            .environmentObject(appEnvironment)
-            .presentationDetents([.large])
-            .presentationDragIndicator(.visible)
-        }
-        .sheet(isPresented: $showTypeInput) {
-            NavigationStack {
-                TypePromptView(viewModel: generateViewModel)
-                    .navigationTitle("Type Prompt")
-                    .navigationBarTitleDisplayMode(.inline)
-                    .toolbar {
-                        ToolbarItem(placement: .cancellationAction) {
-                            Button("Done") {
-                                showTypeInput = false
+        .sheet(item: $activeSheet) { sheet in
+            switch sheet {
+            case .history:
+                HistoryView { item in
+                    generateViewModel.restoreFromHistory(item)
+                    orbEngine.markSuccess()
+                    activeSheet = nil
+                }
+                .environmentObject(appEnvironment)
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+            case .typePrompt:
+                NavigationStack {
+                    TypePromptView(viewModel: generateViewModel)
+                        .navigationTitle("Type Prompt")
+                        .navigationBarTitleDisplayMode(.inline)
+                        .toolbar {
+                            ToolbarItem(placement: .cancellationAction) {
+                                Button("Done") {
+                                    activeSheet = nil
+                                }
                             }
                         }
-                    }
+                }
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
             }
-            .presentationDetents([.medium, .large])
-            .presentationDragIndicator(.visible)
         }
         .overlay(alignment: .bottom) {
             if showCopiedToast {
