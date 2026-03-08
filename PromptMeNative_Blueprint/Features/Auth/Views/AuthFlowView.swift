@@ -108,7 +108,7 @@ struct AuthFlowView: View {
 
     private func routeIfAuthenticated() {
         if env.authManager.isAuthenticated {
-            env.router.rootRoute = .main
+            env.authManager.lastError = nil
         }
     }
 }
