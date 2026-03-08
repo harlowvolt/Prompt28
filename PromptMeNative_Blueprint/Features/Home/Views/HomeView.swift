@@ -39,10 +39,10 @@ struct HomeView: View {
             let compactHeight = proxy.size.height < 760
             let narrowWidth = proxy.size.width < 380
             let headerToOrb: CGFloat = compactHeight ? 20 : 28
-            let orbHeight = min(380, max(292, proxy.size.height * (compactHeight ? 0.38 : 0.42)))
+            let orbHeight = min(360, max(278, proxy.size.height * (compactHeight ? 0.35 : 0.40)))
             let orbToTranscript: CGFloat = compactHeight ? 20 : 28
             let transcriptToResult: CGFloat = compactHeight ? 22 : 30
-            let bottomBreathing = max(proxy.safeAreaInsets.bottom + 132, 156)
+            let bottomProtectedInset = max(proxy.safeAreaInsets.bottom + 150, 182)
 
             ZStack {
                 LinearGradient(
@@ -126,7 +126,8 @@ struct HomeView: View {
                             errorBanner(text: errorMessage)
                         }
 
-                        Spacer(minLength: bottomBreathing)
+                        Color.clear
+                            .frame(height: bottomProtectedInset)
                     }
                     .padding(.horizontal, 20)
                     .padding(.top, compactHeight ? 16 : 22)
