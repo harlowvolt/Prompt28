@@ -53,14 +53,33 @@ struct HomeView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
+                        VStack(alignment: .leading, spacing: 8) {
+                            Text("Prompt28")
+                                .font(.system(size: compactHeight ? 31 : 35, weight: .semibold, design: .rounded))
+                                .foregroundStyle(PromptTheme.paleLilacWhite)
+
+                            Text(greetingLine)
+                                .font(.system(size: compactHeight ? 16 : 17, weight: .medium, design: .rounded))
+                                .foregroundStyle(PromptTheme.softLilac.opacity(0.9))
+                                .lineLimit(1)
+
+                            if let subtitle = greetingSubtitle {
+                                Text(subtitle)
+                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                                    .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
+                                    .lineLimit(1)
+                            }
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+
+                        Spacer(minLength: compactHeight ? 14 : 16)
+
                         if narrowWidth {
                             VStack(alignment: .leading, spacing: 12) {
                                 HStack(spacing: 10) {
-                                    Text("Prompt28")
-                                        .font(.system(size: compactHeight ? 30 : 34, weight: .semibold, design: .rounded))
+                                    Text("Home")
+                                        .font(.system(size: 20, weight: .semibold, design: .rounded))
                                         .foregroundStyle(PromptTheme.paleLilacWhite)
-                                        .lineLimit(1)
-                                        .minimumScaleFactor(0.95)
 
                                     Spacer(minLength: 8)
 
@@ -84,8 +103,8 @@ struct HomeView: View {
                             .frame(maxWidth: .infinity, alignment: .leading)
                         } else {
                             HStack(spacing: 10) {
-                                Text("Prompt28")
-                                    .font(.system(size: compactHeight ? 30 : 34, weight: .semibold, design: .rounded))
+                                Text("Home")
+                                    .font(.system(size: 20, weight: .semibold, design: .rounded))
                                     .foregroundStyle(PromptTheme.paleLilacWhite)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.95)
@@ -274,6 +293,25 @@ struct HomeView: View {
                         .stroke(PromptTheme.glassStroke, lineWidth: 1)
                 )
         )
+    }
+
+    private var greetingLine: String {
+        let rawName = appEnvironment.authManager.currentUser?.name ?? ""
+        let cleaned = rawName.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        if let first = cleaned.split(separator: " ").first, !first.isEmpty {
+            return "Welcome back, \(first)"
+        }
+
+        return "What do you want to make today?"
+    }
+
+    private var greetingSubtitle: String? {
+        if generateViewModel.latestPromptText.isEmpty {
+            return "Speak naturally and Prompt28 will craft it professionally."
+        }
+
+        return "Refine, favorite, or share your latest result."
     }
 
     private var homeStatusText: String {

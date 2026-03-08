@@ -325,16 +325,7 @@ struct OrbView: View {
     }
 
     private var orbSymbol: String {
-        switch visualState {
-        case .idle:
-            return "mic"
-        case .listening:
-            return "waveform"
-        case .processing:
-            return "sparkles"
-        case .error:
-            return "exclamationmark.triangle"
-        }
+        "mic"
     }
 
     private var liveTranscriptText: String {
