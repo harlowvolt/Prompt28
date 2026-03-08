@@ -16,15 +16,12 @@ struct SettingsView: View {
 
 				if let message = viewModel.errorMessage {
 					Text(message)
-						.font(.system(size: 14, weight: .medium, design: .rounded))
+						.font(PromptTheme.Typography.rounded(14, .medium))
 						.foregroundStyle(.red.opacity(0.92))
-						.padding(.horizontal, 14)
-						.padding(.vertical, 12)
+						.padding(.horizontal, PromptTheme.Spacing.s)
+						.padding(.vertical, PromptTheme.Spacing.xs)
 						.frame(maxWidth: .infinity, alignment: .leading)
-						.background(
-							RoundedRectangle(cornerRadius: 14, style: .continuous)
-								.fill(Color.red.opacity(0.12))
-						)
+						.background(Color.red.opacity(0.12), in: RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous))
 				}
 			}
 			.task {
@@ -118,24 +115,21 @@ struct SettingsView: View {
 	}
 
 	private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-		VStack(alignment: .leading, spacing: 12) {
+		VStack(alignment: .leading, spacing: PromptTheme.Spacing.s) {
 			Text(title)
-				.font(.system(size: 14, weight: .semibold, design: .rounded))
+				.font(PromptTheme.Typography.rounded(14, .semibold))
 				.foregroundStyle(PromptTheme.softLilac.opacity(0.76))
 
-			VStack(alignment: .leading, spacing: 10) {
+			VStack(alignment: .leading, spacing: PromptTheme.Spacing.xs) {
 				content()
 			}
 		}
-		.padding(14)
+		.padding(PromptTheme.Spacing.s)
 		.frame(maxWidth: .infinity, alignment: .leading)
-		.background(
-			RoundedRectangle(cornerRadius: 16, style: .continuous)
-				.fill(PromptTheme.glassFill)
-				.overlay(
-					RoundedRectangle(cornerRadius: 16, style: .continuous)
-						.stroke(PromptTheme.glassStroke, lineWidth: 1)
-				)
+		.background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous))
+		.overlay(
+			RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous)
+				.stroke(Color.white.opacity(0.12), lineWidth: 1)
 		)
 	}
 
@@ -150,6 +144,6 @@ struct SettingsView: View {
 				.foregroundStyle(PromptTheme.paleLilacWhite)
 				.multilineTextAlignment(.trailing)
 		}
-		.font(.system(size: 14, weight: .medium, design: .rounded))
+		.font(PromptTheme.Typography.rounded(14, .medium))
 	}
 }

@@ -10,7 +10,7 @@ struct RootView: View {
     init() {
         let appearance = UITabBarAppearance()
         appearance.configureWithTransparentBackground()
-        appearance.backgroundEffect = UIBlurEffect(style: .systemThinMaterialDark)
+        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
         appearance.backgroundColor = PromptTheme.tabBackground
         appearance.shadowColor = PromptTheme.tabShadow
 
@@ -138,10 +138,32 @@ enum PromptTheme {
     static let orbActiveGlow = Color(hex: "#8A74BE")
     static let orbProcessingGlow = Color(hex: "#9D8ACB")
 
-    static let tabBackground = UIColor(red: 0.08, green: 0.06, blue: 0.12, alpha: 0.78)
-    static let tabShadow = UIColor(red: 0.56, green: 0.49, blue: 0.70, alpha: 0.22)
+    static let tabBackground = UIColor(red: 0.08, green: 0.06, blue: 0.12, alpha: 0.64)
+    static let tabShadow = UIColor(red: 0.78, green: 0.74, blue: 0.88, alpha: 0.07)
     static let tabSelected = UIColor(red: 0.81, green: 0.76, blue: 0.96, alpha: 1.0)
     static let tabUnselected = UIColor(red: 0.57, green: 0.52, blue: 0.67, alpha: 1.0)
+
+    enum Typography {
+        static func rounded(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
+            .system(size: size, weight: weight, design: .rounded)
+        }
+    }
+
+    enum Spacing {
+        static let xxs: CGFloat = 6
+        static let xs: CGFloat = 10
+        static let s: CGFloat = 14
+        static let m: CGFloat = 18
+        static let l: CGFloat = 24
+        static let xl: CGFloat = 32
+    }
+
+    enum Radius {
+        static let medium: CGFloat = 16
+        static let large: CGFloat = 24
+    }
+
+    static let premiumMaterial: Material = .ultraThinMaterial
 }
 
 extension Color {

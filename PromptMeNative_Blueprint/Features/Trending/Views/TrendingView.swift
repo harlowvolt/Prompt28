@@ -21,34 +21,43 @@ struct TrendingView: View {
 
 	private var categoryPicker: some View {
 		ScrollView(.horizontal, showsIndicators: false) {
-			HStack(spacing: 8) {
+			HStack(spacing: PromptTheme.Spacing.xs) {
 				ForEach(viewModel.categories) { category in
 					let isSelected = viewModel.selectedCategory?.key == category.key
 					Button(category.name) {
 						viewModel.selectCategory(category.key)
 					}
+					.font(PromptTheme.Typography.rounded(13, .semibold))
 					.buttonStyle(.borderedProminent)
 					.tint(isSelected ? PromptTheme.mutedViolet : PromptTheme.deepShadow.opacity(0.85))
 				}
 			}
+			.padding(.vertical, PromptTheme.Spacing.xxs)
 		}
 	}
 
 	@ViewBuilder
 	private var content: some View {
 		if viewModel.isLoading && viewModel.catalog == nil {
-			VStack(spacing: 10) {
+			VStack(spacing: PromptTheme.Spacing.xs) {
 				ProgressView("Loading prompts...")
 					.tint(PromptTheme.softLilac)
 			}
+			.padding(PromptTheme.Spacing.l)
+			.background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
+			.overlay(
+				RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
+					.stroke(Color.white.opacity(0.1), lineWidth: 1)
+			)
 			.frame(maxWidth: .infinity)
-			.padding(.top, 28)
+			.frame(minHeight: 280, alignment: .center)
 		} else if let message = viewModel.errorMessage, viewModel.catalog == nil {
-			VStack(spacing: 10) {
+			VStack(spacing: PromptTheme.Spacing.xs) {
 				Text("Could not load trending prompts")
-					.font(.headline)
+					.font(PromptTheme.Typography.rounded(18, .semibold))
 					.foregroundStyle(PromptTheme.paleLilacWhite)
 				Text(message)
+					.font(PromptTheme.Typography.rounded(14, .medium))
 					.foregroundStyle(PromptTheme.softLilac.opacity(0.82))
 					.multilineTextAlignment(.center)
 				Button("Retry") {
@@ -57,47 +66,56 @@ struct TrendingView: View {
 				.buttonStyle(.borderedProminent)
 				.tint(PromptTheme.mutedViolet)
 			}
+			.padding(PromptTheme.Spacing.l)
+			.background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
+			.overlay(
+				RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
+					.stroke(Color.white.opacity(0.1), lineWidth: 1)
+			)
 			.frame(maxWidth: .infinity)
-			.padding(.top, 24)
+			.frame(minHeight: 280, alignment: .center)
 		} else if let category = viewModel.selectedCategory {
-			LazyVStack(spacing: 12) {
+			LazyVStack(spacing: PromptTheme.Spacing.s) {
 				ForEach(category.items) { item in
 					NavigationLink(destination: PromptDetailView(item: item)) {
-						VStack(alignment: .leading, spacing: 8) {
+						VStack(alignment: .leading, spacing: PromptTheme.Spacing.xs) {
 							Text(item.title)
-								.font(.system(size: 18, weight: .semibold, design: .rounded))
+								.font(PromptTheme.Typography.rounded(18, .semibold))
 								.foregroundStyle(PromptTheme.paleLilacWhite)
 
 							Text(item.prompt)
 								.lineLimit(3)
-								.font(.system(size: 14, weight: .regular, design: .rounded))
+								.font(PromptTheme.Typography.rounded(14, .regular))
 								.foregroundStyle(PromptTheme.softLilac.opacity(0.82))
 						}
 						.frame(maxWidth: .infinity, alignment: .leading)
-						.padding(14)
-						.background(
-							RoundedRectangle(cornerRadius: 16, style: .continuous)
-								.fill(PromptTheme.glassFill)
-								.overlay(
-									RoundedRectangle(cornerRadius: 16, style: .continuous)
-										.stroke(PromptTheme.glassStroke, lineWidth: 1)
-								)
+						.padding(PromptTheme.Spacing.s)
+						.background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous))
+						.overlay(
+							RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous)
+								.stroke(Color.white.opacity(0.12), lineWidth: 1)
 						)
 					}
 					.buttonStyle(.plain)
 				}
 			}
 		} else {
-			VStack(spacing: 10) {
+			VStack(spacing: PromptTheme.Spacing.xs) {
 				Image(systemName: "text.quote")
 					.font(.system(size: 28, weight: .semibold))
 					.foregroundStyle(PromptTheme.softLilac.opacity(0.75))
 				Text("No Prompts")
-					.font(.system(size: 18, weight: .semibold, design: .rounded))
+					.font(PromptTheme.Typography.rounded(18, .semibold))
 					.foregroundStyle(PromptTheme.paleLilacWhite)
 			}
+			.padding(PromptTheme.Spacing.l)
+			.background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
+			.overlay(
+				RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
+					.stroke(Color.white.opacity(0.1), lineWidth: 1)
+			)
 			.frame(maxWidth: .infinity)
-			.padding(.top, 30)
+			.frame(minHeight: 280, alignment: .center)
 		}
 	}
 }

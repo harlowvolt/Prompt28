@@ -6,12 +6,8 @@ struct OrbView: View {
     let onTranscript: (String) -> Void
     @Environment(\.openURL) private var openURL
 
-    @State private var idleBreathing = false
-    @State private var errorPulse = false
-    @State private var processingSpin = false
-
     var body: some View {
-        VStack(spacing: 14) {
+        VStack(spacing: PromptTheme.Spacing.s) {
             Button {
                 Task {
                     if engine.isRecording {
@@ -36,7 +32,7 @@ struct OrbView: View {
                             reactiveGlowRing(size: ringSize, time: t)
                             audioWaveHalo(size: ringSize * 1.22, time: t)
                             coreOrb(size: orbSize, time: t)
-                            processingSpinner(size: orbSize * 1.12)
+                            processingSpinner(size: orbSize * 1.12, time: t)
                         }
                         .frame(width: size, height: size)
                     }
@@ -68,14 +64,6 @@ struct OrbView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .onAppear {
-            updateAnimations(for: visualState)
-        }
-        .onChange(of: engine.state) { _, _ in
-            withAnimation(.spring(response: 0.42, dampingFraction: 0.85)) {
-                updateAnimations(for: visualState)
-            }
-        }
     }
 
     private var visualState: OrbVisualState {
@@ -88,27 +76,6 @@ struct OrbView: View {
             return .processing
         case .failure:
             return .error
-        }
-    }
-
-    private func updateAnimations(for state: OrbVisualState) {
-        switch state {
-        case .idle:
-            idleBreathing = true
-            errorPulse = false
-            processingSpin = false
-        case .listening:
-            idleBreathing = false
-            errorPulse = false
-            processingSpin = false
-        case .processing:
-            idleBreathing = false
-            errorPulse = false
-            processingSpin = true
-        case .error:
-            idleBreathing = false
-            errorPulse = true
-            processingSpin = false
         }
     }
 
@@ -131,15 +98,29 @@ struct OrbView: View {
             .blendMode(.screen)
     }
 
-    @ViewBuilder
     private func coreOrb(size: CGFloat, time: TimeInterval) -> some View {
         let level = engine.audioLevel
-        let listenPulse = 1.0 + (visualState == .listening ? (0.04 + level * 0.08) * CGFloat((sin(time * 7.0) + 1.0) * 0.5) : 0)
-        let idleScale = idleBreathing ? 1.035 : 0.98
-        let errorScale = errorPulse ? 1.05 : 1.0
-        let scale = (visualState == .idle ? idleScale : 1.0) * listenPulse * (visualState == .error ? errorScale : 1.0)
+        let baseWave = sin(time * 1.35)
+        let secondaryWave = sin(time * 2.45 + 0.9)
+        let organicWave = CGFloat(baseWave * 0.65 + secondaryWave * 0.35)
+        let motionAmplitude: CGFloat
 
-        ZStack {
+        switch visualState {
+        case .idle:
+            motionAmplitude = 0.016
+        case .listening:
+            motionAmplitude = 0.028 + level * 0.02
+        case .processing:
+            motionAmplitude = 0.021
+        case .error:
+            motionAmplitude = 0.012
+        }
+
+        let levelInfluence = visualState == .listening ? level * 0.05 : 0
+        let scale = 1 + organicWave * motionAmplitude + levelInfluence
+        let yFloat = organicWave * size * 0.012
+
+        return ZStack {
             Circle()
                 .fill(
                     RadialGradient(
@@ -172,9 +153,7 @@ struct OrbView: View {
         .frame(width: size, height: size)
         .shadow(color: glowColor.opacity(glowStrength), radius: size * 0.28)
         .scaleEffect(scale)
-        .animation(.easeInOut(duration: 2.4).repeatForever(autoreverses: true), value: idleBreathing)
-        .animation(.easeInOut(duration: 0.65).repeatForever(autoreverses: true), value: errorPulse)
-        .animation(.interactiveSpring(response: 0.2, dampingFraction: 0.88), value: engine.audioLevel)
+        .offset(y: yFloat)
     }
 
     @ViewBuilder
@@ -242,7 +221,9 @@ struct OrbView: View {
     }
 
     @ViewBuilder
-    private func processingSpinner(size: CGFloat) -> some View {
+    private func processingSpinner(size: CGFloat, time: TimeInterval) -> some View {
+        let rotation = visualState == .processing ? Angle.degrees(time * 140) : .zero
+
         Circle()
             .trim(from: 0.05, to: 0.34)
             .stroke(
@@ -253,9 +234,8 @@ struct OrbView: View {
                 style: StrokeStyle(lineWidth: max(2, size * 0.04), lineCap: .round)
             )
             .frame(width: size, height: size)
-            .rotationEffect(.degrees(processingSpin ? 360 : 0))
+            .rotationEffect(rotation)
             .opacity(visualState == .processing ? 1.0 : 0.0)
-            .animation(.linear(duration: 1.1).repeatForever(autoreverses: false), value: processingSpin)
             .animation(.easeInOut(duration: 0.25), value: visualState)
     }
 

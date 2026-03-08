@@ -15,44 +15,41 @@ struct ResultView: View {
                         .tint(PromptTheme.softLilac)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Generating Prompt")
-                            .font(.subheadline.weight(.semibold))
+                            .font(PromptTheme.Typography.rounded(15, .semibold))
                             .foregroundStyle(PromptTheme.paleLilacWhite)
                         Text("Sending your transcript to Prompt28...")
-                            .font(.footnote)
+                            .font(PromptTheme.Typography.rounded(13, .medium))
                             .foregroundStyle(PromptTheme.softLilac.opacity(0.76))
                     }
                     Spacer()
                 }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(PromptTheme.glassFill)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(PromptTheme.glassStroke, lineWidth: 1)
-                        )
+                .padding(PromptTheme.Spacing.s)
+                .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
                 )
             } else if let result = viewModel.latestResult {
-                VStack(alignment: .leading, spacing: 14) {
+                VStack(alignment: .leading, spacing: PromptTheme.Spacing.s) {
                     HStack {
                         Text("Generated Prompt")
-                            .font(.system(size: 18, weight: .semibold, design: .rounded))
+                            .font(PromptTheme.Typography.rounded(18, .semibold))
                             .foregroundStyle(PromptTheme.paleLilacWhite)
                         Spacer()
                         Text(viewModel.selectedMode == .ai ? "AI" : "Human")
-                            .font(.caption.weight(.semibold))
-                            .padding(.horizontal, 10)
+                            .font(PromptTheme.Typography.rounded(12, .semibold))
+                            .padding(.horizontal, PromptTheme.Spacing.xs)
                             .padding(.vertical, 5)
-                            .background(PromptTheme.glassFill, in: Capsule())
+                            .background(Color.white.opacity(0.08), in: Capsule())
                             .overlay(
                                 Capsule()
-                                    .stroke(PromptTheme.glassStroke, lineWidth: 1)
+                                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
                             )
                             .foregroundStyle(PromptTheme.softLilac)
                     }
 
                     Text(result.professional)
-                        .font(.system(size: 16, weight: .regular, design: .rounded))
+                        .font(PromptTheme.Typography.rounded(16, .regular))
                         .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.96))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .textSelection(.enabled)
@@ -60,10 +57,10 @@ struct ResultView: View {
                     if !result.template.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
                         Divider().overlay(PromptTheme.softLilac.opacity(0.22))
                         Text("Template")
-                            .font(.caption.weight(.semibold))
+                            .font(PromptTheme.Typography.rounded(12, .semibold))
                             .foregroundStyle(PromptTheme.softLilac.opacity(0.78))
                         Text(result.template)
-                            .font(.system(size: 14, weight: .regular, design: .rounded))
+                            .font(PromptTheme.Typography.rounded(14, .regular))
                             .foregroundStyle(PromptTheme.softLilac.opacity(0.84))
                             .textSelection(.enabled)
                     }
@@ -88,16 +85,16 @@ struct ResultView: View {
                                 preview: SharePreview("PROMPT²⁸", image: Image(uiImage: shareImage))
                             ) {
                                 Label("Share", systemImage: "square.and.arrow.up")
-                                    .font(.system(size: 15, weight: .semibold))
-                                    .padding(.horizontal, 16)
-                                    .padding(.vertical, 10)
+                                    .font(PromptTheme.Typography.rounded(15, .semibold))
+                                    .padding(.horizontal, PromptTheme.Spacing.s)
+                                    .padding(.vertical, PromptTheme.Spacing.xs)
                                     .frame(maxWidth: .infinity)
                             }
                             .buttonStyle(.bordered)
                             .tint(PromptTheme.softLilac.opacity(0.86))
                         } else {
                             Label("Preparing Share...", systemImage: "hourglass")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(PromptTheme.Typography.rounded(15, .semibold))
                                 .foregroundStyle(PromptTheme.softLilac.opacity(0.75))
                                 .frame(maxWidth: .infinity)
                         }
@@ -123,32 +120,26 @@ struct ResultView: View {
                     }
                     .buttonStyle(.bordered)
                 }
-                .padding(16)
-                .background(
-                    RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(PromptTheme.glassFill)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .stroke(PromptTheme.glassStroke, lineWidth: 1)
-                        )
+                .padding(PromptTheme.Spacing.s)
+                .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
                 )
             } else {
                 HStack(spacing: 10) {
                     Image(systemName: "text.quote")
                         .foregroundStyle(PromptTheme.softLilac.opacity(0.78))
                     Text("Generated prompt will appear here")
-                        .font(.footnote.weight(.medium))
+                        .font(PromptTheme.Typography.rounded(13, .medium))
                         .foregroundStyle(PromptTheme.softLilac.opacity(0.82))
                     Spacer()
                 }
-                .padding(14)
-                .background(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(PromptTheme.glassFill)
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(PromptTheme.glassStroke, lineWidth: 1)
-                        )
+                .padding(PromptTheme.Spacing.s)
+                .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
+                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
                 )
             }
         }

@@ -18,10 +18,10 @@ struct HomeView: View {
     @State private var activeSheet: ActiveSheet?
     @State private var showCopiedToast = false
 
-    private let idleBottomPadding: CGFloat = 24
-    private let resultTopSpacing: CGFloat = 24
-    private let orbToTranscriptSpacing: CGFloat = 16
-    private let transcriptToResultSpacing: CGFloat = 18
+    private let idleBottomPadding: CGFloat = PromptTheme.Spacing.l
+    private let resultTopSpacing: CGFloat = PromptTheme.Spacing.l
+    private let orbToTranscriptSpacing: CGFloat = PromptTheme.Spacing.s
+    private let transcriptToResultSpacing: CGFloat = PromptTheme.Spacing.m
 
     init(appEnvironment: AppEnvironment) {
         self._generateViewModel = StateObject(
@@ -68,10 +68,10 @@ struct HomeView: View {
                                 Spacer(minLength: orbToTranscriptSpacing)
 
                                 Text(primaryTranscriptText)
-                                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                                    .font(PromptTheme.Typography.rounded(16, .regular))
                                     .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.94))
                                     .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 24)
+                                    .padding(.horizontal, PromptTheme.Spacing.l)
                                     .textSelection(.enabled)
 
                                 Spacer(minLength: transcriptToResultSpacing)
@@ -87,7 +87,7 @@ struct HomeView: View {
                                         Color.clear
                                             .frame(height: bottomSafeSpacer)
                                     }
-                                    .padding(.horizontal, 20)
+                                    .padding(.horizontal, PromptTheme.Spacing.m)
                                 }
                             }
                         } else {
@@ -112,10 +112,10 @@ struct HomeView: View {
                                 Spacer(minLength: orbToTranscriptSpacing)
 
                                 Text(primaryTranscriptText)
-                                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                                    .font(PromptTheme.Typography.rounded(16, .regular))
                                     .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.94))
                                     .multilineTextAlignment(.center)
-                                    .padding(.horizontal, 24)
+                                    .padding(.horizontal, PromptTheme.Spacing.l)
                                     .textSelection(.enabled)
 
                                 Spacer(minLength: bottomSafeSpacer)
@@ -233,18 +233,15 @@ struct HomeView: View {
                 .foregroundStyle(.yellow)
 
             Text(text)
-                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .font(PromptTheme.Typography.rounded(14, .medium))
                 .foregroundStyle(PromptTheme.paleLilacWhite)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(14)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color(red: 0.28, green: 0.13, blue: 0.22).opacity(0.52))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color(red: 0.60, green: 0.36, blue: 0.52).opacity(0.5), lineWidth: 1)
-                )
+        .padding(PromptTheme.Spacing.s)
+        .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
         )
     }
 }

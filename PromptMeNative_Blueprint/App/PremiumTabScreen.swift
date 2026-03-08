@@ -3,10 +3,10 @@ import SwiftUI
 struct PremiumTabScreen<Content: View>: View {
     let title: String
     var isScrollable: Bool = true
-    var horizontalPadding: CGFloat = 20
-    var topSpacing: CGFloat = 10
+    var horizontalPadding: CGFloat = PromptTheme.Spacing.m
+    var topSpacing: CGFloat = PromptTheme.Spacing.xxs
     var maxContentWidth: CGFloat = 760
-    var contentSpacing: CGFloat = 16
+    var contentSpacing: CGFloat = PromptTheme.Spacing.s
     @ViewBuilder var content: () -> Content
 
     var body: some View {
@@ -30,15 +30,16 @@ struct PremiumTabScreen<Content: View>: View {
 
     @ViewBuilder
     private func contentLayout(proxy: GeometryProxy) -> some View {
-        VStack(alignment: .leading, spacing: contentSpacing) {
+        VStack(alignment: .leading, spacing: PromptTheme.Spacing.m) {
             Text(title)
-                .font(.system(size: 30, weight: .semibold, design: .rounded))
+                .font(PromptTheme.Typography.rounded(24, .semibold))
                 .foregroundStyle(PromptTheme.paleLilacWhite)
+                .padding(.top, PromptTheme.Spacing.xxs)
 
             content()
 
             Color.clear
-                .frame(height: max(28, proxy.safeAreaInsets.bottom + 18))
+                .frame(height: max(PromptTheme.Spacing.s, proxy.safeAreaInsets.bottom + PromptTheme.Spacing.xs))
         }
         .frame(maxWidth: maxContentWidth)
         .frame(maxWidth: .infinity, alignment: .top)

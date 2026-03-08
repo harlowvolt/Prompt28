@@ -12,7 +12,7 @@ struct FavoritesView: View {
 				if viewModel.favoriteItems.isEmpty {
 					emptyState
 				} else {
-					LazyVStack(spacing: 12) {
+					LazyVStack(spacing: PromptTheme.Spacing.s) {
 						ForEach(viewModel.favoriteItems) { item in
 							favoriteRow(item)
 						}
@@ -26,58 +26,65 @@ struct FavoritesView: View {
 	}
 
 	private var searchField: some View {
-		HStack(spacing: 10) {
+		HStack(spacing: PromptTheme.Spacing.xs) {
 			Image(systemName: "magnifyingglass")
 				.foregroundStyle(PromptTheme.softLilac.opacity(0.72))
 
 			TextField("Search favorites", text: $viewModel.query)
+				.font(PromptTheme.Typography.rounded(15, .medium))
+				.foregroundStyle(PromptTheme.paleLilacWhite)
 				.textInputAutocapitalization(.never)
 				.autocorrectionDisabled()
 		}
-		.padding(.horizontal, 14)
-		.padding(.vertical, 11)
-		.background(PromptTheme.glassFill, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+		.padding(.horizontal, PromptTheme.Spacing.s)
+		.padding(.vertical, PromptTheme.Spacing.xs)
+		.background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous))
 		.overlay(
-			RoundedRectangle(cornerRadius: 14, style: .continuous)
-				.stroke(PromptTheme.glassStroke, lineWidth: 1)
+			RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous)
+				.stroke(Color.white.opacity(0.12), lineWidth: 1)
 		)
 	}
 
 	private var emptyState: some View {
-		VStack(spacing: 10) {
+		VStack(spacing: PromptTheme.Spacing.xs) {
 			Image(systemName: "star")
 				.font(.system(size: 28, weight: .semibold))
 				.foregroundStyle(PromptTheme.softLilac.opacity(0.75))
 
 			Text("No Favorites Yet")
-				.font(.system(size: 18, weight: .semibold, design: .rounded))
+				.font(PromptTheme.Typography.rounded(18, .semibold))
 				.foregroundStyle(PromptTheme.paleLilacWhite)
 
 			Text("Favorite generated prompts to find them quickly.")
-				.font(.system(size: 14, weight: .medium, design: .rounded))
+				.font(PromptTheme.Typography.rounded(14, .medium))
 				.foregroundStyle(PromptTheme.softLilac.opacity(0.74))
 				.multilineTextAlignment(.center)
 		}
+		.padding(PromptTheme.Spacing.l)
+		.background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
+		.overlay(
+			RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
+				.stroke(Color.white.opacity(0.1), lineWidth: 1)
+		)
 		.frame(maxWidth: .infinity)
-		.padding(.top, 34)
-		.padding(.bottom, 22)
+		.frame(minHeight: 280, alignment: .center)
 	}
 
 	private func favoriteRow(_ item: PromptHistoryItem) -> some View {
-		VStack(alignment: .leading, spacing: 10) {
+		VStack(alignment: .leading, spacing: PromptTheme.Spacing.xs) {
 			Text(item.customName ?? item.input)
-				.font(.system(size: 17, weight: .semibold, design: .rounded))
+				.font(PromptTheme.Typography.rounded(17, .semibold))
 				.foregroundStyle(PromptTheme.paleLilacWhite)
 				.lineLimit(2)
 
 			Text(item.professional)
-				.font(.system(size: 14, weight: .regular, design: .rounded))
+				.font(PromptTheme.Typography.rounded(14, .regular))
 				.foregroundStyle(PromptTheme.softLilac.opacity(0.86))
 				.lineLimit(3)
 
 			HStack {
 				Text(item.createdAt, style: .date)
-					.font(.caption)
+					.font(PromptTheme.Typography.rounded(12, .medium))
 					.foregroundStyle(PromptTheme.softLilac.opacity(0.72))
 
 				Spacer()
@@ -89,14 +96,11 @@ struct FavoritesView: View {
 				.tint(PromptTheme.mutedViolet.opacity(0.86))
 			}
 		}
-		.padding(14)
-		.background(
-			RoundedRectangle(cornerRadius: 16, style: .continuous)
-				.fill(PromptTheme.glassFill)
-				.overlay(
-					RoundedRectangle(cornerRadius: 16, style: .continuous)
-						.stroke(PromptTheme.glassStroke, lineWidth: 1)
-				)
+		.padding(PromptTheme.Spacing.s)
+		.background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous))
+		.overlay(
+			RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous)
+				.stroke(Color.white.opacity(0.12), lineWidth: 1)
 		)
 	}
 }
