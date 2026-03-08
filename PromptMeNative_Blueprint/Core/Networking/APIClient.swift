@@ -25,6 +25,10 @@ final class APIClient {
         do {
             (data, response) = try await session.data(for: request)
         } catch {
+            let nsError = error as NSError
+            if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorTimedOut {
+                throw NetworkError.transport(message: "The server took too long to respond. Please try again.")
+            }
             throw NetworkError.transport(message: error.localizedDescription)
         }
 

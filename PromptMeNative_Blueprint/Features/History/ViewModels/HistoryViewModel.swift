@@ -1,6 +1,5 @@
 import Combine
 import Foundation
-import Combine
 
 @MainActor
 final class HistoryViewModel: ObservableObject {
@@ -26,10 +25,11 @@ final class HistoryViewModel: ObservableObject {
 	}
 
 	var filteredItems: [PromptHistoryItem] {
+		let newestFirst = items.sorted { $0.createdAt > $1.createdAt }
 		let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
-		guard !trimmed.isEmpty else { return items }
+		guard !trimmed.isEmpty else { return newestFirst }
 
-		return items.filter {
+		return newestFirst.filter {
 			$0.input.localizedCaseInsensitiveContains(trimmed)
 			|| $0.professional.localizedCaseInsensitiveContains(trimmed)
 			|| ($0.customName?.localizedCaseInsensitiveContains(trimmed) == true)

@@ -1,5 +1,6 @@
 import Foundation
 import Combine
+import CoreGraphics
 
 @MainActor
 final class OrbEngine: ObservableObject {
@@ -28,14 +29,13 @@ final class OrbEngine: ObservableObject {
         bindSpeechState()
     }
 
-    @MainActor
-    static func makeDefault() async -> OrbEngine {
-        return await OrbEngine(speech: SpeechRecognizerService(locale: .current))
+    static func makeDefault() -> OrbEngine {
+        OrbEngine(speech: SpeechRecognizerService(locale: .current))
     }
 
     var needsPermissionSettingsAction: Bool {
         switch permissionStatus {
-        case .denied, .restricted:
+        case .speechDenied, .microphoneDenied, .restricted:
             return true
         case .notDetermined, .granted, .unavailable, .error:
             return false
@@ -46,8 +46,10 @@ final class OrbEngine: ObservableObject {
         switch permissionStatus {
         case .notDetermined, .granted:
             return ""
-        case .denied:
-            return "Microphone and speech permissions are required to use voice input."
+        case .speechDenied:
+            return "Speech recognition access is required to transcribe your voice."
+        case .microphoneDenied:
+            return "Microphone access is required to capture your voice."
         case .restricted:
             return "Speech recognition is restricted on this device."
         case .unavailable:
@@ -144,8 +146,10 @@ final class OrbEngine: ObservableObject {
                 switch status {
                 case .granted, .notDetermined:
                     break
-                case .denied:
-                    self.state = .failure("Microphone or speech access denied.")
+                case .speechDenied:
+                    self.state = .failure("Speech recognition permission denied.")
+                case .microphoneDenied:
+                    self.state = .failure("Microphone permission denied.")
                 case .restricted:
                     self.state = .failure("Speech recognition is restricted on this device.")
                 case .unavailable:

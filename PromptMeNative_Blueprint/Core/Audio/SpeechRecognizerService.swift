@@ -29,7 +29,8 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
     enum PermissionStatus: Equatable {
         case notDetermined
         case granted
-        case denied
+        case speechDenied
+        case microphoneDenied
         case restricted
         case unavailable
         case error(String)
@@ -53,7 +54,7 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
     private var recognitionTask: SFSpeechRecognitionTask?
     private var watchdogTask: Task<Void, Never>?
 
-    init(locale: Locale = .current) async {
+    init(locale: Locale = .current) {
         self.recognizer = SFSpeechRecognizer(locale: locale)
         super.init()
         self.recognizer?.delegate = self
@@ -131,24 +132,24 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
         case .notDetermined:
             let granted = await requestSpeechPermission()
             if !granted {
-                permissionStatus = .denied
+                permissionStatus = .speechDenied
                 return
             }
         case .authorized:
             break
         case .denied:
-            permissionStatus = .denied
+            permissionStatus = .speechDenied
             return
         case .restricted:
             permissionStatus = .restricted
             return
         @unknown default:
-            permissionStatus = .denied
+            permissionStatus = .speechDenied
             return
         }
 
         let micGranted = await requestMicrophonePermission()
-        permissionStatus = micGranted ? .granted : .denied
+        permissionStatus = micGranted ? .granted : .microphoneDenied
     }
 
     private func requestSpeechPermission() async -> Bool {
@@ -161,7 +162,7 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
 
     private func requestMicrophonePermission() async -> Bool {
         await withCheckedContinuation { continuation in
-            AVAudioApplication.requestRecordPermission { granted in
+            AVAudioSession.sharedInstance().requestRecordPermission { granted in
                 continuation.resume(returning: granted)
             }
         }

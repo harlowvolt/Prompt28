@@ -1,92 +1,166 @@
 import SwiftUI
 
 struct HomeView: View {
-    @State private var orbScale: CGFloat = 1.0
-    @State private var orbGlow = false
-    @State private var statusText = "Tap the orb"
+    @ObservedObject private var appEnvironment: AppEnvironment
+    @StateObject private var orbEngine: OrbEngine
+    @StateObject private var generateViewModel: GenerateViewModel
+
+    @State private var showHistory = false
+    @State private var showCopiedToast = false
+
+    init(appEnvironment: AppEnvironment) {
+        self._appEnvironment = ObservedObject(wrappedValue: appEnvironment)
+        self._orbEngine = StateObject(wrappedValue: OrbEngine.makeDefault())
+        self._generateViewModel = StateObject(
+            wrappedValue: GenerateViewModel(
+                apiClient: appEnvironment.apiClient,
+                authManager: appEnvironment.authManager,
+                historyStore: appEnvironment.historyStore,
+                preferencesStore: appEnvironment.preferencesStore
+            )
+        )
+    }
 
     var body: some View {
         ZStack {
-            Color.black
-                .ignoresSafeArea()
+            LinearGradient(
+                colors: [Color.black, Color(red: 0.04, green: 0.08, blue: 0.11), Color.black],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
 
-            VStack(spacing: 28) {
-                Spacer()
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 20) {
+                    HStack {
+                        Text("Prompt28")
+                            .font(.system(size: 34, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.white)
 
-                Text("Prompt28")
-                    .font(.system(size: 34, weight: .semibold))
-                    .foregroundStyle(.white)
+                        Spacer()
 
-                Text(statusText)
-                    .font(.system(size: 18, weight: .regular))
-                    .foregroundStyle(.white.opacity(0.7))
-
-                Button {
-                    withAnimation(.easeInOut(duration: 0.18)) {
-                        orbScale = 0.92
-                        statusText = "Listening..."
+                        Button {
+                            showHistory = true
+                        } label: {
+                            Label("History", systemImage: "clock.arrow.circlepath")
+                                .font(.system(size: 14, weight: .semibold))
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 10)
+                                .background(.white.opacity(0.1), in: Capsule())
+                        }
+                        .foregroundStyle(.white)
+                        .buttonStyle(.plain)
                     }
 
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
-                        withAnimation(.spring(response: 0.35, dampingFraction: 0.65)) {
-                            orbScale = 1.0
+                    OrbView(engine: orbEngine) { finalText in
+                        Task {
+                            orbEngine.markGenerating()
+                            await generateViewModel.generateFromOrb(text: finalText)
+
+                            if let error = generateViewModel.errorMessage {
+                                orbEngine.markFailure(error)
+                            } else {
+                                orbEngine.markSuccess()
+                            }
                         }
                     }
-                } label: {
-                    ZStack {
-                        Circle()
-                            .fill(
-                                RadialGradient(
-                                    colors: [
-                                        Color.blue.opacity(0.9),
-                                        Color.purple.opacity(0.5),
-                                        Color.black.opacity(0.0)
-                                    ],
-                                    center: .center,
-                                    startRadius: 10,
-                                    endRadius: 200
-                                )
-                            )
-                            .frame(width: 260, height: 260)
-                            .scaleEffect(orbGlow ? 1.2 : 0.9)
-                            .animation(
-                                .easeInOut(duration: 1.6).repeatForever(autoreverses: true),
-                                value: orbGlow
-                            )
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 420)
 
-                        Circle()
-                            .fill(
-                                LinearGradient(
-                                    colors: [
-                                        Color.white.opacity(0.35),
-                                        Color.blue,
-                                        Color.purple
-                                    ],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
-                            .frame(width: 170, height: 170)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
-                            )
-                            .shadow(color: .blue.opacity(0.45), radius: 24)
+                    if !orbEngine.finalTranscript.isEmpty {
+                        transcriptCard(text: orbEngine.finalTranscript)
                     }
-                    .scaleEffect(orbScale)
-                }
-                .buttonStyle(.plain)
-                .onAppear {
-                    orbGlow = true
-                }
 
-                Text("Native orb placeholder")
-                    .font(.system(size: 15, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.45))
+                    ResultView(viewModel: generateViewModel)
 
-                Spacer()
+                    if let errorMessage = generateViewModel.errorMessage {
+                        errorBanner(text: errorMessage)
+                    }
+                }
+                .padding(.horizontal, 20)
+                .padding(.vertical, 26)
             }
-            .padding(.horizontal, 24)
+        }
+        .sheet(isPresented: $showHistory) {
+            HistoryView { item in
+                generateViewModel.restoreFromHistory(item)
+                orbEngine.markSuccess()
+                showHistory = false
+            }
+            .environmentObject(appEnvironment)
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+        }
+        .overlay(alignment: .bottom) {
+            if showCopiedToast {
+                Text("Copied to clipboard")
+                    .font(.footnote.weight(.semibold))
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 10)
+                    .background(.ultraThinMaterial, in: Capsule())
+                    .foregroundStyle(.white)
+                    .padding(.bottom, 18)
+                    .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .prompt28DidCopyPrompt)) { _ in
+            withAnimation(.easeInOut(duration: 0.2)) {
+                showCopiedToast = true
+            }
+
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showCopiedToast = false
+                }
+            }
         }
     }
+
+    private func transcriptCard(text: String) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Transcript")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.55))
+
+            Text(text)
+                .font(.system(size: 16, weight: .regular, design: .rounded))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .textSelection(.enabled)
+        }
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color.white.opacity(0.06))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                )
+        )
+    }
+
+    private func errorBanner(text: String) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.yellow)
+
+            Text(text)
+                .font(.system(size: 14, weight: .medium, design: .rounded))
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.red.opacity(0.24))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(Color.red.opacity(0.42), lineWidth: 1)
+                )
+        )
+    }
+}
+
+extension Notification.Name {
+    static let prompt28DidCopyPrompt = Notification.Name("prompt28.didCopyPrompt")
 }

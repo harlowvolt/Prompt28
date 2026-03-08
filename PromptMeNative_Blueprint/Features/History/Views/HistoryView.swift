@@ -6,6 +6,11 @@ struct HistoryView: View {
 	@State private var renameItem: PromptHistoryItem?
 	@State private var renameText = ""
 	@State private var showClearAllConfirm = false
+	let onSelect: ((PromptHistoryItem) -> Void)?
+
+	init(onSelect: ((PromptHistoryItem) -> Void)? = nil) {
+		self.onSelect = onSelect
+	}
 
 	var body: some View {
 		NavigationStack {
@@ -32,6 +37,10 @@ struct HistoryView: View {
 							.font(.caption)
 							.buttonStyle(.bordered)
 						}
+					}
+					.contentShape(Rectangle())
+					.onTapGesture {
+						onSelect?(item)
 					}
 					.padding(.vertical, 4)
 					.swipeActions(edge: .leading, allowsFullSwipe: false) {

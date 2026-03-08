@@ -33,6 +33,10 @@ final class GenerateViewModel: ObservableObject {
         inputText.trimmingCharacters(in: .whitespacesAndNewlines).count >= 3 && !isGenerating
     }
 
+    var latestPromptText: String {
+        latestResult?.professional.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
     func generate() async {
         await runGenerate(input: inputText, refinement: nil)
     }
@@ -48,8 +52,14 @@ final class GenerateViewModel: ObservableObject {
     }
 
     private func runGenerate(input: String, refinement: String?) async {
+        let cleanedInput = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleanedInput.isEmpty else {
+            errorMessage = "No speech detected. Try again and speak a little longer."
+            return
+        }
+
         guard let token = authManager.token else {
-            errorMessage = "Not authenticated."
+            errorMessage = "Please sign in to generate prompts."
             return
         }
 
@@ -59,19 +69,26 @@ final class GenerateViewModel: ObservableObject {
 
         do {
             let request = GenerateRequest(
-                input: input.trimmingCharacters(in: .whitespacesAndNewlines),
+                input: cleanedInput,
                 refinement: refinement?.isEmpty == true ? nil : refinement,
                 mode: selectedMode
             )
 
             let response = try await apiClient.generate(request, token: token)
+            let promptText = response.professional.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !promptText.isEmpty else {
+                errorMessage = "The server returned an empty result. Please try again."
+                latestResult = nil
+                return
+            }
+
             latestResult = response
-            latestInput = input
+            latestInput = cleanedInput
 
             if preferencesStore.preferences.saveHistory {
                 let item = PromptHistoryItem(
                     mode: selectedMode,
-                    input: input,
+                    input: cleanedInput,
                     professional: response.professional,
                     template: response.template
                 )
@@ -83,7 +100,25 @@ final class GenerateViewModel: ObservableObject {
             if case NetworkError.unauthorized = error {
                 authManager.logout()
             }
-            errorMessage = error.localizedDescription
+            if let network = error as? NetworkError {
+                errorMessage = network.errorDescription
+            } else {
+                errorMessage = error.localizedDescription
+            }
         }
+    }
+
+    func restoreFromHistory(_ item: PromptHistoryItem) {
+        selectedMode = item.mode
+        inputText = item.input
+        latestInput = item.input
+        latestResult = GenerateResponse(
+            professional: item.professional,
+            template: item.template,
+            prompts_used: 0,
+            prompts_remaining: nil,
+            plan: .starter
+        )
+        errorMessage = nil
     }
 }
