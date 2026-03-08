@@ -21,63 +21,81 @@ struct HomeView: View {
     }
 
     var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [Color.black, Color(red: 0.04, green: 0.08, blue: 0.11), Color.black],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .ignoresSafeArea()
+        GeometryReader { proxy in
+            let compactHeight = proxy.size.height < 760
+            let headerToOrb: CGFloat = compactHeight ? 18 : 26
+            let orbHeight = min(420, max(330, proxy.size.height * (compactHeight ? 0.43 : 0.47)))
+            let orbToTranscript: CGFloat = compactHeight ? 14 : 20
+            let transcriptToResult: CGFloat = compactHeight ? 16 : 22
+            let bottomBreathing = max(proxy.safeAreaInsets.bottom + 70, 92)
 
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 20) {
-                    HStack {
-                        Text("Prompt28")
-                            .font(.system(size: 34, weight: .semibold, design: .rounded))
+            ZStack {
+                LinearGradient(
+                    colors: [Color.black, Color(red: 0.04, green: 0.08, blue: 0.11), Color.black],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .ignoresSafeArea()
+
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        HStack {
+                            Text("Prompt28")
+                                .font(.system(size: compactHeight ? 30 : 34, weight: .semibold, design: .rounded))
+                                .foregroundStyle(.white)
+
+                            Spacer()
+
+                            Button {
+                                showHistory = true
+                            } label: {
+                                Label("History", systemImage: "clock.arrow.circlepath")
+                                    .font(.system(size: 14, weight: .semibold))
+                                    .padding(.horizontal, 14)
+                                    .padding(.vertical, 10)
+                                    .background(.white.opacity(0.1), in: Capsule())
+                            }
                             .foregroundStyle(.white)
-
-                        Spacer()
-
-                        Button {
-                            showHistory = true
-                        } label: {
-                            Label("History", systemImage: "clock.arrow.circlepath")
-                                .font(.system(size: 14, weight: .semibold))
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 10)
-                                .background(.white.opacity(0.1), in: Capsule())
+                            .buttonStyle(.plain)
                         }
-                        .foregroundStyle(.white)
-                        .buttonStyle(.plain)
-                    }
 
-                    OrbView(engine: orbEngine) { finalText in
-                        Task {
-                            orbEngine.markGenerating()
-                            await generateViewModel.generateFromOrb(text: finalText)
+                        Spacer(minLength: headerToOrb)
 
-                            if let error = generateViewModel.errorMessage {
-                                orbEngine.markFailure(error)
-                            } else {
-                                orbEngine.markSuccess()
+                        OrbView(engine: orbEngine) { finalText in
+                            Task {
+                                orbEngine.markGenerating()
+                                await generateViewModel.generateFromOrb(text: finalText)
+
+                                if let error = generateViewModel.errorMessage {
+                                    orbEngine.markFailure(error)
+                                } else {
+                                    orbEngine.markSuccess()
+                                }
                             }
                         }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 420)
+                        .frame(maxWidth: .infinity)
+                        .frame(height: orbHeight)
 
-                    if !orbEngine.finalTranscript.isEmpty {
-                        transcriptCard(text: orbEngine.finalTranscript)
-                    }
+                        Spacer(minLength: orbToTranscript)
 
-                    ResultView(viewModel: generateViewModel)
+                        if !orbEngine.finalTranscript.isEmpty {
+                            transcriptCard(text: orbEngine.finalTranscript)
+                        }
 
-                    if let errorMessage = generateViewModel.errorMessage {
-                        errorBanner(text: errorMessage)
+                        Spacer(minLength: transcriptToResult)
+
+                        ResultView(viewModel: generateViewModel)
+
+                        if let errorMessage = generateViewModel.errorMessage {
+                            Spacer(minLength: 12)
+                            errorBanner(text: errorMessage)
+                        }
+
+                        Spacer(minLength: bottomBreathing)
                     }
+                    .padding(.horizontal, 20)
+                    .padding(.top, compactHeight ? 18 : 24)
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 26)
             }
         }
         .sheet(isPresented: $showHistory) {

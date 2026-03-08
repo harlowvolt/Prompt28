@@ -90,8 +90,23 @@ struct ResultView: View {
                         )
                 )
             } else {
-                ContentUnavailableView("No Result Yet", systemImage: "text.quote")
-                    .foregroundStyle(.white.opacity(0.75))
+                HStack(spacing: 10) {
+                    Image(systemName: "text.quote")
+                        .foregroundStyle(.white.opacity(0.7))
+                    Text("Generated prompt will appear here")
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.78))
+                    Spacer()
+                }
+                .padding(14)
+                .background(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color.white.opacity(0.05))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                        )
+                )
             }
         }
     }
