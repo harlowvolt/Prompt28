@@ -11,6 +11,7 @@ struct TrendingView: View {
 				content
 			}
 			.padding()
+			.background(PromptTheme.backgroundGradient.ignoresSafeArea())
 			.navigationTitle("Trending")
 			.task {
 				await viewModel.loadIfNeeded(apiClient: env.apiClient)
@@ -30,7 +31,7 @@ struct TrendingView: View {
 						viewModel.selectCategory(category.key)
 					}
 					.buttonStyle(.borderedProminent)
-					.tint(isSelected ? .blue : .gray.opacity(0.4))
+					.tint(isSelected ? PromptTheme.mutedViolet : PromptTheme.deepShadow.opacity(0.85))
 				}
 			}
 		}

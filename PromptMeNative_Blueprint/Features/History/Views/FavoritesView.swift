@@ -26,6 +26,8 @@ struct FavoritesView: View {
 					}
 				}
 			}
+			.scrollContentBackground(.hidden)
+			.background(PromptTheme.backgroundGradient.ignoresSafeArea())
 			.searchable(text: $viewModel.query, prompt: "Search favorites")
 			.navigationTitle("Favorites")
 			.overlay {

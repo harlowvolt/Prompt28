@@ -68,7 +68,7 @@ struct OrbView: View {
                             openURL(url)
                         }
                         .buttonStyle(.borderedProminent)
-                        .tint(.cyan.opacity(0.75))
+                        .tint(PromptTheme.mutedViolet.opacity(0.84))
                     }
                 }
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
@@ -145,7 +145,7 @@ struct OrbView: View {
                 RadialGradient(
                     colors: [
                         Color.white.opacity(0.08),
-                        Color.cyan.opacity(0.05),
+                        PromptTheme.mutedViolet.opacity(0.12),
                         Color.black.opacity(0.0)
                     ],
                     center: .center,
@@ -288,11 +288,11 @@ struct OrbView: View {
     private var orbGradientColors: [Color] {
         switch visualState {
         case .idle:
-            return [Color.white.opacity(0.35), Color.cyan.opacity(0.5), Color.blue.opacity(0.75), Color.black.opacity(0.88)]
+            return [PromptTheme.paleLilacWhite.opacity(0.30), PromptTheme.softLilac.opacity(0.34), PromptTheme.mutedViolet.opacity(0.58), PromptTheme.backgroundBase.opacity(0.94)]
         case .listening:
-            return [Color.white.opacity(0.42), Color.cyan.opacity(0.6), Color.teal.opacity(0.84), Color.black.opacity(0.9)]
+            return [PromptTheme.paleLilacWhite.opacity(0.36), PromptTheme.softLilac.opacity(0.46), PromptTheme.mutedViolet.opacity(0.75), PromptTheme.deepShadow.opacity(0.95)]
         case .processing:
-            return [Color.white.opacity(0.35), Color.mint.opacity(0.56), Color.blue.opacity(0.84), Color.black.opacity(0.9)]
+            return [PromptTheme.paleLilacWhite.opacity(0.34), PromptTheme.softLilac.opacity(0.42), PromptTheme.mutedViolet.opacity(0.66), PromptTheme.plum.opacity(0.95)]
         case .error:
             return [Color.white.opacity(0.22), Color.red.opacity(0.64), Color.red.opacity(0.9), Color.black.opacity(0.92)]
         }
@@ -301,11 +301,11 @@ struct OrbView: View {
     private var glowColor: Color {
         switch visualState {
         case .idle:
-            return .cyan
+            return PromptTheme.orbIdleGlow
         case .listening:
-            return .teal
+            return PromptTheme.orbActiveGlow
         case .processing:
-            return .mint
+            return PromptTheme.orbProcessingGlow
         case .error:
             return .red
         }

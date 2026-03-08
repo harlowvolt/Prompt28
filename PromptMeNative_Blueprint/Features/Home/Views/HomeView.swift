@@ -45,11 +45,7 @@ struct HomeView: View {
             let bottomProtectedInset = max(proxy.safeAreaInsets.bottom + 74, 98)
 
             ZStack {
-                LinearGradient(
-                    colors: [Color.black, Color(red: 0.04, green: 0.08, blue: 0.11), Color.black],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
+                PromptTheme.backgroundGradient
                 .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
@@ -58,7 +54,7 @@ struct HomeView: View {
                             VStack(alignment: .leading, spacing: 12) {
                                 Text("Prompt28")
                                     .font(.system(size: compactHeight ? 30 : 34, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(PromptTheme.paleLilacWhite)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.95)
 
@@ -79,7 +75,7 @@ struct HomeView: View {
                             HStack(spacing: 10) {
                                 Text("Prompt28")
                                     .font(.system(size: compactHeight ? 30 : 34, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(PromptTheme.paleLilacWhite)
                                     .lineLimit(1)
                                     .minimumScaleFactor(0.95)
                                     .layoutPriority(1)
@@ -168,8 +164,12 @@ struct HomeView: View {
                     .font(.footnote.weight(.semibold))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
-                    .background(.ultraThinMaterial, in: Capsule())
-                    .foregroundStyle(.white)
+                    .background(
+                        Capsule()
+                            .fill(PromptTheme.glassFill)
+                            .overlay(Capsule().stroke(PromptTheme.glassStroke, lineWidth: 1))
+                    )
+                    .foregroundStyle(PromptTheme.paleLilacWhite)
                     .padding(.bottom, 18)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
@@ -194,10 +194,14 @@ struct HomeView: View {
                 .lineLimit(1)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 10)
-                .background(.white.opacity(0.1), in: Capsule())
+                .background(PromptTheme.glassFill, in: Capsule())
+                .overlay(
+                    Capsule()
+                    .stroke(PromptTheme.glassStroke, lineWidth: 1)
+                )
                 .fixedSize(horizontal: true, vertical: false)
         }
-        .foregroundStyle(.white)
+            .foregroundStyle(PromptTheme.softLilac)
         .buttonStyle(.plain)
     }
 
@@ -208,7 +212,7 @@ struct HomeView: View {
         return VStack(alignment: .leading, spacing: 10) {
             Text("Status")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(PromptTheme.softLilac.opacity(0.7))
 
             Text(status)
                 .font(.system(size: 16, weight: .semibold, design: .rounded))
@@ -217,11 +221,11 @@ struct HomeView: View {
 
             Text("Transcript")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.55))
+                .foregroundStyle(PromptTheme.softLilac.opacity(0.7))
 
             Text(transcript)
                 .font(.system(size: 15, weight: .regular, design: .rounded))
-                .foregroundStyle(.white.opacity(0.95))
+                .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.94))
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .lineSpacing(2)
                 .textSelection(.enabled)
@@ -229,10 +233,10 @@ struct HomeView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color.white.opacity(0.06))
+                .fill(PromptTheme.glassFill)
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                        .stroke(PromptTheme.glassStroke, lineWidth: 1)
                 )
         )
     }
@@ -298,12 +302,12 @@ struct HomeView: View {
             return .red.opacity(0.9)
         }
         if status == "Listening" {
-            return .teal
+            return PromptTheme.softLilac
         }
         if status == "Processing" {
-            return .mint
+            return PromptTheme.mutedViolet
         }
-        return .white
+        return PromptTheme.paleLilacWhite
     }
 
     private func errorBanner(text: String) -> some View {
@@ -313,16 +317,16 @@ struct HomeView: View {
 
             Text(text)
                 .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundStyle(.white)
+                .foregroundStyle(PromptTheme.paleLilacWhite)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(14)
         .background(
             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(Color.red.opacity(0.24))
+                .fill(Color(red: 0.28, green: 0.13, blue: 0.22).opacity(0.52))
                 .overlay(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(Color.red.opacity(0.42), lineWidth: 1)
+                        .stroke(Color(red: 0.60, green: 0.36, blue: 0.52).opacity(0.5), lineWidth: 1)
                 )
         )
     }

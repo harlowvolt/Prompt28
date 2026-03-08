@@ -9,24 +9,24 @@ struct ResultView: View {
             if viewModel.isGenerating {
                 HStack(spacing: 12) {
                     ProgressView()
-                        .tint(.white)
+                        .tint(PromptTheme.softLilac)
                     VStack(alignment: .leading, spacing: 4) {
                         Text("Generating Prompt")
                             .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(PromptTheme.paleLilacWhite)
                         Text("Sending your transcript to Prompt28...")
                             .font(.footnote)
-                            .foregroundStyle(.white.opacity(0.72))
+                            .foregroundStyle(PromptTheme.softLilac.opacity(0.76))
                     }
                     Spacer()
                 }
                 .padding(16)
                 .background(
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .fill(Color.white.opacity(0.07))
+                        .fill(PromptTheme.glassFill)
                         .overlay(
                             RoundedRectangle(cornerRadius: 16, style: .continuous)
-                                .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                                .stroke(PromptTheme.glassStroke, lineWidth: 1)
                         )
                 )
             } else if let result = viewModel.latestResult {
@@ -34,34 +34,38 @@ struct ResultView: View {
                     HStack {
                         Text("Generated Prompt")
                             .font(.system(size: 18, weight: .semibold, design: .rounded))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(PromptTheme.paleLilacWhite)
                         Spacer()
                         Text(viewModel.selectedMode == .ai ? "AI" : "Human")
                             .font(.caption.weight(.semibold))
                             .padding(.horizontal, 10)
                             .padding(.vertical, 5)
-                            .background(.white.opacity(0.12), in: Capsule())
-                            .foregroundStyle(.white.opacity(0.9))
+                            .background(PromptTheme.glassFill, in: Capsule())
+                            .overlay(
+                                Capsule()
+                                    .stroke(PromptTheme.glassStroke, lineWidth: 1)
+                            )
+                            .foregroundStyle(PromptTheme.softLilac)
                     }
 
                     Text(result.professional)
                         .font(.system(size: 16, weight: .regular, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.95))
+                        .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.96))
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .textSelection(.enabled)
 
                     if !result.template.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                        Divider().overlay(Color.white.opacity(0.15))
+                        Divider().overlay(PromptTheme.softLilac.opacity(0.22))
                         Text("Template")
                             .font(.caption.weight(.semibold))
-                            .foregroundStyle(.white.opacity(0.72))
+                            .foregroundStyle(PromptTheme.softLilac.opacity(0.78))
                         Text(result.template)
                             .font(.system(size: 14, weight: .regular, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.85))
+                            .foregroundStyle(PromptTheme.softLilac.opacity(0.84))
                             .textSelection(.enabled)
                     }
 
-                    Divider().overlay(Color.white.opacity(0.15))
+                    Divider().overlay(PromptTheme.softLilac.opacity(0.22))
 
                     HStack(spacing: 10) {
                         Button(copied ? "Copied" : "Copy") {
@@ -73,14 +77,14 @@ struct ResultView: View {
                             }
                         }
                         .buttonStyle(.borderedProminent)
-                        .tint(Color(red: 0.12, green: 0.55, blue: 0.92))
+                        .tint(PromptTheme.mutedViolet)
 
                         ShareLink(item: result.professional) {
                             Label("Share", systemImage: "square.and.arrow.up")
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
-                        .tint(.white.opacity(0.8))
+                        .tint(PromptTheme.softLilac.opacity(0.86))
 
                         Button {
                             viewModel.toggleFavoriteForLatest()
@@ -92,7 +96,7 @@ struct ResultView: View {
                             .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(.bordered)
-                        .tint(viewModel.isLatestFavorite ? .yellow : .white.opacity(0.8))
+                        .tint(viewModel.isLatestFavorite ? PromptTheme.softLilac : PromptTheme.softLilac.opacity(0.86))
                     }
 
                     TextField("Refine request", text: $viewModel.refinementText)
@@ -106,28 +110,28 @@ struct ResultView: View {
                 .padding(16)
                 .background(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(PromptTheme.glassFill)
                         .overlay(
                             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                                .stroke(PromptTheme.glassStroke, lineWidth: 1)
                         )
                 )
             } else {
                 HStack(spacing: 10) {
                     Image(systemName: "text.quote")
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(PromptTheme.softLilac.opacity(0.78))
                     Text("Generated prompt will appear here")
                         .font(.footnote.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.78))
+                        .foregroundStyle(PromptTheme.softLilac.opacity(0.82))
                     Spacer()
                 }
                 .padding(14)
                 .background(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color.white.opacity(0.05))
+                        .fill(PromptTheme.glassFill)
                         .overlay(
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .stroke(Color.white.opacity(0.1), lineWidth: 1)
+                                .stroke(PromptTheme.glassStroke, lineWidth: 1)
                         )
                 )
             }

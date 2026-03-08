@@ -61,6 +61,8 @@ struct SettingsView: View {
 					}
 				}
 			}
+			.scrollContentBackground(.hidden)
+			.background(PromptTheme.backgroundGradient.ignoresSafeArea())
 			.navigationTitle("Settings")
 			.task {
 				viewModel.bind(

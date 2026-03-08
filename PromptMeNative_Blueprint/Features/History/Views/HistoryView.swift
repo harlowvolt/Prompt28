@@ -78,6 +78,8 @@ struct HistoryView: View {
 				}
 			}
 			.listStyle(.plain)
+			.scrollContentBackground(.hidden)
+			.background(PromptTheme.backgroundGradient.ignoresSafeArea())
 			.searchable(text: $viewModel.query, prompt: "Search history")
 			.navigationTitle("History")
 			.toolbar {
@@ -187,7 +189,11 @@ struct HistoryView: View {
 						.font(.footnote.weight(.semibold))
 						.padding(.horizontal, 16)
 						.padding(.vertical, 10)
-						.background(.ultraThinMaterial, in: Capsule())
+						.background(
+							Capsule()
+								.fill(PromptTheme.glassFill)
+								.overlay(Capsule().stroke(PromptTheme.glassStroke, lineWidth: 1))
+						)
 						.padding(.bottom, 18)
 				}
 			}

@@ -11,12 +11,19 @@ struct RootView: View {
         let appearance = UITabBarAppearance()
         appearance.configureWithTransparentBackground()
         appearance.backgroundEffect = UIBlurEffect(style: .systemThinMaterialDark)
-        appearance.backgroundColor = UIColor.black.withAlphaComponent(0.12)
-        appearance.shadowColor = UIColor.white.withAlphaComponent(0.08)
+        appearance.backgroundColor = PromptTheme.tabBackground
+        appearance.shadowColor = PromptTheme.tabShadow
+
+        appearance.stackedLayoutAppearance.selected.iconColor = PromptTheme.tabSelected
+        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: PromptTheme.tabSelected]
+        appearance.stackedLayoutAppearance.normal.iconColor = PromptTheme.tabUnselected
+        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: PromptTheme.tabUnselected]
 
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
         UITabBar.appearance().isTranslucent = true
+        UITabBar.appearance().tintColor = PromptTheme.tabSelected
+        UITabBar.appearance().unselectedItemTintColor = PromptTheme.tabUnselected
     }
 
     var body: some View {
@@ -96,20 +103,57 @@ struct RootView: View {
 
     private var launchView: some View {
         ZStack {
-            LinearGradient(
-                colors: [Color.black, Color(red: 0.04, green: 0.08, blue: 0.11), Color.black],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            PromptTheme.backgroundGradient
             .ignoresSafeArea()
 
             VStack(spacing: 14) {
                 ProgressView()
-                    .tint(.white)
+                    .tint(PromptTheme.softLilac)
                 Text("Loading Prompt28")
                     .font(.footnote.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.85))
+                    .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.9))
             }
         }
+    }
+}
+
+enum PromptTheme {
+    static let backgroundBase = Color(hex: "#08070D")
+    static let deepShadow = Color(hex: "#151021")
+    static let plum = Color(hex: "#24192F")
+    static let mutedViolet = Color(hex: "#6F5AA8")
+    static let softLilac = Color(hex: "#CFC3F6")
+    static let paleLilacWhite = Color(hex: "#EEE9FF")
+
+    static let glassFill = Color(red: 0.17, green: 0.13, blue: 0.22).opacity(0.52)
+    static let glassStroke = Color(red: 0.72, green: 0.67, blue: 0.82).opacity(0.26)
+
+    static let backgroundGradient = LinearGradient(
+        colors: [backgroundBase, deepShadow, plum, backgroundBase],
+        startPoint: .top,
+        endPoint: .bottom
+    )
+
+    static let orbIdleGlow = Color(hex: "#6F5AA8")
+    static let orbActiveGlow = Color(hex: "#8A74BE")
+    static let orbProcessingGlow = Color(hex: "#9D8ACB")
+
+    static let tabBackground = UIColor(red: 0.08, green: 0.06, blue: 0.12, alpha: 0.78)
+    static let tabShadow = UIColor(red: 0.56, green: 0.49, blue: 0.70, alpha: 0.22)
+    static let tabSelected = UIColor(red: 0.81, green: 0.76, blue: 0.96, alpha: 1.0)
+    static let tabUnselected = UIColor(red: 0.57, green: 0.52, blue: 0.67, alpha: 1.0)
+}
+
+extension Color {
+    init(hex: String) {
+        let cleaned = hex.replacingOccurrences(of: "#", with: "")
+        var value: UInt64 = 0
+        Scanner(string: cleaned).scanHexInt64(&value)
+
+        let red = Double((value >> 16) & 0xFF) / 255.0
+        let green = Double((value >> 8) & 0xFF) / 255.0
+        let blue = Double(value & 0xFF) / 255.0
+
+        self.init(.sRGB, red: red, green: green, blue: blue, opacity: 1)
     }
 }
