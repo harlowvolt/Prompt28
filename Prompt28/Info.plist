@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Prompt28 uses the microphone so you can speak into the orb and generate prompts hands-free.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>Prompt28 uses speech recognition so you can speak your prompt instead of typing.</string>
+</dict>
+</plist>

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Bucket
+   uuid = "5728D5DD-3919-47EC-87B4-CC5B5C1101FA"
+   type = "1"
+   version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "1F3F9715-974A-4B73-B45C-0E9A5CCC32DF"
+            shouldBeEnabled = "Yes"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "32"
+            endingLineNumber = "32"
+            landmarkName = "makeDefault()"
+            landmarkType = "7">
+            <Locations>
+               <Location
+                  uuid = "1F3F9715-974A-4B73-B45C-0E9A5CCC32DF - 4732b29bb70d9795"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "static Prompt28.OrbEngine.makeDefault() async -&gt; Prompt28.OrbEngine"
+                  moduleName = "Prompt28.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/nataliewhipps/Desktop/Prompt28/PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "32"
+                  endingLineNumber = "32">
+               </Location>
+               <Location
+                  uuid = "1F3F9715-974A-4B73-B45C-0E9A5CCC32DF - 596dc84fc725a674"
+                  shouldBeEnabled = "Yes"
+                  ignoreCount = "0"
+                  continueAfterRunningActions = "No"
+                  symbolName = "(1) suspend resume partial function for static Prompt28.OrbEngine.makeDefault() async -&gt; Prompt28.OrbEngine"
+                  moduleName = "Prompt28.debug.dylib"
+                  usesParentBreakpointCondition = "Yes"
+                  urlString = "file:///Users/nataliewhipps/Desktop/Prompt28/PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift"
+                  startingColumnNumber = "9223372036854775807"
+                  endingColumnNumber = "9223372036854775807"
+                  startingLineNumber = "32"
+                  endingLineNumber = "32">
+               </Location>
+            </Locations>
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
+</Bucket>
