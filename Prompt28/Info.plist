@@ -3,8 +3,8 @@
 <plist version="1.0">
 <dict>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>This app needs microphone access to capture spoken prompts.</string>
+	<string>Prompt28 uses the microphone so you can speak your request out loud.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>This app uses speech recognition to convert your voice into prompts.</string>
+	<string>Prompt28 uses speech recognition to convert your spoken request into a prompt.</string>
 </dict>
 </plist>

@@ -7,6 +7,7 @@
 
 import SwiftUI
 
+@main
 struct Prompt28App: App {
     @StateObject private var env = AppEnvironment()
 

@@ -1,6 +1,5 @@
 import SwiftUI
 
-@main
 struct PromptMeNativeApp: App {
     @StateObject private var env = AppEnvironment()
 
