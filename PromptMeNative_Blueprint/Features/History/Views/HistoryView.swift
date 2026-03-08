@@ -1,11 +1,14 @@
 import SwiftUI
+import UIKit
 
 struct HistoryView: View {
 	@EnvironmentObject private var env: AppEnvironment
 	@StateObject private var viewModel = HistoryViewModel()
 	@State private var renameItem: PromptHistoryItem?
+	@State private var selectedItem: PromptHistoryItem?
 	@State private var renameText = ""
 	@State private var showClearAllConfirm = false
+	@State private var showCopiedToast = false
 	let onSelect: ((PromptHistoryItem) -> Void)?
 
 	init(onSelect: ((PromptHistoryItem) -> Void)? = nil) {
@@ -40,7 +43,11 @@ struct HistoryView: View {
 					}
 					.contentShape(Rectangle())
 					.onTapGesture {
-						onSelect?(item)
+						if let onSelect {
+							onSelect(item)
+						} else {
+							selectedItem = item
+						}
 					}
 					.padding(.vertical, 4)
 					.swipeActions(edge: .leading, allowsFullSwipe: false) {
@@ -95,9 +102,78 @@ struct HistoryView: View {
 					}
 				}
 			}
+			.sheet(item: $selectedItem) { item in
+				NavigationStack {
+					ScrollView {
+						VStack(alignment: .leading, spacing: 16) {
+							Text(item.customName ?? item.input)
+								.font(.title3.weight(.semibold))
+
+							Text(item.professional)
+								.font(.body)
+								.textSelection(.enabled)
+
+							if !item.template.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+								Divider()
+								Text("Template")
+									.font(.caption.weight(.semibold))
+									.foregroundStyle(.secondary)
+								Text(item.template)
+									.font(.footnote)
+									.foregroundStyle(.secondary)
+									.textSelection(.enabled)
+							}
+
+							HStack(spacing: 10) {
+								Button("Copy") {
+									UIPasteboard.general.string = item.professional
+									showCopiedToast = true
+									DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+										showCopiedToast = false
+									}
+								}
+								.buttonStyle(.borderedProminent)
+
+								ShareLink(item: item.professional) {
+									Label("Share", systemImage: "square.and.arrow.up")
+								}
+								.buttonStyle(.bordered)
+
+								Button(item.favorite ? "Unfavorite" : "Favorite") {
+									viewModel.toggleFavorite(item)
+									if let updated = viewModel.items.first(where: { $0.id == item.id }) {
+										selectedItem = updated
+									}
+								}
+								.buttonStyle(.bordered)
+							}
+						}
+						.padding()
+					}
+					.navigationTitle("History Item")
+					.navigationBarTitleDisplayMode(.inline)
+					.toolbar {
+						ToolbarItem(placement: .cancellationAction) {
+							Button("Done") {
+								selectedItem = nil
+							}
+						}
+					}
+				}
+			}
 			.overlay {
 				if viewModel.items.isEmpty {
 					ContentUnavailableView("No History", systemImage: "clock.arrow.circlepath")
+				}
+			}
+			.overlay(alignment: .bottom) {
+				if showCopiedToast {
+					Text("Copied to clipboard")
+						.font(.footnote.weight(.semibold))
+						.padding(.horizontal, 16)
+						.padding(.vertical, 10)
+						.background(.ultraThinMaterial, in: Capsule())
+						.padding(.bottom, 18)
 				}
 			}
 		}
