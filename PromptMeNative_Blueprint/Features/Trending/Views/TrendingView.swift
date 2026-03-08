@@ -6,13 +6,10 @@ struct TrendingView: View {
 
 	var body: some View {
 		NavigationStack {
-			VStack(spacing: 12) {
+			PremiumTabScreen(title: "Trending") {
 				categoryPicker
 				content
 			}
-			.padding()
-			.background(PromptTheme.backgroundGradient.ignoresSafeArea())
-			.navigationTitle("Trending")
 			.task {
 				await viewModel.loadIfNeeded(apiClient: env.apiClient)
 			}
@@ -40,42 +37,67 @@ struct TrendingView: View {
 	@ViewBuilder
 	private var content: some View {
 		if viewModel.isLoading && viewModel.catalog == nil {
-			Spacer()
-			ProgressView("Loading prompts...")
-			Spacer()
+			VStack(spacing: 10) {
+				ProgressView("Loading prompts...")
+					.tint(PromptTheme.softLilac)
+			}
+			.frame(maxWidth: .infinity)
+			.padding(.top, 28)
 		} else if let message = viewModel.errorMessage, viewModel.catalog == nil {
-			Spacer()
 			VStack(spacing: 10) {
 				Text("Could not load trending prompts")
 					.font(.headline)
+					.foregroundStyle(PromptTheme.paleLilacWhite)
 				Text(message)
-					.foregroundStyle(.secondary)
+					.foregroundStyle(PromptTheme.softLilac.opacity(0.82))
 					.multilineTextAlignment(.center)
 				Button("Retry") {
 					Task { await viewModel.refresh(apiClient: env.apiClient) }
 				}
 				.buttonStyle(.borderedProminent)
+				.tint(PromptTheme.mutedViolet)
 			}
-			Spacer()
+			.frame(maxWidth: .infinity)
+			.padding(.top, 24)
 		} else if let category = viewModel.selectedCategory {
-			List(category.items) { item in
-				NavigationLink(destination: PromptDetailView(item: item)) {
-					VStack(alignment: .leading, spacing: 6) {
-						Text(item.title)
-							.font(.headline)
-						Text(item.prompt)
-							.lineLimit(2)
-							.font(.subheadline)
-							.foregroundStyle(.secondary)
+			LazyVStack(spacing: 12) {
+				ForEach(category.items) { item in
+					NavigationLink(destination: PromptDetailView(item: item)) {
+						VStack(alignment: .leading, spacing: 8) {
+							Text(item.title)
+								.font(.system(size: 18, weight: .semibold, design: .rounded))
+								.foregroundStyle(PromptTheme.paleLilacWhite)
+
+							Text(item.prompt)
+								.lineLimit(3)
+								.font(.system(size: 14, weight: .regular, design: .rounded))
+								.foregroundStyle(PromptTheme.softLilac.opacity(0.82))
+						}
+						.frame(maxWidth: .infinity, alignment: .leading)
+						.padding(14)
+						.background(
+							RoundedRectangle(cornerRadius: 16, style: .continuous)
+								.fill(PromptTheme.glassFill)
+								.overlay(
+									RoundedRectangle(cornerRadius: 16, style: .continuous)
+										.stroke(PromptTheme.glassStroke, lineWidth: 1)
+								)
+						)
 					}
-					.padding(.vertical, 4)
+					.buttonStyle(.plain)
 				}
 			}
-			.listStyle(.plain)
 		} else {
-			Spacer()
-			ContentUnavailableView("No Prompts", systemImage: "text.quote")
-			Spacer()
+			VStack(spacing: 10) {
+				Image(systemName: "text.quote")
+					.font(.system(size: 28, weight: .semibold))
+					.foregroundStyle(PromptTheme.softLilac.opacity(0.75))
+				Text("No Prompts")
+					.font(.system(size: 18, weight: .semibold, design: .rounded))
+					.foregroundStyle(PromptTheme.paleLilacWhite)
+			}
+			.frame(maxWidth: .infinity)
+			.padding(.top, 30)
 		}
 	}
 }

@@ -8,62 +8,25 @@ struct SettingsView: View {
 
 	var body: some View {
 		NavigationStack {
-			Form {
-				Section("Account") {
-					if let user = env.authManager.currentUser {
-						LabeledContent("Email", value: user.email)
-						LabeledContent("Plan", value: user.plan.rawValue.capitalized)
-						LabeledContent("Used", value: "\(user.prompts_used)")
-						LabeledContent("Remaining", value: user.prompts_remaining.map(String.init) ?? "Unlimited")
-					}
-				}
-
-				Section("Preferences") {
-					Toggle("Save Prompt History", isOn: $viewModel.saveHistory)
-
-					Picker("Default Mode", selection: $viewModel.selectedMode) {
-						Text("AI").tag(PromptMode.ai)
-						Text("Human").tag(PromptMode.human)
-					}
-
-					Button("Save Preferences") {
-						viewModel.applyLocalPreferences()
-					}
-				}
-
-				Section("Plan") {
-					Button("Manage Plan") {
-						showUpgrade = true
-					}
-
-					if env.authManager.currentUser?.plan == .dev {
-						Button("Reset Usage") {
-							Task { await viewModel.resetUsage() }
-						}
-					}
-				}
-
-				Section("Danger Zone") {
-					Button("Log Out", role: .none) {
-						env.authManager.logout()
-						env.router.rootRoute = .auth
-					}
-
-					Button("Delete Account", role: .destructive) {
-						showDeleteConfirm = true
-					}
-				}
+			PremiumTabScreen(title: "Settings") {
+				accountSection
+				preferencesSection
+				planSection
+				dangerSection
 
 				if let message = viewModel.errorMessage {
-					Section {
-						Text(message)
-							.foregroundStyle(.red)
-					}
+					Text(message)
+						.font(.system(size: 14, weight: .medium, design: .rounded))
+						.foregroundStyle(.red.opacity(0.92))
+						.padding(.horizontal, 14)
+						.padding(.vertical, 12)
+						.frame(maxWidth: .infinity, alignment: .leading)
+						.background(
+							RoundedRectangle(cornerRadius: 14, style: .continuous)
+								.fill(Color.red.opacity(0.12))
+						)
 				}
 			}
-			.scrollContentBackground(.hidden)
-			.background(PromptTheme.backgroundGradient.ignoresSafeArea())
-			.navigationTitle("Settings")
 			.task {
 				viewModel.bind(
 					apiClient: env.apiClient,
@@ -88,5 +51,105 @@ struct SettingsView: View {
 				}
 			}
 		}
+	}
+
+	private var accountSection: some View {
+		settingsSection(title: "Account") {
+			if let user = env.authManager.currentUser {
+				settingsRow(label: "Email", value: user.email)
+				settingsRow(label: "Plan", value: user.plan.rawValue.capitalized)
+				settingsRow(label: "Used", value: "\(user.prompts_used)")
+				settingsRow(label: "Remaining", value: user.prompts_remaining.map(String.init) ?? "Unlimited")
+			} else {
+				settingsRow(label: "Status", value: "Signed out")
+			}
+		}
+	}
+
+	private var preferencesSection: some View {
+		settingsSection(title: "Preferences") {
+			Toggle("Save Prompt History", isOn: $viewModel.saveHistory)
+				.tint(PromptTheme.mutedViolet)
+
+			Picker("Default Mode", selection: $viewModel.selectedMode) {
+				Text("AI").tag(PromptMode.ai)
+				Text("Human").tag(PromptMode.human)
+			}
+
+			Button("Save Preferences") {
+				viewModel.applyLocalPreferences()
+			}
+			.buttonStyle(.borderedProminent)
+			.tint(PromptTheme.mutedViolet)
+		}
+	}
+
+	private var planSection: some View {
+		settingsSection(title: "Plan") {
+			Button("Manage Plan") {
+				showUpgrade = true
+			}
+			.buttonStyle(.bordered)
+			.tint(PromptTheme.softLilac.opacity(0.9))
+
+			if env.authManager.currentUser?.plan == .dev {
+				Button("Reset Usage") {
+					Task { await viewModel.resetUsage() }
+				}
+				.buttonStyle(.bordered)
+				.tint(PromptTheme.softLilac.opacity(0.9))
+			}
+		}
+	}
+
+	private var dangerSection: some View {
+		settingsSection(title: "Danger Zone") {
+			Button("Log Out") {
+				env.authManager.logout()
+				env.router.rootRoute = .auth
+			}
+			.buttonStyle(.bordered)
+
+			Button("Delete Account", role: .destructive) {
+				showDeleteConfirm = true
+			}
+			.buttonStyle(.bordered)
+		}
+	}
+
+	private func settingsSection<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+		VStack(alignment: .leading, spacing: 12) {
+			Text(title)
+				.font(.system(size: 14, weight: .semibold, design: .rounded))
+				.foregroundStyle(PromptTheme.softLilac.opacity(0.76))
+
+			VStack(alignment: .leading, spacing: 10) {
+				content()
+			}
+		}
+		.padding(14)
+		.frame(maxWidth: .infinity, alignment: .leading)
+		.background(
+			RoundedRectangle(cornerRadius: 16, style: .continuous)
+				.fill(PromptTheme.glassFill)
+				.overlay(
+					RoundedRectangle(cornerRadius: 16, style: .continuous)
+						.stroke(PromptTheme.glassStroke, lineWidth: 1)
+				)
+		)
+	}
+
+	private func settingsRow(label: String, value: String) -> some View {
+		HStack {
+			Text(label)
+				.foregroundStyle(PromptTheme.softLilac.opacity(0.82))
+
+			Spacer()
+
+			Text(value)
+				.foregroundStyle(PromptTheme.paleLilacWhite)
+				.multilineTextAlignment(.trailing)
+		}
+		.font(.system(size: 14, weight: .medium, design: .rounded))
 	}
 }

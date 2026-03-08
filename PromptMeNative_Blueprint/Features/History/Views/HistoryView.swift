@@ -30,58 +30,19 @@ struct HistoryView: View {
 
 	var body: some View {
 		NavigationStack {
-			List {
-				ForEach(viewModel.filteredItems) { item in
-					VStack(alignment: .leading, spacing: 8) {
-						Text(item.customName ?? item.input)
-							.font(.headline)
-							.lineLimit(2)
+			PremiumTabScreen(title: "History") {
+				searchField
 
-						Text(item.professional)
-							.font(.subheadline)
-							.foregroundStyle(.secondary)
-							.lineLimit(3)
-
-						HStack {
-							Text(item.createdAt, style: .date)
-								.font(.caption)
-								.foregroundStyle(.secondary)
-							Spacer()
-							Button(item.favorite ? "Unfavorite" : "Favorite") {
-								viewModel.toggleFavorite(item)
-							}
-							.font(.caption)
-							.buttonStyle(.bordered)
-						}
-					}
-					.contentShape(Rectangle())
-					.onTapGesture {
-						if let onSelect {
-							onSelect(item)
-						} else {
-							activeSheet = .detail(item)
-						}
-					}
-					.padding(.vertical, 4)
-					.swipeActions(edge: .leading, allowsFullSwipe: false) {
-						Button("Rename") {
-							activeSheet = .rename(item)
-							renameText = item.customName ?? ""
-						}
-						.tint(.blue)
-					}
-					.swipeActions(edge: .trailing, allowsFullSwipe: true) {
-						Button("Delete", role: .destructive) {
-							viewModel.delete(item)
+				if viewModel.items.isEmpty {
+					emptyState
+				} else {
+					LazyVStack(spacing: 12) {
+						ForEach(viewModel.filteredItems) { item in
+							historyRow(item)
 						}
 					}
 				}
 			}
-			.listStyle(.plain)
-			.scrollContentBackground(.hidden)
-			.background(PromptTheme.backgroundGradient.ignoresSafeArea())
-			.searchable(text: $viewModel.query, prompt: "Search history")
-			.navigationTitle("History")
 			.toolbar {
 				if !viewModel.items.isEmpty {
 					ToolbarItem(placement: .topBarTrailing) {
@@ -178,11 +139,6 @@ struct HistoryView: View {
 					}
 				}
 			}
-			.overlay {
-				if viewModel.items.isEmpty {
-					ContentUnavailableView("No History", systemImage: "clock.arrow.circlepath")
-				}
-			}
 			.overlay(alignment: .bottom) {
 				if showCopiedToast {
 					Text("Copied to clipboard")
@@ -202,4 +158,106 @@ struct HistoryView: View {
 			viewModel.bind(historyStore: env.historyStore)
 		}
 	}
+
+		private var searchField: some View {
+			HStack(spacing: 10) {
+				Image(systemName: "magnifyingglass")
+					.foregroundStyle(PromptTheme.softLilac.opacity(0.72))
+
+				TextField("Search history", text: $viewModel.query)
+					.textInputAutocapitalization(.never)
+					.autocorrectionDisabled()
+			}
+			.padding(.horizontal, 14)
+			.padding(.vertical, 11)
+			.background(PromptTheme.glassFill, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+			.overlay(
+				RoundedRectangle(cornerRadius: 14, style: .continuous)
+					.stroke(PromptTheme.glassStroke, lineWidth: 1)
+			)
+		}
+
+		private var emptyState: some View {
+			VStack(spacing: 10) {
+				Image(systemName: "clock.arrow.circlepath")
+					.font(.system(size: 28, weight: .semibold))
+					.foregroundStyle(PromptTheme.softLilac.opacity(0.75))
+
+				Text("No History Yet")
+					.font(.system(size: 18, weight: .semibold, design: .rounded))
+					.foregroundStyle(PromptTheme.paleLilacWhite)
+
+				Text("Your generated prompts will appear here.")
+					.font(.system(size: 14, weight: .medium, design: .rounded))
+					.foregroundStyle(PromptTheme.softLilac.opacity(0.74))
+					.multilineTextAlignment(.center)
+			}
+			.frame(maxWidth: .infinity)
+			.padding(.top, 34)
+			.padding(.bottom, 22)
+		}
+
+		private func historyRow(_ item: PromptHistoryItem) -> some View {
+			VStack(alignment: .leading, spacing: 10) {
+				Button {
+					if let onSelect {
+						onSelect(item)
+					} else {
+						activeSheet = .detail(item)
+					}
+				} label: {
+					VStack(alignment: .leading, spacing: 8) {
+						Text(item.customName ?? item.input)
+							.font(.system(size: 17, weight: .semibold, design: .rounded))
+							.foregroundStyle(PromptTheme.paleLilacWhite)
+							.lineLimit(2)
+
+						Text(item.professional)
+							.font(.system(size: 14, weight: .regular, design: .rounded))
+							.foregroundStyle(PromptTheme.softLilac.opacity(0.86))
+							.lineLimit(3)
+					}
+					.frame(maxWidth: .infinity, alignment: .leading)
+				}
+				.buttonStyle(.plain)
+
+				HStack {
+					Text(item.createdAt, style: .date)
+						.font(.caption)
+						.foregroundStyle(PromptTheme.softLilac.opacity(0.72))
+
+					Spacer()
+
+					Button(item.favorite ? "Unfavorite" : "Favorite") {
+						viewModel.toggleFavorite(item)
+					}
+					.buttonStyle(.bordered)
+					.tint(PromptTheme.mutedViolet.opacity(0.86))
+
+					Menu {
+						Button("Rename") {
+							activeSheet = .rename(item)
+							renameText = item.customName ?? ""
+						}
+
+						Button("Delete", role: .destructive) {
+							viewModel.delete(item)
+						}
+					} label: {
+						Image(systemName: "ellipsis.circle")
+							.font(.system(size: 16, weight: .semibold))
+							.foregroundStyle(PromptTheme.softLilac.opacity(0.9))
+					}
+				}
+			}
+			.padding(14)
+			.background(
+				RoundedRectangle(cornerRadius: 16, style: .continuous)
+					.fill(PromptTheme.glassFill)
+					.overlay(
+						RoundedRectangle(cornerRadius: 16, style: .continuous)
+							.stroke(PromptTheme.glassStroke, lineWidth: 1)
+					)
+			)
+		}
 }

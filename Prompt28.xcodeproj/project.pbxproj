@@ -60,6 +60,7 @@
 		CCA100001122334455667711 /* ShareCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667701 /* ShareCardView.swift */; };
 		CCA100001122334455667712 /* ShareCardRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667702 /* ShareCardRenderer.swift */; };
 		CCA100001122334455667713 /* ShareCardFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667703 /* ShareCardFileStore.swift */; };
+		CCA100001122334455667714 /* PremiumTabScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667704 /* PremiumTabScreen.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -82,6 +83,7 @@
 /* Begin PBXFileReference section */
 		CCAB0B512F5D780200C29A7E /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
 		CCAB0B532F5D780200C29A7E /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
+		CCA100001122334455667704 /* PremiumTabScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumTabScreen.swift; sourceTree = "<group>"; };
 		CCAB0B542F5D780200C29A7E /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
 		CCAB0B562F5D780200C29A7E /* OrbEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrbEngine.swift; sourceTree = "<group>"; };
 		CCAB0B572F5D780200C29A7E /* SpeechRecognizerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizerService.swift; sourceTree = "<group>"; };
@@ -208,6 +210,7 @@
 			children = (
 				CCAB0B522F5D780200C29A7E /* Routing */,
 				CCAB0B532F5D780200C29A7E /* AppEnvironment.swift */,
+				CCA100001122334455667704 /* PremiumTabScreen.swift */,
 				CCAB0B542F5D780200C29A7E /* RootView.swift */,
 			);
 			path = App;
@@ -696,6 +699,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CCA100001122334455667714 /* PremiumTabScreen.swift in Sources */,
 				CCA100001122334455667713 /* ShareCardFileStore.swift in Sources */,
 				CCA100001122334455667712 /* ShareCardRenderer.swift in Sources */,
 				CCA100001122334455667711 /* ShareCardView.swift in Sources */,
