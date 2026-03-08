@@ -103,8 +103,7 @@ struct RootView: View {
 
     private var launchView: some View {
         ZStack {
-            PromptTheme.backgroundGradient
-            .ignoresSafeArea()
+            PromptPremiumBackground()
 
             VStack(spacing: 14) {
                 ProgressView()
@@ -114,6 +113,52 @@ struct RootView: View {
                     .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.9))
             }
         }
+    }
+}
+
+struct PromptPremiumBackground: View {
+    var body: some View {
+        GeometryReader { geo in
+            let size = geo.size
+            let maxDimension = max(size.width, size.height)
+
+            ZStack {
+                PromptTheme.backgroundBase
+
+                LinearGradient(
+                    colors: [
+                        PromptTheme.deepShadow.opacity(0.96),
+                        PromptTheme.plum.opacity(0.84),
+                        PromptTheme.backgroundBase.opacity(0.98)
+                    ],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+
+                RadialGradient(
+                    colors: [
+                        PromptTheme.plum.opacity(0.62),
+                        PromptTheme.deepShadow.opacity(0.26),
+                        .clear
+                    ],
+                    center: UnitPoint(x: 0.5, y: 0.22),
+                    startRadius: maxDimension * 0.03,
+                    endRadius: maxDimension * 0.74
+                )
+
+                RadialGradient(
+                    colors: [
+                        PromptTheme.mutedViolet.opacity(0.25),
+                        .clear
+                    ],
+                    center: UnitPoint(x: 0.84, y: 0.06),
+                    startRadius: maxDimension * 0.02,
+                    endRadius: maxDimension * 0.42
+                )
+            }
+            .frame(width: size.width, height: size.height)
+        }
+        .ignoresSafeArea()
     }
 }
 

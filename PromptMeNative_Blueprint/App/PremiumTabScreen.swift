@@ -12,8 +12,7 @@ struct PremiumTabScreen<Content: View>: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                PromptTheme.backgroundGradient
-                    .ignoresSafeArea()
+                PromptPremiumBackground()
 
                 if isScrollable {
                     ScrollView(showsIndicators: false) {

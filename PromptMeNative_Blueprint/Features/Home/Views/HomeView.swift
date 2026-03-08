@@ -37,8 +37,7 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PromptTheme.backgroundGradient
-                    .ignoresSafeArea()
+                PromptPremiumBackground()
 
                 GeometryReader { proxy in
                     let orbHeight = min(proxy.size.height * 0.42, 420)
