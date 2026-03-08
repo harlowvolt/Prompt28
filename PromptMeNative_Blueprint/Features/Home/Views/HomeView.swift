@@ -37,11 +37,12 @@ struct HomeView: View {
     var body: some View {
         GeometryReader { proxy in
             let compactHeight = proxy.size.height < 760
-            let headerToOrb: CGFloat = compactHeight ? 12 : 18
-            let orbHeight = min(390, max(300, proxy.size.height * (compactHeight ? 0.40 : 0.44)))
-            let orbToTranscript: CGFloat = compactHeight ? 18 : 24
-            let transcriptToResult: CGFloat = compactHeight ? 20 : 26
-            let bottomBreathing = max(proxy.safeAreaInsets.bottom + 110, 132)
+            let narrowWidth = proxy.size.width < 380
+            let headerToOrb: CGFloat = compactHeight ? 20 : 28
+            let orbHeight = min(380, max(292, proxy.size.height * (compactHeight ? 0.38 : 0.42)))
+            let orbToTranscript: CGFloat = compactHeight ? 20 : 28
+            let transcriptToResult: CGFloat = compactHeight ? 22 : 30
+            let bottomBreathing = max(proxy.safeAreaInsets.bottom + 132, 156)
 
             ZStack {
                 LinearGradient(
@@ -53,43 +54,46 @@ struct HomeView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
-                        HStack {
-                            Text("Prompt28")
-                                .font(.system(size: compactHeight ? 30 : 34, weight: .semibold, design: .rounded))
-                                .foregroundStyle(.white)
-                                .lineLimit(1)
-                                .minimumScaleFactor(0.85)
-                                .layoutPriority(1)
-
-                            Spacer()
-
-                            Button {
-                                activeSheet = .typePrompt
-                            } label: {
-                                Label("Type", systemImage: "keyboard")
-                                    .font(.system(size: 14, weight: .semibold))
+                        if narrowWidth {
+                            VStack(alignment: .leading, spacing: 12) {
+                                Text("Prompt28")
+                                    .font(.system(size: compactHeight ? 30 : 34, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(.white)
                                     .lineLimit(1)
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 10)
-                                    .background(.white.opacity(0.1), in: Capsule())
-                                    .fixedSize(horizontal: true, vertical: false)
-                            }
-                            .foregroundStyle(.white)
-                            .buttonStyle(.plain)
+                                    .minimumScaleFactor(0.95)
 
-                            Button {
-                                activeSheet = .history
-                            } label: {
-                                Label("History", systemImage: "clock.arrow.circlepath")
-                                    .font(.system(size: 14, weight: .semibold))
-                                    .lineLimit(1)
-                                    .padding(.horizontal, 14)
-                                    .padding(.vertical, 10)
-                                    .background(.white.opacity(0.1), in: Capsule())
-                                    .fixedSize(horizontal: true, vertical: false)
+                                HStack(spacing: 10) {
+                                    topActionButton(title: "Type", systemImage: "keyboard") {
+                                        activeSheet = .typePrompt
+                                    }
+
+                                    topActionButton(title: "History", systemImage: "clock.arrow.circlepath") {
+                                        activeSheet = .history
+                                    }
+
+                                    Spacer(minLength: 0)
+                                }
                             }
-                            .foregroundStyle(.white)
-                            .buttonStyle(.plain)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        } else {
+                            HStack(spacing: 10) {
+                                Text("Prompt28")
+                                    .font(.system(size: compactHeight ? 30 : 34, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(.white)
+                                    .lineLimit(1)
+                                    .minimumScaleFactor(0.95)
+                                    .layoutPriority(1)
+
+                                Spacer(minLength: 8)
+
+                                topActionButton(title: "Type", systemImage: "keyboard") {
+                                    activeSheet = .typePrompt
+                                }
+
+                                topActionButton(title: "History", systemImage: "clock.arrow.circlepath") {
+                                    activeSheet = .history
+                                }
+                            }
                         }
 
                         Spacer(minLength: headerToOrb)
@@ -127,7 +131,7 @@ struct HomeView: View {
                         Spacer(minLength: bottomBreathing)
                     }
                     .padding(.horizontal, 20)
-                    .padding(.top, compactHeight ? 18 : 24)
+                    .padding(.top, compactHeight ? 16 : 22)
                 }
             }
         }
@@ -182,6 +186,20 @@ struct HomeView: View {
                 }
             }
         }
+    }
+
+    private func topActionButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Label(title, systemImage: systemImage)
+                .font(.system(size: 14, weight: .semibold))
+                .lineLimit(1)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(.white.opacity(0.1), in: Capsule())
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .foregroundStyle(.white)
+        .buttonStyle(.plain)
     }
 
     private func transcriptCard(text: String) -> some View {
