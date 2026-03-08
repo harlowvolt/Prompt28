@@ -1,15 +1,24 @@
 import SwiftUI
 
 struct HomeView: View {
-    @ObservedObject private var appEnvironment: AppEnvironment
+    private enum ActiveSheet: Identifiable {
+        case typePrompt
+
+        var id: String {
+            switch self {
+            case .typePrompt:
+                return "typePrompt"
+            }
+        }
+    }
+
     @StateObject private var orbEngine = OrbEngine.makeDefault()
     @StateObject private var generateViewModel: GenerateViewModel
 
-    @State private var showTypePrompt = false
+    @State private var activeSheet: ActiveSheet?
     @State private var showCopiedToast = false
 
     init(appEnvironment: AppEnvironment) {
-        self._appEnvironment = ObservedObject(wrappedValue: appEnvironment)
         self._generateViewModel = StateObject(
             wrappedValue: GenerateViewModel(
                 apiClient: appEnvironment.apiClient,
@@ -26,58 +35,79 @@ struct HomeView: View {
                 PromptTheme.backgroundGradient
                 .ignoresSafeArea()
 
-                VStack(spacing: 0) {
-                    Spacer(minLength: 0)
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        Spacer(minLength: 60)
 
-                    OrbView(engine: orbEngine) { finalText in
-                        Task {
-                            orbEngine.markGenerating()
-                            await generateViewModel.generateFromOrb(text: finalText)
+                        OrbView(engine: orbEngine) { finalText in
+                            Task {
+                                orbEngine.markGenerating()
+                                await generateViewModel.generateFromOrb(text: finalText)
 
-                            if let error = generateViewModel.errorMessage {
-                                orbEngine.markFailure(error)
-                            } else {
-                                orbEngine.markSuccess()
+                                if let error = generateViewModel.errorMessage {
+                                    orbEngine.markFailure(error)
+                                } else {
+                                    orbEngine.markSuccess()
+                                }
                             }
                         }
+                        .frame(maxWidth: .infinity)
+                        .frame(maxHeight: 380)
+
+                        Spacer(minLength: 30)
+
+                        Text(activeTranscriptText)
+                            .font(.system(size: 16, weight: .regular, design: .rounded))
+                            .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.94))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 24)
+                            .textSelection(.enabled)
+
+                        Spacer(minLength: 40)
+
+                        ResultView(viewModel: generateViewModel)
+
+                        if let errorMessage = generateViewModel.errorMessage {
+                            Spacer(minLength: 12)
+                            errorBanner(text: errorMessage)
+                        }
+
+                        Spacer(minLength: 40)
                     }
-                    .frame(maxWidth: 430)
-
-                    transcriptText
-                        .padding(.top, 14)
-
-                    Spacer(minLength: 18)
-
-                    ResultView(viewModel: generateViewModel)
-
-                    if let errorMessage = generateViewModel.errorMessage {
-                        errorBanner(text: errorMessage)
-                            .padding(.top, 12)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 10)
-            }
-        }
-        .navigationTitle("PROMPT²⁸")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .topBarTrailing) {
-                Button {
-                    showTypePrompt = true
-                } label: {
-                    Image(systemName: "keyboard")
+                    .padding(.horizontal, 20)
                 }
             }
-        }
-        .navigationDestination(isPresented: $showTypePrompt) {
-            TypePromptView(viewModel: generateViewModel)
-                .navigationTitle("Type Prompt")
-                .navigationBarTitleDisplayMode(.inline)
-        }
-        .safeAreaInset(edge: .bottom) {
-            Color.clear
-                .frame(height: 8)
+            .navigationTitle("PROMPT²⁸")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        activeSheet = .typePrompt
+                    } label: {
+                        Image(systemName: "keyboard")
+                            .foregroundStyle(PromptTheme.softLilac)
+                    }
+                }
+            }
+            .sheet(item: $activeSheet) { sheet in
+                switch sheet {
+                case .typePrompt:
+                    NavigationStack {
+                        TypePromptView(viewModel: generateViewModel)
+                            .navigationTitle("Type Prompt")
+                            .navigationBarTitleDisplayMode(.inline)
+                            .toolbar {
+                                ToolbarItem(placement: .cancellationAction) {
+                                    Button("Done") {
+                                        activeSheet = nil
+                                    }
+                                }
+                            }
+                    }
+                    .presentationDetents([.medium, .large])
+                    .presentationDragIndicator(.visible)
+                }
+            }
         }
         .overlay(alignment: .bottom) {
             if showCopiedToast {
@@ -108,49 +138,6 @@ struct HomeView: View {
         }
     }
 
-    private var transcriptText: some View {
-        VStack(spacing: 6) {
-            Text(homeStatusText)
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(statusTint)
-
-            Text(activeTranscriptText)
-                .font(.system(size: 15, weight: .medium, design: .rounded))
-                .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.9))
-                .multilineTextAlignment(.center)
-                .lineSpacing(1.5)
-                .frame(maxWidth: .infinity)
-                .textSelection(.enabled)
-        }
-    }
-
-    private var homeStatusText: String {
-        if let error = generateViewModel.errorMessage,
-           !error.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-            if error.localizedCaseInsensitiveContains("sign in") || error.localizedCaseInsensitiveContains("unauthorized") {
-                return "Auth required"
-            }
-            return "Error"
-        }
-
-        if generateViewModel.isGenerating || orbEngine.state == .generating || orbEngine.state == .transcribing {
-            return "Processing"
-        }
-
-        if orbEngine.isRecording || orbEngine.state == .listening {
-            return "Listening"
-        }
-
-        switch orbEngine.state {
-        case .failure(let message):
-            return message.localizedCaseInsensitiveContains("no speech") ? "No speech detected" : "Error"
-        case .success:
-            return "Ready"
-        default:
-            return "Tap to speak"
-        }
-    }
-
     private var activeTranscriptText: String {
         if let error = generateViewModel.errorMessage,
            !error.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -177,20 +164,6 @@ struct HomeView: View {
         }
 
         return "Tap the orb and speak your prompt. Your live transcript and final text will appear here."
-    }
-
-    private var statusTint: Color {
-        let status = homeStatusText
-        if status == "Error" || status == "No speech detected" || status == "Auth required" {
-            return .red.opacity(0.9)
-        }
-        if status == "Listening" {
-            return PromptTheme.softLilac
-        }
-        if status == "Processing" {
-            return PromptTheme.mutedViolet
-        }
-        return PromptTheme.paleLilacWhite
     }
 
     private func errorBanner(text: String) -> some View {

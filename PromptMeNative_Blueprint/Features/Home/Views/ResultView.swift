@@ -1,12 +1,11 @@
 import SwiftUI
+import UIKit
 
 struct ResultView: View {
     @ObservedObject var viewModel: GenerateViewModel
     @State private var copied = false
-    @State private var isPreparingShare = false
-    @State private var isShareSheetPresented = false
-    @State private var shareItems: [Any] = []
-    @State private var shareError: String?
+    @State private var shareImage: UIImage?
+    @State private var shareURL: URL?
 
     var body: some View {
         Group {
@@ -83,23 +82,25 @@ struct ResultView: View {
                         .buttonStyle(.borderedProminent)
                         .tint(PromptTheme.mutedViolet)
 
-                        Button {
-                            Task { await prepareAndShareCard(for: result) }
-                        } label: {
-                            if isPreparingShare {
-                                HStack(spacing: 8) {
-                                    ProgressView()
-                                    Text("Preparing...")
-                                }
-                                .frame(maxWidth: .infinity)
-                            } else {
+                        if let shareURL, let shareImage {
+                            ShareLink(
+                                item: shareURL,
+                                preview: SharePreview("PROMPT²⁸", image: Image(uiImage: shareImage))
+                            ) {
                                 Label("Share", systemImage: "square.and.arrow.up")
+                                    .font(.system(size: 15, weight: .semibold))
+                                    .padding(.horizontal, 16)
+                                    .padding(.vertical, 10)
                                     .frame(maxWidth: .infinity)
                             }
+                            .buttonStyle(.bordered)
+                            .tint(PromptTheme.softLilac.opacity(0.86))
+                        } else {
+                            Label("Preparing Share...", systemImage: "hourglass")
+                                .font(.system(size: 15, weight: .semibold))
+                                .foregroundStyle(PromptTheme.softLilac.opacity(0.75))
+                                .frame(maxWidth: .infinity)
                         }
-                        .buttonStyle(.bordered)
-                        .tint(PromptTheme.softLilac.opacity(0.86))
-                        .disabled(isPreparingShare)
 
                         Button {
                             viewModel.toggleFavoriteForLatest()
@@ -151,163 +152,48 @@ struct ResultView: View {
                 )
             }
         }
-        .sheet(isPresented: $isShareSheetPresented) {
-            ShareSheet(items: shareItems)
-        }
-        .alert("Unable to Share Card", isPresented: shareErrorBinding) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(shareError ?? "Please try again.")
-        }
-    }
-
-    private var shareErrorBinding: Binding<Bool> {
-        Binding(
-            get: { shareError != nil },
-            set: { shouldShow in
-                if !shouldShow {
-                    shareError = nil
-                }
+        .onChange(of: viewModel.latestPromptText) { _, newPrompt in
+            Task { @MainActor in
+                regenerateShareCard(using: newPrompt)
             }
-        )
-    }
-
-    @MainActor
-    private func prepareAndShareCard(for result: GenerateResponse) async {
-        guard !isPreparingShare else { return }
-        isPreparingShare = true
-        defer { isPreparingShare = false }
-
-        do {
-            let url = try renderShareCardImageURL(for: result)
-            shareItems = [url]
-            isShareSheetPresented = true
-        } catch {
-            shareError = error.localizedDescription
+        }
+        .onAppear {
+            Task { @MainActor in
+                regenerateShareCard(using: viewModel.latestPromptText)
+            }
+        }
+        .onDisappear {
+            ShareCardFileStore.removeFileIfNeeded(at: shareURL)
+            shareURL = nil
+            shareImage = nil
         }
     }
 
     @MainActor
-    private func renderShareCardImageURL(for result: GenerateResponse) throws -> URL {
-        let cardView = PromptShareCardView(
-            promptText: result.professional,
-            mode: viewModel.selectedMode
+    private func regenerateShareCard(using promptText: String) {
+        let cleanedPrompt = promptText.trimmingCharacters(in: .whitespacesAndNewlines)
+
+        guard !cleanedPrompt.isEmpty else {
+            ShareCardFileStore.removeFileIfNeeded(at: shareURL)
+            shareImage = nil
+            shareURL = nil
+            return
+        }
+
+        let image = ShareCardRenderer.render(
+            rawInput: viewModel.latestInput,
+            generatedPrompt: cleanedPrompt,
+            modeName: viewModel.selectedMode == .ai ? "AI Mode" : "Human Mode"
         )
-        .frame(width: 1080, height: 1350)
 
-        let renderer = ImageRenderer(content: cardView)
-        renderer.scale = 1
+        ShareCardFileStore.removeFileIfNeeded(at: shareURL)
 
-        guard let image = renderer.uiImage else {
-            throw ShareCardError.renderFailed
-        }
+        shareImage = image
 
-        guard let imageData = image.pngData() else {
-            throw ShareCardError.encodingFailed
-        }
-
-        let filename = "prompt28-share-\(UUID().uuidString).png"
-        let outputURL = FileManager.default.temporaryDirectory.appendingPathComponent(filename)
-        try imageData.write(to: outputURL, options: [.atomic])
-        return outputURL
-    }
-}
-
-private struct PromptShareCardView: View {
-    let promptText: String
-    let mode: PromptMode
-
-    private var modeTitle: String {
-        mode == .ai ? "AI MODE" : "HUMAN MODE"
-    }
-
-    var body: some View {
-        ZStack {
-            LinearGradient(
-                colors: [
-                    Color(hex: "05040A"),
-                    Color(hex: "12091E"),
-                    Color(hex: "1D1330")
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-
-            VStack(alignment: .leading, spacing: 30) {
-                HStack {
-                    Text("PROMPT28")
-                        .font(.system(size: 42, weight: .semibold, design: .serif))
-                        .foregroundStyle(PromptTheme.paleLilacWhite)
-
-                    Spacer()
-
-                    Text(modeTitle)
-                        .font(.system(size: 28, weight: .bold, design: .rounded))
-                        .foregroundStyle(PromptTheme.softLilac)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
-                        .background(PromptTheme.glassFill, in: Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(PromptTheme.glassStroke, lineWidth: 2)
-                        )
-                }
-
-                Text("Generated Prompt")
-                    .font(.system(size: 44, weight: .medium, design: .serif))
-                    .foregroundStyle(PromptTheme.softLilac.opacity(0.9))
-
-                ScrollView {
-                    Text(promptText)
-                        .font(.system(size: 40, weight: .regular, design: .serif))
-                        .foregroundStyle(PromptTheme.paleLilacWhite)
-                        .multilineTextAlignment(.leading)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .scrollIndicators(.hidden)
-                .padding(34)
-                .background(
-                    RoundedRectangle(cornerRadius: 30, style: .continuous)
-                        .fill(Color.white.opacity(0.05))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 30, style: .continuous)
-                                .stroke(Color.white.opacity(0.2), lineWidth: 1.5)
-                        )
-                )
-
-                HStack {
-                    Spacer()
-                    Text("Made with PROMPT²⁸")
-                        .font(.system(size: 28, weight: .semibold, design: .rounded))
-                        .foregroundStyle(PromptTheme.softLilac.opacity(0.9))
-                }
-            }
-            .padding(56)
-        }
-        .clipShape(RoundedRectangle(cornerRadius: 44, style: .continuous))
-    }
-}
-
-private struct ShareSheet: UIViewControllerRepresentable {
-    let items: [Any]
-
-    func makeUIViewController(context: Context) -> UIActivityViewController {
-        UIActivityViewController(activityItems: items, applicationActivities: nil)
-    }
-
-    func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
-}
-
-private enum ShareCardError: LocalizedError {
-    case renderFailed
-    case encodingFailed
-
-    var errorDescription: String? {
-        switch self {
-        case .renderFailed:
-            return "The share card could not be rendered."
-        case .encodingFailed:
-            return "The share card image could not be encoded."
+        if let image {
+            shareURL = ShareCardFileStore.writePNG(image)
+        } else {
+            shareURL = nil
         }
     }
 }
