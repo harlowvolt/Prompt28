@@ -4,6 +4,7 @@ struct HomeView: View {
     private enum ActiveSheet: Identifiable {
         case history
         case typePrompt
+        case settings
 
         var id: String {
             switch self {
@@ -11,6 +12,8 @@ struct HomeView: View {
                 return "history"
             case .typePrompt:
                 return "typePrompt"
+            case .settings:
+                return "settings"
             }
         }
     }
@@ -52,11 +55,19 @@ struct HomeView: View {
                     VStack(spacing: 0) {
                         if narrowWidth {
                             VStack(alignment: .leading, spacing: 12) {
-                                Text("Prompt28")
-                                    .font(.system(size: compactHeight ? 30 : 34, weight: .semibold, design: .rounded))
-                                    .foregroundStyle(PromptTheme.paleLilacWhite)
-                                    .lineLimit(1)
-                                    .minimumScaleFactor(0.95)
+                                HStack(spacing: 10) {
+                                    Text("Prompt28")
+                                        .font(.system(size: compactHeight ? 30 : 34, weight: .semibold, design: .rounded))
+                                        .foregroundStyle(PromptTheme.paleLilacWhite)
+                                        .lineLimit(1)
+                                        .minimumScaleFactor(0.95)
+
+                                    Spacer(minLength: 8)
+
+                                    topActionIconButton(systemImage: "gearshape.fill") {
+                                        activeSheet = .settings
+                                    }
+                                }
 
                                 HStack(spacing: 10) {
                                     topActionButton(title: "Type", systemImage: "keyboard") {
@@ -81,6 +92,10 @@ struct HomeView: View {
                                     .layoutPriority(1)
 
                                 Spacer(minLength: 8)
+
+                                topActionIconButton(systemImage: "gearshape.fill") {
+                                    activeSheet = .settings
+                                }
 
                                 topActionButton(title: "Type", systemImage: "keyboard") {
                                     activeSheet = .typePrompt
@@ -156,6 +171,10 @@ struct HomeView: View {
                 }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+            case .settings:
+                NavigationStack {
+                    SettingsView()
+                }
             }
         }
         .overlay(alignment: .bottom) {
@@ -202,6 +221,22 @@ struct HomeView: View {
                 .fixedSize(horizontal: true, vertical: false)
         }
             .foregroundStyle(PromptTheme.softLilac)
+        .buttonStyle(.plain)
+    }
+
+    private func topActionIconButton(systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemImage)
+                .font(.system(size: 15, weight: .semibold))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 10)
+                .background(PromptTheme.glassFill, in: Capsule())
+                .overlay(
+                    Capsule()
+                        .stroke(PromptTheme.glassStroke, lineWidth: 1)
+                )
+        }
+        .foregroundStyle(PromptTheme.softLilac)
         .buttonStyle(.plain)
     }
 
