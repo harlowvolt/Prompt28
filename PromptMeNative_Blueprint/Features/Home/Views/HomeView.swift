@@ -177,7 +177,7 @@ struct HomeView: View {
                 .font(.system(size: 17, weight: .semibold, design: .rounded))
                 .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: AppHeights.segmented)
+                .frame(height: AppHeights.segmentedControl)
                 .background {
                     Capsule()
                         .fill(
@@ -298,7 +298,7 @@ struct HomeView: View {
                 .font(.system(size: 17, weight: .medium, design: .rounded))
                 .foregroundStyle(Color.white.opacity(0.62))
                 .frame(maxWidth: .infinity)
-                .frame(height: AppHeights.primaryButton)
+                .frame(height: AppHeights.typeButton)
                 .background(
                     Capsule()
                         .fill(Color.white.opacity(0.07))

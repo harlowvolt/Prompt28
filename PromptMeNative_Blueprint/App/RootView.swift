@@ -5,7 +5,7 @@ struct RootView: View {
     @EnvironmentObject private var env: AppEnvironment
     @State private var didBootstrap = false
     @State private var selectedTab: MainTab = .home
-    private let tabBarProtectedInset: CGFloat = AppHeights.tabBarClearance
+    private let tabBarProtectedInset: CGFloat = AppSpacing.bottomContentClearance
 
     init() {
         let appearance = UITabBarAppearance()
@@ -263,7 +263,7 @@ extension Color {
 
 private extension UIImage {
     static func tabSelectionIndicator(color: UIColor, stroke: UIColor) -> UIImage {
-        let size = CGSize(width: 90, height: AppHeights.tabBarFloating)
+        let size = CGSize(width: 90, height: AppHeights.floatingTabBar)
         let rect = CGRect(origin: .zero, size: size).insetBy(dx: 6, dy: 9)
         let radius: CGFloat = 22
 
