@@ -1,5 +1,24 @@
 import SwiftUI
 
+enum AppSpacing {
+    static let screenHorizontal: CGFloat = 24
+    static let section: CGFloat = 24
+    static let largeSection: CGFloat = 34
+    static let element: CGFloat = 12
+    static let bottomContentClearance: CGFloat = 88
+}
+
+enum AppRadii {
+    static let card: CGFloat = 24
+}
+
+enum AppHeights {
+    static let searchBar: CGFloat = 56
+    static let segmentedControl: CGFloat = 56
+    static let floatingTabBar: CGFloat = 76
+    static let typeButton: CGFloat = 58
+}
+
 // MARK: - Shared Layout Compatibility
 
 extension AppSpacing {
@@ -189,5 +208,30 @@ extension View {
         self
             .background { PromptTheme.glassCard(cornerRadius: radius) }
             .shadow(color: .black.opacity(0.48), radius: AppShadows.cardRadius, y: AppShadows.cardYOffset)
+    }
+}
+
+extension PromptTheme {
+    static func glassCard(cornerRadius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(Color.white.opacity(0.07))
+            .overlay(
+                GeometryReader { geo in
+                    RadialGradient(
+                        stops: [
+                            .init(color: Color.white.opacity(0.10), location: 0.0),
+                            .init(color: Color.clear, location: 0.55)
+                        ],
+                        center: UnitPoint(x: 0.15, y: 0.0),
+                        startRadius: 0,
+                        endRadius: geo.size.width * 0.6
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+            )
     }
 }

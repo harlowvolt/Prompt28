@@ -10,7 +10,7 @@ struct PremiumTabScreen<Content: View>: View {
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        AppScreenContainer(title: title, showsScrollIndicators: isScrollable) {
+        AppScreenContainer(title: title, isScrollable: isScrollable) {
             content()
         }
     }

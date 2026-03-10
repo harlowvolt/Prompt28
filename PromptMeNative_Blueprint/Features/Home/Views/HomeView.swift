@@ -1,5 +1,4 @@
 import SwiftUI
-import UIKit
 
 struct HomeView: View {
     private enum ActiveSheet: Identifiable {
@@ -35,41 +34,43 @@ struct HomeView: View {
 
     var body: some View {
         GeometryReader { proxy in
+            let topSafe = proxy.safeAreaInsets.top
+            let topSpacing = min(64, max(52, proxy.size.height * 0.07))
+            let bottomBreathing = min(34, max(26, proxy.size.height * 0.034))
+
             ZStack {
                 PromptPremiumBackground()
                     .ignoresSafeArea()
 
-                VStack(spacing: AppSpacing.section) {
+                VStack(spacing: 0) {
                     headerSection
-                        .padding(.top, proxy.safeAreaInsets.top + 6)
+                        .padding(.top, topSafe + topSpacing)
 
-                    subtitleLine
+                    modePicker
+                        .padding(.top, 36)
 
-                    modeSelector
+                    modeDescriptionLine
+                        .padding(.top, 24)
 
-                    Text(modeDescription)
-                        .font(.system(size: 13, weight: .medium, design: .rounded))
-                        .foregroundStyle(PromptTheme.softLilac.opacity(0.6))
-                        .multilineTextAlignment(.center)
+                    orbSection
+                        .padding(.top, 36)
 
-                    Spacer(minLength: hasResult ? 8 : 24)
-
-                    orbButton(proxy: proxy)
+                    transcriptSection
+                        .padding(.top, 24)
 
                     if hasResult {
-                        transcriptSection
                         resultSection
+                            .padding(.top, 18)
+                            .frame(maxHeight: .infinity)
                     } else {
-                        transcriptSection
+                        Spacer(minLength: 40)
                     }
 
-                    Spacer(minLength: 0)
-
                     typeInsteadButton
-                        .padding(.bottom, max(12, proxy.safeAreaInsets.bottom + 6))
+                        .padding(.top, hasResult ? 14 : 24)
+                        .padding(.bottom, bottomBreathing + 18)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .padding(.horizontal, AppSpacing.screenHorizontal)
+                .frame(width: proxy.size.width, height: proxy.size.height)
             }
         }
         .overlay(alignment: .bottom) { copiedToast }
@@ -114,62 +115,57 @@ struct HomeView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        HStack(alignment: .top) {
-            Color.clear
-                .frame(width: 42, height: 42)
-
-            VStack(spacing: 6) {
+        ZStack(alignment: .topTrailing) {
+            VStack(spacing: 12) {
                 Text("\(firstName),")
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
-                    .kerning(-0.9)
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [
-                                Color.white,
-                                Color(red: 0.82, green: 0.88, blue: 1.00),
-                                Color(red: 0.68, green: 0.58, blue: 1.00)
-                            ],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .frame(maxWidth: .infinity)
-            }
-            .frame(maxWidth: .infinity, alignment: .center)
+                    .font(.system(size: 50, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
 
-            Button {
-                activeSheet = .settings
-            } label: {
+                Text("What do you want to make today?")
+                    .font(.system(size: 16, weight: .regular, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.55))
+                    .multilineTextAlignment(.center)
+            }
+            .frame(maxWidth: .infinity)
+
+            Button { activeSheet = .settings } label: {
                 Image(systemName: "gearshape.fill")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(Color(red: 0.90, green: 0.92, blue: 0.95).opacity(0.78))
-                    .frame(width: 42, height: 42)
-                    .background(
-                        Circle()
-                            .fill(Color.white.opacity(0.08))
-                            .overlay(Circle().stroke(Color.white.opacity(0.14), lineWidth: 1))
-                            .shadow(color: .black.opacity(0.40), radius: 11, y: 8)
-                    )
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.8))
+                    .padding(12)
+                    .background(Color.white.opacity(0.06), in: Circle())
+                    .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
             }
-            .buttonStyle(.plain)
-            .padding(.leading, 6)
+            .shadow(color: .white.opacity(0.08), radius: 10, y: 3)
+            .padding(.trailing, 2)
+            .padding(.top, 2)
         }
+        .padding(.horizontal, 24)
     }
 
-    private var subtitleLine: some View {
-        Text("What do you want to make today?")
-            .font(.system(size: 17, weight: .medium, design: .rounded))
-            .foregroundStyle(.white.opacity(0.82))
+    // MARK: - Mode Picker
+
+    private var modePicker: some View {
+        HStack(spacing: 14) {
+            HStack(spacing: 14) {
+                modePill(label: "AI Mode", mode: .ai)
+                modePill(label: "Human Mode", mode: .human)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.horizontal, 24)
+    }
+
+    private var modeDescriptionLine: some View {
+        Text(modeDescription)
+            .font(.system(size: 13, weight: .regular, design: .rounded))
+            .foregroundStyle(.white.opacity(0.42))
             .multilineTextAlignment(.center)
-    }
-
-    // MARK: - Mode Selector
-
-    private var modeSelector: some View {
-        HStack(spacing: AppSpacing.element) {
-            modePill(label: "AI Mode", mode: .ai)
-            modePill(label: "Human Mode", mode: .human)
-        }
+            .transition(.opacity.combined(with: .move(edge: .top)))
+            .animation(.easeInOut(duration: 0.2), value: generateViewModel.selectedMode)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, 24)
     }
 
     private var modeDescription: String {
@@ -180,7 +176,7 @@ struct HomeView: View {
     }
 
     private func modePill(label: String, mode: PromptMode) -> some View {
-        let selected = generateViewModel.selectedMode == mode
+        let isSelected = generateViewModel.selectedMode == mode
 
         return Button {
             withAnimation(.easeInOut(duration: 0.18)) {
@@ -188,94 +184,37 @@ struct HomeView: View {
             }
         } label: {
             Text(label)
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                .foregroundStyle(.white)
+                .font(.system(size: 14, weight: isSelected ? .semibold : .medium, design: .rounded))
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
+                .foregroundStyle(isSelected ? .white : .white.opacity(0.62))
                 .frame(maxWidth: .infinity)
-                .frame(height: AppHeights.segmentedControl)
+                .frame(height: 58)
                 .background {
-                    Capsule()
-                        .fill(
-                            selected
-                            ? LinearGradient(
-                                colors: [
-                                    Color.blue.opacity(0.55),
-                                    Color.purple.opacity(0.45)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                            : LinearGradient(
-                                colors: [Color.white.opacity(0.06), Color.white.opacity(0.06)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        )
+                    if isSelected {
+                        Capsule()
+                            .fill(PromptTheme.mutedViolet.opacity(0.4))
+                            .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.45), lineWidth: 1.1))
+                            .shadow(color: PromptTheme.softLilac.opacity(0.18), radius: 12, y: 3)
+                    } else {
+                        Capsule()
+                            .fill(PromptTheme.deepShadow.opacity(0.48))
+                            .background(.ultraThinMaterial, in: Capsule())
+                            .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 1))
+                    }
                 }
-                .overlay {
-                    Capsule()
-                        .stroke(
-                            selected
-                            ? LinearGradient(
-                                colors: [
-                                    Color.white.opacity(0.9),
-                                    Color.cyan.opacity(0.8),
-                                    Color.purple.opacity(0.8)
-                                ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
-                            )
-                            : LinearGradient(
-                                colors: [Color.white.opacity(0.18), Color.white.opacity(0.18)],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            ),
-                            lineWidth: selected ? 2 : 1
-                        )
-                }
-                .shadow(color: selected ? Color.blue.opacity(0.35) : .clear, radius: 16)
         }
         .buttonStyle(.plain)
-        .frame(maxWidth: .infinity)
+        .frame(maxWidth: 252)
     }
 
     // MARK: - Orb + Transcript + Result
 
-    private func orbButton(proxy: GeometryProxy) -> some View {
-        let restingOrb = min(proxy.size.width * 0.80, 318)
-        let resultOrb = min(proxy.size.width * 0.70, 286)
-        let orbSize = hasResult ? resultOrb : restingOrb
+    private var orbSection: some View {
+        let restingOrb = min(UIScreen.main.bounds.width * 0.90, 360)
+        let resultOrb = min(UIScreen.main.bounds.width * 0.70, 286)
 
-        return Button {
-            let feedback = UIImpactFeedbackGenerator(style: .light)
-            feedback.impactOccurred()
-            Task {
-                if orbEngine.isRecording {
-                    if let final = await orbEngine.stopListeningAndFinalize() {
-                        generateFromText(final)
-                    }
-                } else {
-                    orbEngine.startListening()
-                }
-            }
-        } label: {
-            orbSection(proxy: proxy)
-                .frame(width: orbSize, height: orbSize)
-                .overlay {
-                    Image(systemName: orbEngine.isRecording ? "waveform" : "mic.fill")
-                        .font(.system(size: orbEngine.isRecording ? 44 : 58, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Color.white.opacity(0.94))
-                        .shadow(color: .white.opacity(0.24), radius: 8)
-                }
-        }
-        .buttonStyle(.plain)
-        .contentShape(Circle())
-    }
-
-    private func orbSection(proxy: GeometryProxy) -> some View {
-        let restingOrb = min(proxy.size.width * 0.76, 300)
-        let resultOrb = min(proxy.size.width * 0.70, 286)
-
-        return OrbView()
+        return OrbView(engine: orbEngine, onTranscript: generateFromText)
             .frame(width: hasResult ? resultOrb : restingOrb, height: hasResult ? resultOrb : restingOrb)
             .frame(maxWidth: .infinity)
     }
@@ -305,24 +244,25 @@ struct HomeView: View {
     }
     // MARK: - Type Instead
 
-    // HTML #type-btn: pill, rgba(255,255,255,0.07), border rgba(255,255,255,0.14),
-    //   text rgba(255,255,255,0.62), shadow 0 12px 28px rgba(0,0,0,0.45)
     private var typeInsteadButton: some View {
         Button { activeSheet = .typePrompt } label: {
             Text("Type instead")
-                .font(.system(size: 17, weight: .medium, design: .rounded))
-                .foregroundStyle(Color.white.opacity(0.62))
+                .font(.system(size: 18, weight: .medium, design: .rounded))
+                .foregroundStyle(.white.opacity(0.74))
                 .frame(maxWidth: .infinity)
-                .frame(height: AppHeights.typeButton)
+                .frame(height: 58)
                 .background(
                     Capsule()
-                        .fill(Color.white.opacity(0.07))
-                        .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 1))
-                        .shadow(color: .black.opacity(0.45), radius: 14, y: 12)
+                        .fill(PromptTheme.deepShadow.opacity(0.5))
+                        .background(.ultraThinMaterial, in: Capsule())
+                        .overlay(
+                            Capsule()
+                                .stroke(.white.opacity(0.16), lineWidth: 1)
+                        )
                 )
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 24)
     }
 
     // MARK: - Toast
@@ -353,23 +293,7 @@ struct HomeView: View {
     private var firstName: String {
         let full = env.authManager.currentUser?.name ?? ""
         let first = full.components(separatedBy: " ").first ?? ""
-        // If the name looks like a UID (short alphanumeric blob with digits), skip it
-        let looksLikeUID = first.count < 20
-            && first.contains(where: { $0.isNumber })
-            && !first.contains(" ")
-            && first.filter({ $0.isLetter }).count < 8
-        if !first.isEmpty && !looksLikeUID {
-            return first
-        }
-        // Fallback: use email prefix, strip trailing digits
-        let email = env.authManager.currentUser?.email ?? ""
-        let prefix = email.components(separatedBy: "@").first ?? ""
-        // Strip numbers and separators from end to get a name
-        let letters = prefix.prefix(while: { $0.isLetter })
-        if !letters.isEmpty {
-            return letters.prefix(1).uppercased() + letters.dropFirst().lowercased()
-        }
-        return "there"
+        return first.isEmpty ? "there" : first
     }
 
     private func generateFromText(_ finalText: String) {
@@ -408,7 +332,10 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(PromptTheme.Spacing.s)
-        .background { PromptTheme.glassCard(cornerRadius: PromptTheme.Radius.large) }
+        .background(PromptTheme.premiumMaterial,
+                    in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
+            .stroke(Color.white.opacity(0.12), lineWidth: 1))
     }
 }
 
