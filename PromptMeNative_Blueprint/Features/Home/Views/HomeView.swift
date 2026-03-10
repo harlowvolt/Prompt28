@@ -60,6 +60,8 @@ struct HomeView: View {
                 }
                 .presentationDetents([.medium, .large])
                 .presentationDragIndicator(.visible)
+                .presentationBackground(.regularMaterial)
+                .presentationCornerRadius(32)
 
             case .settings:
                 NavigationStack {
@@ -69,6 +71,8 @@ struct HomeView: View {
                 }
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
+                .presentationBackground(.regularMaterial)
+                .presentationCornerRadius(32)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .prompt28DidCopyPrompt)) { _ in
@@ -112,13 +116,29 @@ struct HomeView: View {
     // MARK: - Mode Picker
 
     private var modePicker: some View {
-        HStack(spacing: 10) {
-            modePill(label: "AI Mode", mode: .ai)
-            modePill(label: "Human Mode", mode: .human)
-            Spacer()
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 10) {
+                modePill(label: "AI Mode", mode: .ai)
+                modePill(label: "Human Mode", mode: .human)
+                Spacer()
+            }
+
+            Text(modeDescription)
+                .font(.system(size: 13, weight: .regular, design: .rounded))
+                .foregroundStyle(.white.opacity(0.38))
+                .padding(.horizontal, 4)
+                .transition(.opacity.combined(with: .move(edge: .top)))
+                .animation(.easeInOut(duration: 0.2), value: generateViewModel.selectedMode)
         }
         .padding(.horizontal, 24)
         .padding(.bottom, 20)
+    }
+
+    private var modeDescription: String {
+        switch generateViewModel.selectedMode {
+        case .ai:    return "Standard AI prompt style"
+        case .human: return "Sounds like a real human wrote it"
+        }
     }
 
     private func modePill(label: String, mode: PromptMode) -> some View {
@@ -135,17 +155,15 @@ struct HomeView: View {
                 .padding(.horizontal, 18)
                 .padding(.vertical, 9)
                 .background {
-                    Capsule()
-                        .fill(isSelected
-                              ? PromptTheme.mutedViolet.opacity(0.6)
-                              : Color.white.opacity(0.07))
-                        .overlay(
-                            Capsule()
-                                .stroke(isSelected
-                                        ? PromptTheme.softLilac.opacity(0.5)
-                                        : Color.white.opacity(0.1),
-                                        lineWidth: 1)
-                        )
+                    if isSelected {
+                        Capsule()
+                            .fill(PromptTheme.mutedViolet.opacity(0.6))
+                            .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.5), lineWidth: 1))
+                    } else {
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                            .overlay(Capsule().stroke(Color.white.opacity(0.1), lineWidth: 1))
+                    }
                 }
         }
         .buttonStyle(.plain)
@@ -216,7 +234,7 @@ struct HomeView: View {
                 .frame(height: 52)
                 .background(
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(.white.opacity(0.07))
+                        .fill(.ultraThinMaterial)
                         .overlay(
                             RoundedRectangle(cornerRadius: 14, style: .continuous)
                                 .stroke(.white.opacity(0.12), lineWidth: 1)
@@ -254,8 +272,9 @@ struct HomeView: View {
     private var hasResult: Bool { !generateViewModel.latestPromptText.isEmpty }
 
     private var firstName: String {
-        let full = env.authManager.currentUser?.name ?? "there"
-        return full.components(separatedBy: " ").first ?? full
+        let full = env.authManager.currentUser?.name ?? ""
+        let first = full.components(separatedBy: " ").first ?? ""
+        return first.isEmpty ? "there" : first
     }
 
     private func generateFromText(_ finalText: String) {
