@@ -8,10 +8,10 @@ struct HomeView: View {
             ZStack {
                 CyberBackgroundGradient()
 
-                VStack(spacing: 20) {
+                VStack(spacing: AppSpacing.section) {
                     Spacer(minLength: max(geo.size.height * 0.03, 14))
 
-                    VStack(spacing: 8) {
+                    VStack(spacing: AppSpacing.element) {
                         Text("Natalie,")
                             .font(.system(size: 58, weight: .bold, design: .rounded))
                             .foregroundStyle(.white.opacity(0.95))
@@ -23,7 +23,7 @@ struct HomeView: View {
                             .foregroundStyle(.white.opacity(0.60))
                             .multilineTextAlignment(.center)
                     }
-                    .padding(.horizontal, 28)
+                    .padding(.horizontal, AppSpacing.screenHorizontal)
 
                     ModePillsView(selectedMode: $viewModel.selectedMode)
 
@@ -49,16 +49,16 @@ struct HomeView: View {
                             .font(.system(size: 20, weight: .medium, design: .rounded))
                             .foregroundStyle(.white.opacity(0.72))
                             .frame(maxWidth: .infinity)
-                            .frame(height: 92)
+                            .frame(height: AppHeights.floatingTabBar)
                             .background {
-                                RoundedRectangle(cornerRadius: 46, style: .continuous)
+                                RoundedRectangle(cornerRadius: AppRadii.pill, style: .continuous)
                                     .fill(.ultraThinMaterial)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 46, style: .continuous)
+                                        RoundedRectangle(cornerRadius: AppRadii.pill, style: .continuous)
                                             .stroke(Color.white.opacity(0.20), lineWidth: 1.2)
                                     )
                                     .overlay {
-                                        RoundedRectangle(cornerRadius: 46, style: .continuous)
+                                        RoundedRectangle(cornerRadius: AppRadii.pill, style: .continuous)
                                             .fill(
                                                 LinearGradient(
                                                     colors: [Color.white.opacity(0.10), Color.clear],
@@ -70,7 +70,7 @@ struct HomeView: View {
                             }
                     }
                     .buttonStyle(.plain)
-                    .padding(.horizontal, 20)
+                    .padding(.horizontal, AppSpacing.screenHorizontal)
 
                     Spacer(minLength: max(geo.size.height * 0.07, 18))
                 }

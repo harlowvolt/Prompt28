@@ -4,7 +4,7 @@ struct ModePillsView: View {
     @Binding var selectedMode: PromptMode
 
     var body: some View {
-        HStack(spacing: 14) {
+        HStack(spacing: AppSpacing.element) {
             ForEach(PromptMode.allCases) { mode in
                 Button {
                     withAnimation(.spring(response: 0.45, dampingFraction: 0.75)) {
@@ -15,13 +15,13 @@ struct ModePillsView: View {
                         .font(.system(size: 33, weight: .semibold, design: .rounded))
                         .minimumScaleFactor(0.6)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 74)
+                        .frame(height: AppHeights.segmentedControl)
                         .background(
                             .ultraThinMaterial,
-                            in: RoundedRectangle(cornerRadius: 37, style: .continuous)
+                            in: RoundedRectangle(cornerRadius: AppRadii.pill, style: .continuous)
                         )
                         .overlay {
-                            RoundedRectangle(cornerRadius: 37, style: .continuous)
+                            RoundedRectangle(cornerRadius: AppRadii.pill, style: .continuous)
                                 .fill(
                                     LinearGradient(
                                         colors: [Color.white.opacity(0.08), Color.clear],
@@ -32,10 +32,10 @@ struct ModePillsView: View {
                         }
                         .overlay {
                             if mode == selectedMode {
-                                RoundedRectangle(cornerRadius: 37, style: .continuous)
+                                RoundedRectangle(cornerRadius: AppRadii.pill, style: .continuous)
                                     .strokeBorder(Color.white.opacity(0.35), lineWidth: 1.5)
                             } else {
-                                RoundedRectangle(cornerRadius: 37, style: .continuous)
+                                RoundedRectangle(cornerRadius: AppRadii.pill, style: .continuous)
                                     .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
                             }
                         }
@@ -43,6 +43,6 @@ struct ModePillsView: View {
                 .foregroundStyle(mode == selectedMode ? .white.opacity(0.96) : .white.opacity(0.64))
             }
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, AppSpacing.screenHorizontal)
     }
 }
