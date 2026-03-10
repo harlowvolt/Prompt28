@@ -52,7 +52,7 @@ struct HomeView: View {
                     modeDescriptionLine
                         .padding(.top, 24)
 
-                    orbSection
+                    orbSection(screenWidth: proxy.size.width)
                         .padding(.top, 36)
 
                     transcriptSection
@@ -210,9 +210,9 @@ struct HomeView: View {
 
     // MARK: - Orb + Transcript + Result
 
-    private var orbSection: some View {
-        let restingOrb = min(UIScreen.main.bounds.width * 0.90, 360)
-        let resultOrb = min(UIScreen.main.bounds.width * 0.70, 286)
+    private func orbSection(screenWidth: CGFloat) -> some View {
+        let restingOrb = min(screenWidth * 0.90, 360)
+        let resultOrb = min(screenWidth * 0.70, 286)
 
         return OrbView(engine: orbEngine, onTranscript: generateFromText)
             .frame(width: hasResult ? resultOrb : restingOrb, height: hasResult ? resultOrb : restingOrb)
