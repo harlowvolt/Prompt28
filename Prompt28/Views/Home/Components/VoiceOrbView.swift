@@ -2,48 +2,52 @@ import SwiftUI
 
 struct VoiceOrbView: View {
     @Binding var isRecording: Bool
-    @State private var pulse: Double = 0
+    @State private var pulse: CGFloat = 0
 
     var body: some View {
         GeometryReader { geo in
             let base = min(geo.size.width, geo.size.height)
 
             ZStack {
-                ForEach(0..<3, id: \.self) { i in
+                ForEach(0..<2, id: \.self) { i in
                     Circle()
-                        .stroke(
-                            Color.neonPurple.opacity(0.65 - Double(i) * 0.2),
-                            lineWidth: base * 0.0085
+                        .fill(
+                            Color.orbGlowBlue.opacity(i == 0 ? 0.38 : 0.18)
                         )
-                        .frame(width: base * (1.12 + CGFloat(i) * 0.26))
-                        .blur(radius: CGFloat(i) * 4.5)
-                        .scaleEffect(isRecording ? 1.0 + sin(pulse + Double(i)) * 0.055 : 1.0)
-                        .opacity(isRecording ? 1.0 - Double(i) * 0.22 : 0.35)
+                        .frame(width: base * (1.08 + CGFloat(i) * 0.12))
+                        .blur(radius: i == 0 ? 28 : 42)
+                        .scaleEffect(isRecording ? (1.0 + pulse * (0.05 + CGFloat(i) * 0.03)) : 1.0)
                 }
 
                 Circle()
                     .fill(
                         RadialGradient(
-                            colors: [.white.opacity(0.28), .neonPurple],
-                            center: .center,
+                            colors: [Color.white.opacity(0.26), Color.orbCoreMid, Color.orbCoreDark],
+                            center: UnitPoint(x: 0.30, y: 0.22),
                             startRadius: 0,
-                            endRadius: base * 0.42
+                            endRadius: base * 0.54
                         )
                     )
-                    .frame(width: base * 0.71)
+                    .frame(width: base * 0.96)
                     .overlay(
-                        Circle().stroke(Color.white.opacity(0.22), lineWidth: 3)
+                        Circle()
+                            .stroke(Color.white.opacity(0.74), lineWidth: 1.2)
                     )
-                    .shadow(color: .neonPurple.opacity(0.95), radius: 45)
-                    .shadow(color: .neonCyan.opacity(0.55), radius: 70)
+
+                Image(systemName: "mic.fill")
+                    .font(.system(size: base * 0.17, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.96))
+                    .shadow(color: .white.opacity(0.35), radius: 10)
             }
             .frame(width: base, height: base)
         }
         .aspectRatio(1, contentMode: .fit)
+        .shadow(color: Color.orbGlowBlue.opacity(0.74), radius: 35)
+        .shadow(color: Color.orbGlowBlue.opacity(0.38), radius: 64)
         .onChange(of: isRecording) { _, newValue in
             if newValue {
                 withAnimation(.easeInOut(duration: 1.65).repeatForever(autoreverses: true)) {
-                    pulse = .pi * 2
+                    pulse = 1
                 }
             } else {
                 pulse = 0

@@ -125,9 +125,9 @@ private extension OrbView {
                     RadialGradient(
                         colors: [
                             Color.white.opacity(0.95),
-                            Color.cyan.opacity(0.42),
-                            Color.blue.opacity(0.28),
-                            Color.black.opacity(0.92)
+                            Color(red: 0.50, green: 0.76, blue: 1.00).opacity(0.68),
+                            Color(red: 0.18, green: 0.32, blue: 0.80).opacity(0.82),
+                            Color(red: 0.04, green: 0.06, blue: 0.28).opacity(0.88)
                         ],
                         center: UnitPoint(x: 0.38, y: 0.28),
                         startRadius: 2,
@@ -139,9 +139,9 @@ private extension OrbView {
                         .fill(
                             LinearGradient(
                                 colors: [
-                                    Color.white.opacity(0.28),
+                                    Color.white.opacity(0.32),
                                     Color.clear,
-                                    Color.purple.opacity(0.08)
+                                    Color(red: 0.50, green: 0.30, blue: 0.90).opacity(0.10)
                                 ],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
@@ -152,35 +152,39 @@ private extension OrbView {
                 .overlay {
                     Circle()
                         .stroke(
-                            LinearGradient(
+                            AngularGradient(
                                 colors: [
-                                    Color.white.opacity(0.65),
-                                    Color.cyan.opacity(0.18),
-                                    Color.purple.opacity(0.14),
-                                    Color.white.opacity(0.30)
+                                    Color(red: 0.55, green: 0.82, blue: 1.00).opacity(0.92),
+                                    Color.white.opacity(0.96),
+                                    Color(red: 0.72, green: 0.55, blue: 1.00).opacity(0.88),
+                                    Color(red: 0.42, green: 0.68, blue: 1.00).opacity(0.80),
+                                    Color.white.opacity(0.94),
+                                    Color(red: 0.55, green: 0.82, blue: 1.00).opacity(0.92)
                                 ],
-                                startPoint: .topLeading,
-                                endPoint: .bottomTrailing
+                                center: .center
                             ),
-                            lineWidth: 1.2
+                            lineWidth: max(1.6, size * 0.010)
                         )
                 }
-                .shadow(color: Color.blue.opacity(0.20), radius: 18)
-                .shadow(color: Color.purple.opacity(0.18), radius: 28)
+                .shadow(color: Color(red: 0.30, green: 0.55, blue: 1.00).opacity(0.55), radius: 28)
+                .shadow(color: Color.purple.opacity(0.38), radius: 44)
+                .shadow(color: Color.cyan.opacity(0.22), radius: 58)
 
+            // Top-left glass highlight
             Circle()
                 .fill(
                     RadialGradient(
                         colors: [
-                            Color.white.opacity(0.34),
+                            Color.white.opacity(0.52),
+                            Color.white.opacity(0.14),
                             Color.clear
                         ],
                         center: UnitPoint(x: 0.34, y: 0.25),
                         startRadius: 1,
-                        endRadius: size * 0.18
+                        endRadius: size * 0.22
                     )
                 )
-                .frame(width: size * 0.46, height: size * 0.46)
+                .frame(width: size * 0.50, height: size * 0.50)
                 .offset(x: -size * 0.12, y: -size * 0.16)
 
             sparklesLayer(size: size, time: time)
@@ -200,12 +204,14 @@ private extension OrbView {
     }
 
     func sparkle(x: CGFloat, y: CGFloat, size: CGFloat, opacity: Double) -> some View {
-        Circle()
+        // orbDiameter ≈ size / 0.030 — back-calculate so offset scales with orb
+        let orbDiameter = size / 0.030
+        return Circle()
             .fill(Color.white.opacity(opacity))
             .frame(width: size, height: size)
             .blur(radius: 0.3)
-            .shadow(color: Color.cyan.opacity(0.35), radius: 4)
-            .offset(x: x * 220, y: y * 220)
+            .shadow(color: Color.cyan.opacity(0.40), radius: 5)
+            .offset(x: x * orbDiameter * 0.40, y: y * orbDiameter * 0.40)
     }
 
     func processingSpinner(size: CGFloat, time: TimeInterval) -> some View {

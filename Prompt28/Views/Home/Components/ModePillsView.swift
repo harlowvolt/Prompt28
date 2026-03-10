@@ -12,26 +12,37 @@ struct ModePillsView: View {
                     }
                 } label: {
                     Text(mode.rawValue)
-                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .font(.system(size: 33, weight: .semibold, design: .rounded))
+                        .minimumScaleFactor(0.6)
                         .frame(maxWidth: .infinity)
-                        .padding(.vertical, 15)
+                        .frame(height: 74)
                         .background(
                             .ultraThinMaterial,
-                            in: RoundedRectangle(cornerRadius: 32, style: .continuous)
+                            in: RoundedRectangle(cornerRadius: 37, style: .continuous)
                         )
                         .overlay {
+                            RoundedRectangle(cornerRadius: 37, style: .continuous)
+                                .fill(
+                                    LinearGradient(
+                                        colors: [Color.white.opacity(0.08), Color.clear],
+                                        startPoint: .topLeading,
+                                        endPoint: .bottomTrailing
+                                    )
+                                )
+                        }
+                        .overlay {
                             if mode == selectedMode {
-                                RoundedRectangle(cornerRadius: 32, style: .continuous)
-                                    .strokeBorder(LinearGradient.neonBorder, lineWidth: 2.5)
+                                RoundedRectangle(cornerRadius: 37, style: .continuous)
+                                    .strokeBorder(Color.white.opacity(0.35), lineWidth: 1.5)
                             } else {
-                                RoundedRectangle(cornerRadius: 32, style: .continuous)
-                                    .strokeBorder(Color.white.opacity(0.12), lineWidth: 1)
+                                RoundedRectangle(cornerRadius: 37, style: .continuous)
+                                    .strokeBorder(Color.white.opacity(0.15), lineWidth: 1)
                             }
                         }
                 }
-                .foregroundStyle(mode == selectedMode ? .white : .white.opacity(0.75))
+                .foregroundStyle(mode == selectedMode ? .white.opacity(0.96) : .white.opacity(0.64))
             }
         }
-        .padding(.horizontal, 28)
+        .padding(.horizontal, 24)
     }
 }

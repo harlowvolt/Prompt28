@@ -5,41 +5,96 @@ struct HomeView: View {
 
     var body: some View {
         GeometryReader { geo in
-            ZStack(alignment: .topTrailing) {
+            ZStack {
                 CyberBackgroundGradient()
 
-                VStack(spacing: geo.size.height * 0.042) {
-                    Spacer(minLength: geo.size.height * 0.07)
+                VStack(spacing: 20) {
+                    Spacer(minLength: max(geo.size.height * 0.03, 14))
 
-                    Text("PROMPT²⁸")
-                        .font(.system(size: 38, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                    VStack(spacing: 8) {
+                        Text("Natalie,")
+                            .font(.system(size: 58, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.95))
+                            .minimumScaleFactor(0.85)
+                            .lineLimit(1)
 
-                    Text("What do you want to make today?")
-                        .font(.system(size: 20, weight: .regular, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.78))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 40)
+                        Text("What do you want to make today?")
+                            .font(.system(size: 22, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.60))
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.horizontal, 28)
+
+                    ModePillsView(selectedMode: $viewModel.selectedMode)
+
+                    Text(helperText)
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.36))
 
                     VoiceOrbView(isRecording: $viewModel.isRecording)
-                        .frame(width: min(geo.size.width * 0.58, 310))
+                        .frame(width: min(geo.size.width * 0.70, 360))
+                        .contentShape(Circle())
                         .onTapGesture {
                             viewModel.toggleRecording()
                         }
 
-                    ModePillsView(selectedMode: $viewModel.selectedMode)
+                    Text("Tap to speak")
+                        .font(.system(size: 18, weight: .medium, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.56))
 
-                    Spacer(minLength: geo.size.height * 0.14)
+                    Button {
+                        // Presentation-only control on this screen for now.
+                    } label: {
+                        Text("Type instead")
+                            .font(.system(size: 20, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.72))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 92)
+                            .background {
+                                RoundedRectangle(cornerRadius: 46, style: .continuous)
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 46, style: .continuous)
+                                            .stroke(Color.white.opacity(0.20), lineWidth: 1.2)
+                                    )
+                                    .overlay {
+                                        RoundedRectangle(cornerRadius: 46, style: .continuous)
+                                            .fill(
+                                                LinearGradient(
+                                                    colors: [Color.white.opacity(0.10), Color.clear],
+                                                    startPoint: .topLeading,
+                                                    endPoint: .bottomTrailing
+                                                )
+                                            )
+                                    }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 20)
+
+                    Spacer(minLength: max(geo.size.height * 0.07, 18))
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.top, geo.safeAreaInsets.top + 26)
+                .padding(.bottom, max(geo.safeAreaInsets.bottom, 12))
 
                 SettingsButton {
                     viewModel.openSettings()
                 }
                 .padding(.top, geo.safeAreaInsets.top + 18)
                 .padding(.trailing, 20)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }
         }
         .preferredColorScheme(.dark)
+    }
+
+    private var helperText: String {
+        switch viewModel.selectedMode {
+        case .ai:
+            return "Standard AI prompt style"
+        case .human:
+            return "Human-like tone and phrasing"
+        }
     }
 }

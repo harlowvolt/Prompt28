@@ -114,14 +114,25 @@ struct HomeView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        HStack {
+        HStack(alignment: .top) {
             Color.clear
                 .frame(width: 42, height: 42)
 
             VStack(spacing: 6) {
-                Text(firstName)
+                Text("\(firstName),")
                     .font(.system(size: 44, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
+                    .kerning(-0.9)
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [
+                                Color.white,
+                                Color(red: 0.82, green: 0.88, blue: 1.00),
+                                Color(red: 0.68, green: 0.58, blue: 1.00)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
                     .frame(maxWidth: .infinity)
             }
             .frame(maxWidth: .infinity, alignment: .center)
@@ -130,12 +141,15 @@ struct HomeView: View {
                 activeSheet = .settings
             } label: {
                 Image(systemName: "gearshape.fill")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(Color(red: 0.90, green: 0.92, blue: 0.95).opacity(0.78))
                     .frame(width: 42, height: 42)
-                    .background(.ultraThinMaterial)
-                    .clipShape(Circle())
-                    .overlay(Circle().stroke(Color.white.opacity(0.16), lineWidth: 1))
+                    .background(
+                        Circle()
+                            .fill(Color.white.opacity(0.08))
+                            .overlay(Circle().stroke(Color.white.opacity(0.14), lineWidth: 1))
+                            .shadow(color: .black.opacity(0.40), radius: 11, y: 8)
+                    )
             }
             .buttonStyle(.plain)
             .padding(.leading, 6)
@@ -221,6 +235,7 @@ struct HomeView: View {
                 .shadow(color: selected ? Color.blue.opacity(0.35) : .clear, radius: 16)
         }
         .buttonStyle(.plain)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Orb + Transcript + Result
@@ -338,7 +353,23 @@ struct HomeView: View {
     private var firstName: String {
         let full = env.authManager.currentUser?.name ?? ""
         let first = full.components(separatedBy: " ").first ?? ""
-        return first.isEmpty ? "there" : first
+        // If the name looks like a UID (short alphanumeric blob with digits), skip it
+        let looksLikeUID = first.count < 20
+            && first.contains(where: { $0.isNumber })
+            && !first.contains(" ")
+            && first.filter({ $0.isLetter }).count < 8
+        if !first.isEmpty && !looksLikeUID {
+            return first
+        }
+        // Fallback: use email prefix, strip trailing digits
+        let email = env.authManager.currentUser?.email ?? ""
+        let prefix = email.components(separatedBy: "@").first ?? ""
+        // Strip numbers and separators from end to get a name
+        let letters = prefix.prefix(while: { $0.isLetter })
+        if !letters.isEmpty {
+            return letters.prefix(1).uppercased() + letters.dropFirst().lowercased()
+        }
+        return "there"
     }
 
     private func generateFromText(_ finalText: String) {

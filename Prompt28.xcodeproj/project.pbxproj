@@ -18,7 +18,6 @@
 		CCAB0BB02F5D780200C29A7E /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B7C2F5D780200C29A7E /* FavoritesView.swift */; };
 		CCAB0BB12F5D780200C29A7E /* UpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B8C2F5D780200C29A7E /* UpgradeView.swift */; };
 		CCAB0BB22F5D780200C29A7E /* AppPreferences.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B9C2F5D780200C29A7E /* AppPreferences.swift */; };
-		CCAB0BB32F5D780200C29A7E /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B812F5D780200C29A7E /* HomeViewModel.swift */; };
 		CCAB0BB52F5D780200C29A7E /* ResultView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B852F5D780200C29A7E /* ResultView.swift */; };
 		CCAB0BB62F5D780200C29A7E /* TrendingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B8F2F5D780200C29A7E /* TrendingViewModel.swift */; };
 		CCAB0BB72F5D780200C29A7E /* OrbEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B562F5D780200C29A7E /* OrbEngine.swift */; };
@@ -27,7 +26,6 @@
 		CCAB0BBA2F5D780200C29A7E /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B5A2F5D780200C29A7E /* KeychainService.swift */; };
 		CCAB0BBB2F5D780200C29A7E /* PromptHistoryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B9D2F5D780200C29A7E /* PromptHistoryItem.swift */; };
 		CCAB0BBC2F5D780200C29A7E /* NetworkError.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B5F2F5D780200C29A7E /* NetworkError.swift */; };
-		CCAB0BBD2F5D780200C29A7E /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B832F5D780200C29A7E /* HomeView.swift */; };
 		CCAB0BBE2F5D780200C29A7E /* GenerateModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B972F5D780200C29A7E /* GenerateModels.swift */; };
 		CCAB0BBF2F5D780200C29A7E /* HistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B7A2F5D780200C29A7E /* HistoryViewModel.swift */; };
 		CCAB0BC02F5D780200C29A7E /* PromptMeNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0BAB2F5D780200C29A7E /* PromptMeNativeApp.swift */; };
@@ -722,7 +720,6 @@
 				CCAB0BB02F5D780200C29A7E /* FavoritesView.swift in Sources */,
 				CCAB0BB12F5D780200C29A7E /* UpgradeView.swift in Sources */,
 				CCAB0BB22F5D780200C29A7E /* AppPreferences.swift in Sources */,
-				CCAB0BB32F5D780200C29A7E /* HomeViewModel.swift in Sources */,
 				CCAB0BB52F5D780200C29A7E /* ResultView.swift in Sources */,
 				CCAB0BB62F5D780200C29A7E /* TrendingViewModel.swift in Sources */,
 				CCAB0BB72F5D780200C29A7E /* OrbEngine.swift in Sources */,
@@ -731,7 +728,6 @@
 				CCAB0BBA2F5D780200C29A7E /* KeychainService.swift in Sources */,
 				CCAB0BBB2F5D780200C29A7E /* PromptHistoryItem.swift in Sources */,
 				CCAB0BBC2F5D780200C29A7E /* NetworkError.swift in Sources */,
-				CCAB0BBD2F5D780200C29A7E /* HomeView.swift in Sources */,
 				CCAB0BBE2F5D780200C29A7E /* GenerateModels.swift in Sources */,
 				CCAB0BBF2F5D780200C29A7E /* HistoryViewModel.swift in Sources */,
 				CCAB0BC02F5D780200C29A7E /* PromptMeNativeApp.swift in Sources */,
