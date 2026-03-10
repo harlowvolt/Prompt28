@@ -33,10 +33,23 @@ private func topmostViewController(from base: UIViewController) -> UIViewControl
 }
 
 private func foregroundKeyWindow() -> UIWindow? {
-    UIApplication.shared.connectedScenes
+    let scenes = UIApplication.shared.connectedScenes
         .compactMap { $0 as? UIWindowScene }
-        .first(where: { $0.activationState == .foregroundActive })?
-        .keyWindow
+        .filter { $0.activationState == .foregroundActive || $0.activationState == .foregroundInactive }
+
+    for scene in scenes {
+        if let key = scene.windows.first(where: { $0.isKeyWindow }) {
+            return key
+        }
+
+        if let visible = scene.windows.first(where: {
+            !$0.isHidden && $0.alpha > 0 && $0.windowLevel == .normal
+        }) {
+            return visible
+        }
+    }
+
+    return nil
 }
 
 // MARK: - Google Sign-In
@@ -80,17 +93,13 @@ final class AppleSignInHelper: NSObject,
     }
 
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        // Prefer the active key window; fall back to the first available window scene key window.
+        // Prefer active scene window lookup so auth UI can always present.
         if let window = foregroundKeyWindow() {
             return window
         }
-        if let window = UIApplication.shared.connectedScenes
-            .compactMap({ $0 as? UIWindowScene })
-            .compactMap({ $0.keyWindow })
-            .first {
-            return window
-        }
-        fatalError("Unable to find a valid window for Apple Sign In")
+
+        // Last-resort empty anchor avoids crashing; caller will receive auth error instead.
+        return ASPresentationAnchor()
     }
 
     func authorizationController(controller: ASAuthorizationController,

@@ -6,13 +6,20 @@ final class HistoryStore: ObservableObject {
     @Published private(set) var items: [PromptHistoryItem] = []
 
     private let maxItems = 200
+    private static let storageDirectoryURL: URL = {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let dir = base.appendingPathComponent("PromptMeNative", isDirectory: true)
+        var isDirectory: ObjCBool = false
+        let exists = FileManager.default.fileExists(atPath: dir.path, isDirectory: &isDirectory)
+        if !exists || !isDirectory.boolValue {
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        }
+        return dir
+    }()
     private let fileURL: URL
 
     init() {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = base.appendingPathComponent("PromptMeNative", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        fileURL = dir.appendingPathComponent("history.json")
+        fileURL = Self.storageDirectoryURL.appendingPathComponent("history.json")
         load()
     }
 

@@ -17,18 +17,14 @@ struct ModePillsView: View {
                         .frame(maxWidth: .infinity)
                         .frame(height: AppHeights.segmentedControl)
                         .background(
-                            .ultraThinMaterial,
+                            mode == selectedMode ? .regularMaterial : .ultraThinMaterial,
                             in: RoundedRectangle(cornerRadius: AppRadii.pill, style: .continuous)
                         )
                         .overlay {
-                            RoundedRectangle(cornerRadius: AppRadii.pill, style: .continuous)
-                                .fill(
-                                    LinearGradient(
-                                        colors: [Color.white.opacity(0.08), Color.clear],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
-                                    )
-                                )
+                            if mode == selectedMode {
+                                RoundedRectangle(cornerRadius: AppRadii.pill, style: .continuous)
+                                    .fill(.thinMaterial)
+                            }
                         }
                         .overlay {
                             if mode == selectedMode {

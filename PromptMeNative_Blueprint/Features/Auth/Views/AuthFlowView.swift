@@ -138,7 +138,7 @@ struct AuthFlowView: View {
                         let authorization = try await appleHelper.signIn()
                         await handleAppleAuth(authorization)
                     } catch {
-                        env.authManager.lastError = error.localizedDescription
+                        env.authManager.lastError = appleSignInMessage(for: error)
                     }
                 }
             } label: {
@@ -423,6 +423,35 @@ struct AuthFlowView: View {
         if env.authManager.isAuthenticated {
             focusedField = nil
             env.authManager.lastError = nil
+        }
+    }
+
+    private func appleSignInMessage(for error: Error) -> String? {
+        guard let authError = error as? ASAuthorizationError else {
+            return error.localizedDescription
+        }
+
+        switch authError.code {
+        case .canceled:
+            return nil
+        case .failed:
+            return "Apple Sign In failed. Please try again."
+        case .invalidResponse:
+            return "Apple Sign In returned an invalid response."
+        case .notHandled:
+            return "Apple Sign In was not handled by the system."
+        case .unknown:
+            return "Apple Sign In is currently unavailable. Please try again."
+        case .notInteractive:
+            return "Apple Sign In requires an interactive session."
+        case .matchedExcludedCredential:
+            return "Selected Apple account is excluded. Choose a different account."
+        case .credentialImport:
+            return "Apple credential import failed."
+        case .credentialExport:
+            return "Apple credential export failed."
+        @unknown default:
+            return "Apple Sign In failed with an unknown error."
         }
     }
 }

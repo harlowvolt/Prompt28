@@ -35,8 +35,6 @@ struct HomeView: View {
     var body: some View {
         GeometryReader { proxy in
             let topSafe = proxy.safeAreaInsets.top
-            let topSpacing = min(64, max(52, proxy.size.height * 0.07))
-            let bottomBreathing = min(34, max(26, proxy.size.height * 0.034))
 
             ZStack {
                 PromptPremiumBackground()
@@ -44,16 +42,16 @@ struct HomeView: View {
 
                 VStack(spacing: 0) {
                     headerSection
-                        .padding(.top, topSafe + topSpacing)
+                        .padding(.top, topSafe + AppSpacing.top)
 
                     modePicker
-                        .padding(.top, 36)
+                        .padding(.top, AppSpacing.section)
 
                     modeDescriptionLine
                         .padding(.top, 24)
 
                     orbSection(screenWidth: proxy.size.width)
-                        .padding(.top, 36)
+                        .padding(.top, AppSpacing.section)
 
                     transcriptSection
                         .padding(.top, 24)
@@ -68,7 +66,7 @@ struct HomeView: View {
 
                     typeInsteadButton
                         .padding(.top, hasResult ? 14 : 24)
-                        .padding(.bottom, bottomBreathing + 18)
+                        .padding(.bottom, AppSpacing.bottomContentClearance)
                 }
                 .frame(width: proxy.size.width, height: proxy.size.height)
             }
@@ -141,7 +139,7 @@ struct HomeView: View {
             .padding(.trailing, 2)
             .padding(.top, 2)
         }
-        .padding(.horizontal, 24)
+        .padding(.horizontal, AppSpacing.screenHorizontal)
     }
 
     // MARK: - Mode Picker
@@ -154,7 +152,7 @@ struct HomeView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, 24)
+        .padding(.horizontal, AppSpacing.screenHorizontal)
     }
 
     private var modeDescriptionLine: some View {
@@ -165,7 +163,7 @@ struct HomeView: View {
             .transition(.opacity.combined(with: .move(edge: .top)))
             .animation(.easeInOut(duration: 0.2), value: generateViewModel.selectedMode)
             .frame(maxWidth: .infinity)
-            .padding(.horizontal, 24)
+            .padding(.horizontal, AppSpacing.screenHorizontal)
     }
 
     private var modeDescription: String {
@@ -189,7 +187,7 @@ struct HomeView: View {
                 .lineLimit(1)
                 .foregroundStyle(isSelected ? .white : .white.opacity(0.62))
                 .frame(maxWidth: .infinity)
-                .frame(height: 58)
+                .frame(height: AppHeights.segmentedControl)
                 .background {
                     if isSelected {
                         Capsule()
@@ -262,7 +260,7 @@ struct HomeView: View {
                 )
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 24)
+        .padding(.horizontal, AppSpacing.screenHorizontal)
     }
 
     // MARK: - Toast
