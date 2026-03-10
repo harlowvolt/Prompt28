@@ -86,18 +86,19 @@ struct HomeView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        HStack(alignment: .top) {
-            VStack(alignment: .leading, spacing: 4) {
+        ZStack(alignment: .topTrailing) {
+            VStack(spacing: 6) {
                 Text("\(firstName),")
-                    .font(.system(size: 30, weight: .bold, design: .rounded))
+                    .font(.system(size: 44, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
+                    .multilineTextAlignment(.center)
 
                 Text("What do you want to make today?")
                     .font(.system(size: 15, weight: .regular, design: .rounded))
                     .foregroundStyle(.white.opacity(0.55))
+                    .multilineTextAlignment(.center)
             }
-
-            Spacer()
+            .frame(maxWidth: .infinity)
 
             Button { activeSheet = .settings } label: {
                 Image(systemName: "gearshape.fill")
@@ -116,20 +117,20 @@ struct HomeView: View {
     // MARK: - Mode Picker
 
     private var modePicker: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack(spacing: 10) {
+        VStack(spacing: 10) {
+            HStack(spacing: 12) {
                 modePill(label: "AI Mode", mode: .ai)
                 modePill(label: "Human Mode", mode: .human)
-                Spacer()
             }
 
             Text(modeDescription)
                 .font(.system(size: 13, weight: .regular, design: .rounded))
                 .foregroundStyle(.white.opacity(0.38))
-                .padding(.horizontal, 4)
+                .multilineTextAlignment(.center)
                 .transition(.opacity.combined(with: .move(edge: .top)))
                 .animation(.easeInOut(duration: 0.2), value: generateViewModel.selectedMode)
         }
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, 24)
         .padding(.bottom, 20)
     }
@@ -150,10 +151,10 @@ struct HomeView: View {
             }
         } label: {
             Text(label)
-                .font(.system(size: 14, weight: isSelected ? .semibold : .regular, design: .rounded))
+                .font(.system(size: 16, weight: isSelected ? .semibold : .regular, design: .rounded))
                 .foregroundStyle(isSelected ? .white : .white.opacity(0.5))
-                .padding(.horizontal, 18)
-                .padding(.vertical, 9)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 13)
                 .background {
                     if isSelected {
                         Capsule()
@@ -173,8 +174,8 @@ struct HomeView: View {
 
     private var orbSection: some View {
         GeometryReader { proxy in
-            let orbSize   = min(proxy.size.width * 0.72, 320)
-            let smallOrb  = min(proxy.size.width * 0.52, 220)
+            let orbSize   = min(proxy.size.width * 0.88, 380)
+            let smallOrb  = min(proxy.size.width * 0.62, 260)
 
             VStack(spacing: 0) {
                 if hasResult {
