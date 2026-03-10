@@ -3,12 +3,12 @@ import SwiftUI
 
 struct AuthFlowView: View {
     @EnvironmentObject private var env: AppEnvironment
+    @State private var appleHelper = AppleSignInHelper()
 
     @State private var isSignup = false
     @State private var name = ""
     @State private var email = ""
     @State private var password = ""
-    @State private var googleCredential = ""
     @FocusState private var focusedField: AuthInputField?
 
     var body: some View {
@@ -38,46 +38,53 @@ struct AuthFlowView: View {
                                 .frame(maxWidth: .infinity, alignment: .leading)
                         }
 
-                        SignInWithAppleButton(.continue) { request in
-                            request.requestedScopes = [.email, .fullName]
-                        } onCompletion: { result in
+                        // Plain SwiftUI button triggers ASAuthorizationController
+                        // programmatically — avoids UIKit/SwiftUI gesture conflicts
+                        // that make SignInWithAppleButton unresponsive in ScrollViews.
+                        Button {
+                            focusedField = nil
                             Task {
-                                switch result {
-                                case .success(let authorization):
+                                do {
+                                    let authorization = try await appleHelper.signIn()
                                     await handleAppleAuth(authorization)
-                                case .failure(let error):
+                                } catch {
                                     env.authManager.lastError = error.localizedDescription
                                 }
                             }
+                        } label: {
+                            Label("Continue with Apple", systemImage: "applelogo")
+                                .font(.system(size: 17, weight: .semibold))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 44)
                         }
-                        .signInWithAppleButtonStyle(.black)
-                        .frame(height: 44)
+                        .buttonStyle(.borderedProminent)
+                        .tint(Color(.label))          // black in light, white in dark
+                        .foregroundStyle(Color(.systemBackground))
+                        .disabled(env.authManager.isAuthenticating)
 
-                        VStack(alignment: .leading, spacing: 8) {
-                            Text("Google ID token")
-                                .font(.caption)
-                                .foregroundStyle(.secondary)
-
-                            TextField("Paste Google credential", text: $googleCredential)
-                                .textFieldStyle(.roundedBorder)
-                                .textInputAutocapitalization(.never)
-                                .autocorrectionDisabled(true)
-                                .focused($focusedField, equals: .googleToken)
-                                .submitLabel(.done)
-                                .onSubmit {
-                                    focusedField = nil
-                                }
-
-                            Button("Continue with Google token") {
+                        Button {
                                 focusedField = nil
                                 Task {
-                                    await env.authManager.loginWithGoogle(credential: googleCredential)
-                                    routeIfAuthenticated()
+                                    do {
+                                        let idToken = try await OAuthCoordinator.googleIDToken()
+                                        await env.authManager.loginWithGoogle(credential: idToken)
+                                        routeIfAuthenticated()
+                                    } catch {
+                                        env.authManager.lastError = error.localizedDescription
+                                    }
                                 }
+                            } label: {
+                                HStack(spacing: 10) {
+                                    Image(systemName: "globe")
+                                        .font(.system(size: 17, weight: .medium))
+                                    Text("Continue with Google")
+                                        .font(.system(size: 17, weight: .medium))
+                                }
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 44)
                             }
-                            .buttonStyle(.bordered)
-                            .disabled(env.authManager.isAuthenticating || googleCredential.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
-                        }
+                        .buttonStyle(.bordered)
+                        .disabled(env.authManager.isAuthenticating)
 
                         if let error = env.authManager.lastError, !error.isEmpty {
                             Text(error)
@@ -89,10 +96,11 @@ struct AuthFlowView: View {
                             .frame(height: 120)
                     }
                     .padding()
-                    .contentShape(Rectangle())
-                    .onTapGesture {
+                    // simultaneousGesture lets child UIKit views (SignInWithAppleButton)
+                    // still receive their own taps while the parent also handles dismissal.
+                    .simultaneousGesture(TapGesture().onEnded { _ in
                         focusedField = nil
-                    }
+                    })
                 }
                 .scrollDismissesKeyboard(.interactively)
                 .onChange(of: focusedField) { _, field in

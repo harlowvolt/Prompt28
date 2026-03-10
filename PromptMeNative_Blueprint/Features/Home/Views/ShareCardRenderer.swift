@@ -18,7 +18,7 @@ final class ShareCardRenderer {
         )
 
         let renderer = ImageRenderer(content: view)
-        renderer.scale = UIScreen.main.scale
+        renderer.scale = 3.0 // @3x — all modern iPhones; avoids deprecated UIScreen.main
         renderer.proposedSize = .init(CGSize(width: 400, height: 650))
 
         return renderer.uiImage

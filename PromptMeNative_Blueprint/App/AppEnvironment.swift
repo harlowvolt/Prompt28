@@ -10,6 +10,8 @@ final class AppEnvironment: ObservableObject {
     let preferencesStore: PreferencesStore
     let router: AppRouter
 
+    private var cancellables = Set<AnyCancellable>()
+
     init() {
         let baseURL = URL(string: "https://promptme-app-production.up.railway.app")!
         let keychain = KeychainService()
@@ -21,5 +23,10 @@ final class AppEnvironment: ObservableObject {
         self.historyStore = HistoryStore()
         self.preferencesStore = PreferencesStore()
         self.router = AppRouter()
+
+        // Forward authManager changes to AppEnvironment so RootView re-renders on login/logout
+        self.authManager.objectWillChange
+            .sink { [weak self] _ in self?.objectWillChange.send() }
+            .store(in: &cancellables)
     }
 }

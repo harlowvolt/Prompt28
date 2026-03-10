@@ -12,7 +12,6 @@ enum MainTab: Hashable {
     case trending
     case history
     case favorites
-    case settings
     case admin
 }
 
