@@ -179,25 +179,7 @@ struct HistoryView: View {
     // MARK: - Search Field
 
     private var searchField: some View {
-        HStack(spacing: PromptTheme.Spacing.xs) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
-                .font(.system(size: 14, weight: .medium))
-
-            TextField("Search history", text: $viewModel.query)
-                .font(PromptTheme.Typography.rounded(15, .medium))
-                .foregroundStyle(PromptTheme.paleLilacWhite)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .tint(PromptTheme.softLilac)
-        }
-        .padding(.horizontal, PromptTheme.Spacing.s)
-        .padding(.vertical, PromptTheme.Spacing.xs)
-        .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 1)
-        )
+        AppSearchField(placeholder: "Search history", text: $viewModel.query)
     }
 
     // MARK: - Empty State
@@ -217,12 +199,8 @@ struct HistoryView: View {
                 .foregroundStyle(PromptTheme.softLilac.opacity(0.60))
                 .multilineTextAlignment(.center)
         }
-        .padding(PromptTheme.Spacing.l)
-        .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
+        .padding(AppSpacing.cardInset)
+        .appGlassCard()
         .frame(maxWidth: .infinity)
         .frame(minHeight: 260, alignment: .center)
     }
@@ -300,7 +278,12 @@ struct HistoryView: View {
                         .font(.system(size: 13, weight: .semibold))
                         .foregroundStyle(PromptTheme.softLilac.opacity(0.50))
                         .frame(width: 32, height: 28)
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+                        .background(
+                            RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                .fill(Color.white.opacity(0.08))
+                                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                                    .stroke(Color.white.opacity(0.14), lineWidth: 1))
+                        )
                 }
                 .buttonStyle(.plain)
 
@@ -311,12 +294,8 @@ struct HistoryView: View {
                 }
             }
         }
-        .padding(PromptTheme.Spacing.s)
-        .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 1)
-        )
+        .padding(AppSpacing.cardInset)
+        .appGlassCard()
     }
 
     // MARK: - Shared Helpers
@@ -332,10 +311,13 @@ struct HistoryView: View {
             .foregroundStyle(color)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(
+            .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(color.opacity(0.22), lineWidth: 1)
+                    .fill(Color.white.opacity(0.08))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                            .stroke(color.opacity(0.25), lineWidth: 1)
+                    )
             )
         }
         .buttonStyle(.plain)

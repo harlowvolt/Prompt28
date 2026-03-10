@@ -3,46 +3,21 @@ import SwiftUI
 struct PremiumTabScreen<Content: View>: View {
     let title: String
     var isScrollable: Bool = true
-    var horizontalPadding: CGFloat = PromptTheme.Spacing.m
-    var topSpacing: CGFloat = PromptTheme.Spacing.xxs
+    var horizontalPadding: CGFloat = AppSpacing.screenHorizontal
+    var topSpacing: CGFloat = AppSpacing.screenTopLarge
     var maxContentWidth: CGFloat = 760
-    var contentSpacing: CGFloat = PromptTheme.Spacing.s
+    var contentSpacing: CGFloat = AppSpacing.section
     @ViewBuilder var content: () -> Content
 
     var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                PromptPremiumBackground()
-
-                if isScrollable {
-                    ScrollView(showsIndicators: false) {
-                        contentLayout(proxy: proxy)
-                    }
-                } else {
-                    contentLayout(proxy: proxy)
-                }
-            }
-            .navigationTitle(title)
-            .navigationBarTitleDisplayMode(.inline)
-        }
-    }
-
-    @ViewBuilder
-    private func contentLayout(proxy: GeometryProxy) -> some View {
-        VStack(alignment: .leading, spacing: PromptTheme.Spacing.m) {
-            Text(title)
-                .font(PromptTheme.Typography.rounded(24, .semibold))
-                .foregroundStyle(PromptTheme.paleLilacWhite)
-                .padding(.top, PromptTheme.Spacing.xxs)
-
+        AppScreenContainer(
+            title: title,
+            isScrollable: isScrollable,
+            horizontalPadding: horizontalPadding,
+            topSpacing: topSpacing,
+            contentSpacing: contentSpacing
+        ) {
             content()
-
-            Color.clear
-                .frame(height: max(PromptTheme.Spacing.s, proxy.safeAreaInsets.bottom + PromptTheme.Spacing.xs))
         }
-        .frame(maxWidth: maxContentWidth)
-        .frame(maxWidth: .infinity, alignment: .top)
-        .padding(.horizontal, horizontalPadding)
-        .padding(.top, topSpacing)
     }
 }

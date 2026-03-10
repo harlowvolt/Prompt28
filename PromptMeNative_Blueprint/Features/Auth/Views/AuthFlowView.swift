@@ -19,12 +19,12 @@ struct AuthFlowView: View {
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
-                        Spacer(minLength: 52)
+                        Spacer(minLength: AppSpacing.screenTopLarge + 20)
 
                         brandHeader
-                            .padding(.bottom, 40)
+                            .padding(.bottom, AppSpacing.section)
 
-                        VStack(spacing: 16) {
+                        VStack(spacing: AppSpacing.sectionTight) {
                             socialButtons
 
                             orDivider
@@ -44,13 +44,13 @@ struct AuthFlowView: View {
                                     .padding(.horizontal, 4)
                             }
                         }
-                        .padding(.horizontal, 28)
+                        .padding(.horizontal, AppSpacing.screenHorizontal)
 
                         termsFooter
-                            .padding(.top, 32)
-                            .padding(.horizontal, 28)
+                            .padding(.top, AppSpacing.section)
+                            .padding(.horizontal, AppSpacing.screenHorizontal)
 
-                        Spacer(minLength: 48)
+                        Spacer(minLength: 40)
                     }
                     .frame(minHeight: 700)
                     .simultaneousGesture(TapGesture().onEnded { _ in
@@ -77,7 +77,7 @@ struct AuthFlowView: View {
     // MARK: - Brand Header
 
     private var brandHeader: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: AppSpacing.element) {
             HStack(spacing: 0) {
                 Text("Prompt")
                     .font(.system(size: 44, weight: .bold, design: .rounded))
@@ -103,7 +103,7 @@ struct AuthFlowView: View {
     // MARK: - Social Buttons
 
     private var socialButtons: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: AppSpacing.element) {
             // Google
             Button {
                 focusedField = nil
@@ -124,8 +124,8 @@ struct AuthFlowView: View {
                         .foregroundStyle(Color(red: 0.10, green: 0.09, blue: 0.15))
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(.white, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .frame(height: AppHeights.primaryButton)
+                .background(.white, in: RoundedRectangle(cornerRadius: AppRadii.control, style: .continuous))
             }
             .buttonStyle(.plain)
             .disabled(env.authManager.isAuthenticating)
@@ -151,10 +151,10 @@ struct AuthFlowView: View {
                         .foregroundStyle(.white)
                 }
                 .frame(maxWidth: .infinity)
-                .frame(height: 52)
-                .background(Color.black, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+                .frame(height: AppHeights.primaryButton)
+                .background(Color.black, in: RoundedRectangle(cornerRadius: AppRadii.control, style: .continuous))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: AppRadii.control, style: .continuous)
                         .stroke(Color.white.opacity(0.14), lineWidth: 1)
                 )
             }
@@ -206,13 +206,13 @@ struct AuthFlowView: View {
                         .font(.system(size: 15, weight: isActive ? .semibold : .medium, design: .rounded))
                         .foregroundStyle(isActive ? .white : .white.opacity(0.40))
                         .frame(maxWidth: .infinity)
-                        .frame(height: 44)
+                        .frame(height: AppHeights.segmented - 12)
                         .background {
                             if isActive {
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                RoundedRectangle(cornerRadius: AppRadii.control - 6, style: .continuous)
                                     .fill(PromptTheme.mutedViolet.opacity(0.55))
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                        RoundedRectangle(cornerRadius: AppRadii.control - 6, style: .continuous)
                                             .stroke(PromptTheme.softLilac.opacity(0.30), lineWidth: 1)
                                     )
                             }
@@ -222,12 +222,13 @@ struct AuthFlowView: View {
             }
         }
         .padding(4)
+        .frame(height: AppHeights.segmented)
         .background(
-            RoundedRectangle(cornerRadius: 13, style: .continuous)
-                .fill(.ultraThinMaterial)
+            RoundedRectangle(cornerRadius: AppRadii.control, style: .continuous)
+                .fill(Color.white.opacity(0.07))
                 .overlay(
-                    RoundedRectangle(cornerRadius: 13, style: .continuous)
-                        .stroke(Color.white.opacity(0.09), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: AppRadii.control, style: .continuous)
+                        .stroke(Color.white.opacity(0.13), lineWidth: 1)
                 )
         )
     }
@@ -236,7 +237,7 @@ struct AuthFlowView: View {
 
     @ViewBuilder
     private var formFields: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: AppSpacing.element) {
             if isSignup {
                 nameField
                     .transition(.asymmetric(
@@ -261,7 +262,7 @@ struct AuthFlowView: View {
     }
 
     private var nameField: some View {
-        glassField(isFocused: focusedField == .name) {
+        AppGlassField(isFocused: focusedField == .name) {
             HStack(spacing: 10) {
                 Image(systemName: "person")
                     .font(.system(size: 14, weight: .medium))
@@ -282,7 +283,7 @@ struct AuthFlowView: View {
     }
 
     private var emailField: some View {
-        glassField(isFocused: focusedField == .email) {
+        AppGlassField(isFocused: focusedField == .email) {
             HStack(spacing: 10) {
                 Image(systemName: "envelope")
                     .font(.system(size: 14, weight: .medium))
@@ -304,7 +305,7 @@ struct AuthFlowView: View {
     }
 
     private var passwordField: some View {
-        glassField(isFocused: focusedField == .password) {
+        AppGlassField(isFocused: focusedField == .password) {
             HStack(spacing: 10) {
                 Image(systemName: "lock")
                     .font(.system(size: 14, weight: .medium))
@@ -329,66 +330,17 @@ struct AuthFlowView: View {
         }
     }
 
-    private func glassField<Content: View>(isFocused: Bool, @ViewBuilder _ content: () -> Content) -> some View {
-        content()
-            .padding(.horizontal, 16)
-            .padding(.vertical, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
-                            .stroke(
-                                isFocused
-                                    ? PromptTheme.softLilac.opacity(0.45)
-                                    : Color.white.opacity(0.09),
-                                lineWidth: 1
-                            )
-                    )
-            )
-            .animation(.easeInOut(duration: 0.15), value: isFocused)
-    }
-
     // MARK: - Submit Button
 
     private var submitButton: some View {
-        Button {
+        AppPrimaryButton(
+            title: isSignup ? "Create Account" : "Log In",
+            isLoading: env.authManager.isAuthenticating,
+            isEnabled: canSubmitEmail
+        ) {
             focusedField = nil
             Task { await submitEmail() }
-        } label: {
-            HStack(spacing: 10) {
-                if env.authManager.isAuthenticating {
-                    ProgressView()
-                        .progressViewStyle(.circular)
-                        .tint(.white)
-                        .scaleEffect(0.85)
-                }
-                Text(isSignup ? "Create Account" : "Log In")
-                    .font(.system(size: 17, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white)
-            }
-            .frame(maxWidth: .infinity)
-            .frame(height: 52)
-            .background(
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: canSubmitEmail
-                                ? [PromptTheme.mutedViolet, Color(red: 0.29, green: 0.21, blue: 0.50)]
-                                : [PromptTheme.mutedViolet.opacity(0.35), Color(red: 0.29, green: 0.21, blue: 0.50).opacity(0.35)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .stroke(PromptTheme.softLilac.opacity(canSubmitEmail ? 0.32 : 0.10), lineWidth: 1)
-                    )
-            )
         }
-        .buttonStyle(.plain)
-        .disabled(env.authManager.isAuthenticating || !canSubmitEmail)
-        .animation(.easeInOut(duration: 0.15), value: canSubmitEmail)
     }
 
     // MARK: - Terms Footer

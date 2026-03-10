@@ -126,11 +126,8 @@ struct SettingsView: View {
 		}
 		.padding(PromptTheme.Spacing.s)
 		.frame(maxWidth: .infinity, alignment: .leading)
-		.background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous))
-		.overlay(
-			RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous)
-				.stroke(Color.white.opacity(0.12), lineWidth: 1)
-		)
+		.background { PromptTheme.glassCard(cornerRadius: PromptTheme.Radius.medium) }
+		.shadow(color: .black.opacity(0.40), radius: 14, y: 10)
 	}
 
 	private func settingsRow(label: String, value: String) -> some View {

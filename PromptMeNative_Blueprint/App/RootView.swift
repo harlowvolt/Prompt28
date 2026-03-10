@@ -5,7 +5,7 @@ struct RootView: View {
     @EnvironmentObject private var env: AppEnvironment
     @State private var didBootstrap = false
     @State private var selectedTab: MainTab = .home
-    private let tabBarProtectedInset: CGFloat = 84
+    private let tabBarProtectedInset: CGFloat = AppHeights.tabBarClearance
 
     init() {
         let appearance = UITabBarAppearance()
@@ -13,9 +13,11 @@ struct RootView: View {
         appearance.backgroundEffect = UIBlurEffect(style: .systemThinMaterialDark)
         appearance.backgroundColor = PromptTheme.tabBackground
         appearance.shadowColor = PromptTheme.tabShadow
+        appearance.stackedItemPositioning = .centered
+        appearance.stackedItemSpacing = 4
         appearance.selectionIndicatorImage = UIImage.tabSelectionIndicator(
-            color: UIColor(red: 0.80, green: 0.82, blue: 0.90, alpha: 0.18),
-            stroke: UIColor(red: 0.92, green: 0.94, blue: 1.0, alpha: 0.18)
+            color: UIColor(white: 1.0, alpha: 0.10),   // HTML: rgba(255,255,255,0.10)
+            stroke: UIColor(white: 1.0, alpha: 0.16)   // HTML: rgba(255,255,255,0.16)
         )
 
         appearance.stackedLayoutAppearance.selected.iconColor = PromptTheme.tabSelected
@@ -118,74 +120,40 @@ struct PromptPremiumBackground: View {
             let size = geo.size
 
             ZStack {
-                PromptTheme.backgroundBase
-
+                // Base: Railway dark charcoal — #13111c → #110f1a → #0b0913
                 LinearGradient(
-                    colors: [
-                        PromptTheme.backgroundBase.opacity(1.0),
-                        PromptTheme.deepShadow.opacity(0.98),
-                        PromptTheme.plum.opacity(0.88),
-                        PromptTheme.backgroundBase.opacity(1.0)
+                    stops: [
+                        .init(color: Color(hex: "#13111c"), location: 0.00),
+                        .init(color: Color(hex: "#110f1a"), location: 0.40),
+                        .init(color: Color(hex: "#0b0913"), location: 1.00)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
 
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                .clear,
-                                PromptTheme.softLilac.opacity(0.11),
-                                .clear
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(width: size.width * 0.34)
-                    .position(x: size.width * 0.5, y: size.height * 0.52)
-                    .blur(radius: 50)
-
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                .clear,
-                                PromptTheme.mutedViolet.opacity(0.08),
-                                .clear
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(width: size.width * 0.16)
-                    .position(x: size.width * 0.28, y: size.height * 0.46)
-                    .blur(radius: 44)
-
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                .clear,
-                                PromptTheme.mutedViolet.opacity(0.07),
-                                .clear
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(width: size.width * 0.14)
-                    .position(x: size.width * 0.74, y: size.height * 0.48)
-                    .blur(radius: 42)
-
-                LinearGradient(
-                    colors: [
-                        Color.black.opacity(0.18),
-                        .clear,
-                        Color.black.opacity(0.22)
+                // Subtle purple radial ellipse at ~40% from top (HTML: 50% 40%)
+                RadialGradient(
+                    stops: [
+                        .init(color: Color(red: 120/255, green: 80/255, blue: 220/255).opacity(0.13), location: 0.0),
+                        .init(color: Color(red: 80/255,  green: 40/255, blue: 160/255).opacity(0.07), location: 0.4),
+                        .init(color: .clear, location: 0.70)
                     ],
+                    center: UnitPoint(x: 0.5, y: 0.40),
+                    startRadius: 0,
+                    endRadius: size.height * 0.55
+                )
+
+                // Darken top edge
+                LinearGradient(
+                    colors: [Color.black.opacity(0.30), .clear],
                     startPoint: .top,
+                    endPoint: UnitPoint(x: 0.5, y: 0.25)
+                )
+
+                // Darken bottom edge
+                LinearGradient(
+                    colors: [.clear, Color.black.opacity(0.45)],
+                    startPoint: UnitPoint(x: 0.5, y: 0.40),
                     endPoint: .bottom
                 )
             }
@@ -196,30 +164,40 @@ struct PromptPremiumBackground: View {
 }
 
 enum PromptTheme {
-    static let backgroundBase = Color(hex: "#04050C")
-    static let deepShadow = Color(hex: "#0A0D1A")
-    static let plum = Color(hex: "#131A2A")
-    static let mutedViolet = Color(hex: "#5D628A")
-    static let softLilac = Color(hex: "#CFD7FF")
-    static let paleLilacWhite = Color(hex: "#F2F5FF")
+    // ── Background palette (Railway dark charcoal) ──────────────────────
+    static let backgroundBase = Color(hex: "#0e0c16")   // --bgDeep
+    static let deepShadow     = Color(hex: "#110f1a")   // --bgMid
+    static let plum           = Color(hex: "#13111c")   // --bgTop
+    static let bgBot          = Color(hex: "#0b0913")   // --bgBot
 
-    static let glassFill = Color(red: 0.10, green: 0.12, blue: 0.21).opacity(0.56)
-    static let glassStroke = Color(red: 0.76, green: 0.80, blue: 0.93).opacity(0.24)
+    // ── Accent ──────────────────────────────────────────────────────────
+    // Violet used for AI-mode active pill glow (HTML --purple / accentBlue)
+    static let mutedViolet    = Color(hex: "#6428dc")   // deep violet
+    // Lavender used for tints, borders, highlights (HTML --cyan = b47eff)
+    static let softLilac      = Color(hex: "#b47eff")
+    // Near-white body text (HTML --text = rgba(230,233,242))
+    static let paleLilacWhite = Color(red: 0.90, green: 0.92, blue: 0.95)
+
+    // ── Glass system (HTML --glass / --stroke) ───────────────────────────
+    static let glassFill   = Color.white.opacity(0.06)  // --glass
+    static let glassStroke = Color.white.opacity(0.10)  // --stroke
 
     static let backgroundGradient = LinearGradient(
-        colors: [backgroundBase, deepShadow, plum, backgroundBase],
+        colors: [plum, deepShadow, bgBot],
         startPoint: .top,
         endPoint: .bottom
     )
 
-    static let orbIdleGlow = Color(hex: "#95A7FF")
-    static let orbActiveGlow = Color(hex: "#A9BAFF")
-    static let orbProcessingGlow = Color(hex: "#B9C6FF")
+    // ── Orb: cool blue-white rim (HTML rgba(190,210,255)) ───────────────
+    static let orbIdleGlow       = Color(red: 0.82, green: 0.89, blue: 1.00)
+    static let orbActiveGlow     = Color(red: 0.86, green: 0.92, blue: 1.00)
+    static let orbProcessingGlow = Color(red: 0.90, green: 0.95, blue: 1.00)
 
-    static let tabBackground = UIColor(red: 0.08, green: 0.09, blue: 0.15, alpha: 0.72)
-    static let tabShadow = UIColor(red: 0.83, green: 0.87, blue: 0.98, alpha: 0.10)
-    static let tabSelected = UIColor(red: 0.92, green: 0.94, blue: 1.0, alpha: 1.0)
-    static let tabUnselected = UIColor(red: 0.61, green: 0.63, blue: 0.72, alpha: 1.0)
+    // ── Tab bar (HTML #bottom-nav rgba(255,255,255,0.08)) ────────────────
+    static let tabBackground  = UIColor(white: 1.0, alpha: 0.09)
+    static let tabShadow      = UIColor(white: 1.0, alpha: 0.10)
+    static let tabSelected    = UIColor(white: 1.0, alpha: 0.95)
+    static let tabUnselected  = UIColor(white: 1.0, alpha: 0.45)
 
     enum Typography {
         static func rounded(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
@@ -242,6 +220,31 @@ enum PromptTheme {
     }
 
     static let premiumMaterial: Material = .ultraThinMaterial
+
+    /// Reusable glass card view — matches HTML .h-item / .card glass style.
+    /// Usage: .background { PromptTheme.glassCard(cornerRadius: PromptTheme.Radius.medium) }
+    static func glassCard(cornerRadius: CGFloat) -> some View {
+        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+            .fill(Color.white.opacity(0.07))
+            .overlay(
+                GeometryReader { geo in
+                    RadialGradient(
+                        stops: [
+                            .init(color: Color.white.opacity(0.10), location: 0.0),
+                            .init(color: Color.clear, location: 0.55)
+                        ],
+                        center: UnitPoint(x: 0.15, y: 0.0),
+                        startRadius: 0,
+                        endRadius: geo.size.width * 0.6
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+                }
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+            )
+    }
 }
 
 extension Color {
@@ -260,9 +263,9 @@ extension Color {
 
 private extension UIImage {
     static func tabSelectionIndicator(color: UIColor, stroke: UIColor) -> UIImage {
-        let size = CGSize(width: 86, height: 62)
-        let rect = CGRect(origin: .zero, size: size).insetBy(dx: 6, dy: 7)
-        let radius: CGFloat = 21
+        let size = CGSize(width: 90, height: AppHeights.tabBarFloating)
+        let rect = CGRect(origin: .zero, size: size).insetBy(dx: 6, dy: 9)
+        let radius: CGFloat = 22
 
         let image = UIGraphicsImageRenderer(size: size).image { ctx in
             let path = UIBezierPath(roundedRect: rect, cornerRadius: radius)

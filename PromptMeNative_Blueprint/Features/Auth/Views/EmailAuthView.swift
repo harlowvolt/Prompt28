@@ -18,51 +18,55 @@ struct EmailAuthView: View {
     let onSubmit: () async -> Void
 
     var body: some View {
-        VStack(spacing: 12) {
+        VStack(spacing: AppSpacing.element) {
             Picker("Mode", selection: $isSignup) {
                 Text("Login").tag(false)
                 Text("Sign Up").tag(true)
             }
             .pickerStyle(.segmented)
+            .frame(height: AppHeights.segmented)
 
             if isSignup {
-                TextField("Name", text: $name)
-                    .textInputAutocapitalization(.words)
-                    .autocorrectionDisabled(true)
-                    .textContentType(.name)
-                    .focused($focusedField, equals: .name)
-                    .submitLabel(.next)
-                    .onSubmit {
-                        focusedField = .email
-                    }
-                    .textFieldStyle(.roundedBorder)
+                AppGlassField(isFocused: focusedField == .name) {
+                    TextField("Name", text: $name)
+                        .textInputAutocapitalization(.words)
+                        .autocorrectionDisabled(true)
+                        .textContentType(.name)
+                        .focused($focusedField, equals: .name)
+                        .submitLabel(.next)
+                        .onSubmit {
+                            focusedField = .email
+                        }
+                }
             }
 
-            TextField("Email", text: $email)
-                .keyboardType(.emailAddress)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled(true)
-                .textContentType(.emailAddress)
-                .focused($focusedField, equals: .email)
-                .submitLabel(.next)
-                .onSubmit {
-                    focusedField = .password
-                }
-                .textFieldStyle(.roundedBorder)
-
-            SecureField("Password (min 6)", text: $password)
-                .textContentType(isSignup ? .newPassword : .password)
-                .focused($focusedField, equals: .password)
-                .submitLabel(canSubmit ? .go : .done)
-                .onSubmit {
-                    if canSubmit {
-                        focusedField = nil
-                        Task { await onSubmit() }
-                    } else {
-                        focusedField = nil
+            AppGlassField(isFocused: focusedField == .email) {
+                TextField("Email", text: $email)
+                    .keyboardType(.emailAddress)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled(true)
+                    .textContentType(.emailAddress)
+                    .focused($focusedField, equals: .email)
+                    .submitLabel(.next)
+                    .onSubmit {
+                        focusedField = .password
                     }
-                }
-                .textFieldStyle(.roundedBorder)
+            }
+
+            AppGlassField(isFocused: focusedField == .password) {
+                SecureField("Password (min 6)", text: $password)
+                    .textContentType(isSignup ? .newPassword : .password)
+                    .focused($focusedField, equals: .password)
+                    .submitLabel(canSubmit ? .go : .done)
+                    .onSubmit {
+                        if canSubmit {
+                            focusedField = nil
+                            Task { await onSubmit() }
+                        } else {
+                            focusedField = nil
+                        }
+                    }
+            }
 
             HStack {
                 Spacer()
@@ -74,22 +78,15 @@ struct EmailAuthView: View {
                 .animation(.easeInOut(duration: 0.15), value: focusedField)
             }
 
-            Button {
+            AppPrimaryButton(
+                title: isSignup ? "Create Account" : "Login",
+                isLoading: isLoading,
+                isEnabled: canSubmit
+            ) {
                 focusedField = nil
                 Task { await onSubmit() }
-            } label: {
-                HStack {
-                    if isLoading {
-                        ProgressView()
-                            .progressViewStyle(.circular)
-                    }
-                    Text(isSignup ? "Create Account" : "Login")
-                }
-                .frame(maxWidth: .infinity)
             }
             .id("authSubmitButton")
-            .buttonStyle(.borderedProminent)
-            .disabled(isLoading || !canSubmit)
         }
     }
 }

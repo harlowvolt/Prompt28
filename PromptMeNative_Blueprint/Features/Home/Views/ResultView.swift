@@ -24,11 +24,8 @@ struct ResultView: View {
                     Spacer()
                 }
                 .padding(PromptTheme.Spacing.s)
-                .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                )
+                .background { PromptTheme.glassCard(cornerRadius: PromptTheme.Radius.large) }
+                .shadow(color: .black.opacity(0.45), radius: 16, y: 10)
             } else if let result = viewModel.latestResult {
                 VStack(alignment: .leading, spacing: PromptTheme.Spacing.s) {
                     HStack {
@@ -121,11 +118,8 @@ struct ResultView: View {
                     .buttonStyle(.bordered)
                 }
                 .padding(PromptTheme.Spacing.s)
-                .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
-                        .stroke(Color.white.opacity(0.12), lineWidth: 1)
-                )
+                .background { PromptTheme.glassCard(cornerRadius: PromptTheme.Radius.large) }
+                .shadow(color: .black.opacity(0.50), radius: 20, y: 14)
             } else {
                 HStack(spacing: 10) {
                     Image(systemName: "text.quote")
@@ -136,11 +130,7 @@ struct ResultView: View {
                     Spacer()
                 }
                 .padding(PromptTheme.Spacing.s)
-                .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
-                        .stroke(Color.white.opacity(0.1), lineWidth: 1)
-                )
+                .background { PromptTheme.glassCard(cornerRadius: PromptTheme.Radius.large) }
             }
         }
         .onChange(of: viewModel.latestPromptText) { _, newPrompt in

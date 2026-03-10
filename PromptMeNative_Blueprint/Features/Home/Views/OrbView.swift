@@ -1,298 +1,244 @@
 import SwiftUI
-import UIKit
 
 struct OrbView: View {
-    @ObservedObject var engine: OrbEngine
-    let onTranscript: (String) -> Void
-    @Environment(\.openURL) private var openURL
-
     var body: some View {
-        VStack(spacing: PromptTheme.Spacing.s) {
-            Button {
-                Task {
-                    if engine.isRecording {
-                        if let final = await engine.stopListeningAndFinalize() {
-                            onTranscript(final)
-                        }
-                    } else {
-                        engine.startListening()
-                    }
+        GeometryReader { proxy in
+            let size = min(proxy.size.width, proxy.size.height)
+            let orbSize = size * 0.72
+            let ringSize = orbSize * 1.06
+
+            TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: false)) { timeline in
+                let t = timeline.date.timeIntervalSinceReferenceDate
+
+                ZStack {
+                    backgroundAtmosphere(size: size * 0.92)
+                    equatorialRays(size: size * 0.86, time: t)
+                    reactiveGlowRing(size: ringSize, time: t)
+                    audioWaveHalo(size: ringSize * 1.02, time: t)
+                    coreOrb(size: orbSize, time: t)
+                    processingSpinner(size: orbSize * 1.04, time: t)
                 }
-            } label: {
-                GeometryReader { proxy in
-                    let size = min(proxy.size.width, proxy.size.height)
-                    let orbSize = size * 0.72
-                    let ringSize = orbSize * 1.06
-
-                    TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: false)) { timeline in
-                        let t = timeline.date.timeIntervalSinceReferenceDate
-
-                        ZStack {
-                            backgroundAtmosphere(size: size * 0.92)
-                            reactiveGlowRing(size: ringSize, time: t)
-                            audioWaveHalo(size: ringSize * 1.02, time: t)
-                            coreOrb(size: orbSize, time: t)
-                            processingSpinner(size: orbSize * 1.04, time: t)
-                        }
-                        .frame(width: size, height: size)
-                    }
-                }
-                .aspectRatio(1, contentMode: .fit)
-                .frame(maxWidth: 420)
-                .padding(.horizontal, 8)
-            }
-            .buttonStyle(.plain)
-
-            if !engine.permissionMessage.isEmpty {
-                VStack(spacing: 8) {
-                    Text(engine.permissionMessage)
-                        .font(.caption)
-                        .foregroundStyle(Color.white.opacity(0.78))
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal, 24)
-
-                    if engine.needsPermissionSettingsAction {
-                        Button("Open iOS Settings") {
-                            guard let url = URL(string: UIApplication.openSettingsURLString) else { return }
-                            openURL(url)
-                        }
-                        .buttonStyle(.borderedProminent)
-                        .tint(PromptTheme.mutedViolet.opacity(0.84))
-                    }
-                }
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                .frame(width: size, height: size)
             }
         }
-        .preferredColorScheme(.dark)
+        .aspectRatio(1, contentMode: .fit)
+        .frame(maxWidth: 420)
+        .padding(.horizontal, 8)
+        .buttonStyle(.plain)
     }
-
-    private var visualState: OrbVisualState {
-        switch engine.state {
-        case .idle, .success:
-            return .idle
-        case .listening, .ready:
-            return .listening
-        case .transcribing, .generating:
-            return .processing
-        case .failure:
-            return .error
-        }
-    }
-
-    @ViewBuilder
-    private func backgroundAtmosphere(size: CGFloat) -> some View {
-        Circle()
-            .fill(
-                RadialGradient(
-                    colors: [
-                        PromptTheme.softLilac.opacity(0.07),
-                        PromptTheme.orbActiveGlow.opacity(0.05),
-                        Color.black.opacity(0.0)
-                    ],
-                    center: .center,
-                    startRadius: size * 0.12,
-                    endRadius: size * 0.52
-                )
-            )
-            .frame(width: size, height: size)
-            .blendMode(.plusLighter)
-    }
-
-    private func coreOrb(size: CGFloat, time: TimeInterval) -> some View {
-        let level = engine.audioLevel
-        let baseWave = sin(time * 1.35)
-        let secondaryWave = sin(time * 2.45 + 0.9)
-        let organicWave = CGFloat(baseWave * 0.65 + secondaryWave * 0.35)
-        let motionAmplitude: CGFloat
-
-        switch visualState {
-        case .idle:
-            motionAmplitude = 0.016
-        case .listening:
-            motionAmplitude = 0.028 + level * 0.02
-        case .processing:
-            motionAmplitude = 0.021
-        case .error:
-            motionAmplitude = 0.012
-        }
-
-        let levelInfluence = visualState == .listening ? level * 0.05 : 0
-        let scale = 1 + organicWave * motionAmplitude + levelInfluence
-        let yFloat = organicWave * size * 0.012
-
-        return ZStack {
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: orbGradientColors,
-                        center: .topLeading,
-                        startRadius: size * 0.05,
-                        endRadius: size * 0.88
-                    )
-                )
-
-            Circle()
-                .strokeBorder(PromptTheme.softLilac.opacity(0.72), lineWidth: max(1.2, size * 0.008))
-                .overlay(
-                    Circle()
-                        .strokeBorder(Color.white.opacity(0.52), lineWidth: max(0.6, size * 0.0032))
-                )
-
-            Circle()
-                .fill(
-                    RadialGradient(
-                        colors: [Color.white.opacity(0.24), Color.white.opacity(0.06), .clear],
-                        center: UnitPoint(x: 0.30, y: 0.26),
-                        startRadius: size * 0.01,
-                        endRadius: size * 0.42
-                    )
-                )
-                .scaleEffect(0.95)
-                .blur(radius: 6)
-
-            Image(systemName: orbSymbol)
-                .font(.system(size: size * 0.27, weight: .bold))
-                .foregroundStyle(Color.white.opacity(0.96))
-                .shadow(color: Color.white.opacity(0.2), radius: 4)
-        }
-        .frame(width: size, height: size)
-        .shadow(color: glowColor.opacity(glowStrength), radius: size * 0.14)
-        .shadow(color: Color.white.opacity(0.12), radius: size * 0.06)
-        .scaleEffect(scale)
-        .offset(y: yFloat)
-    }
-
-    @ViewBuilder
-    private func reactiveGlowRing(size: CGFloat, time: TimeInterval) -> some View {
-        let level = engine.audioLevel
-        let pulse = visualState == .listening ? (0.02 + level * 0.14) : 0.0
-        let wave = CGFloat((sin(time * 4.4) + 1.0) * 0.5)
-        let dynamicScale = 1.0 + pulse + wave * (visualState == .listening ? 0.04 : 0.0)
-        let hue = visualState == .listening ? Angle(degrees: Double(6 + level * 20)) : .zero
-
-        Circle()
-            .stroke(
-                AngularGradient(
-                    colors: [
-                        glowColor.opacity(0.08),
-                        glowColor.opacity(0.36),
-                        Color.white.opacity(0.34),
-                        glowColor.opacity(0.08)
-                    ],
-                    center: .center
-                ),
-                lineWidth: max(1.4, size * 0.014)
-            )
-            .hueRotation(hue)
-            .blur(radius: size * 0.008)
-            .frame(width: size, height: size)
-            .scaleEffect(dynamicScale)
-            .opacity(visualState == .processing ? 0.7 : 1.0)
-                .animation(.easeOut(duration: 0.16), value: engine.audioLevel)
-            .animation(.easeInOut(duration: 0.4), value: visualState)
-    }
-
-    @ViewBuilder
-    private func audioWaveHalo(size: CGFloat, time: TimeInterval) -> some View {
-        let barCount = 64
-        let radius = size * 0.46
-        let level = engine.audioLevel
-        let active = visualState == .listening
-
-        ZStack {
-            ForEach(0..<barCount, id: \.self) { index in
-                let progress = Double(index) / Double(barCount)
-                let angle = progress * Double.pi * 2.0
-                let phase = sin(time * 10.0 + progress * Double.pi * 7.0)
-                let activity = active ? max(0.0, phase * 0.6 + Double(level) * 1.1) : 0.0
-                let height = max(size * 0.012, size * CGFloat(0.013 + activity * 0.048))
-                let width = size * 0.006
-
-                Capsule(style: .circular)
-                    .fill(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.95), glowColor.opacity(0.42)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(width: width, height: height)
-                    .offset(y: -radius)
-                    .rotationEffect(.radians(angle))
-                    .opacity(active ? 0.72 : 0.0)
-            }
-        }
-        .frame(width: size, height: size)
-        .animation(.easeOut(duration: 0.12), value: engine.audioLevel)
-    }
-
-    @ViewBuilder
-    private func processingSpinner(size: CGFloat, time: TimeInterval) -> some View {
-        let rotation = visualState == .processing ? Angle.degrees(time * 140) : .zero
-
-        Circle()
-            .trim(from: 0.05, to: 0.34)
-            .stroke(
-                AngularGradient(
-                    colors: [Color.clear, Color.white.opacity(0.8), glowColor.opacity(0.7), Color.clear],
-                    center: .center
-                ),
-                style: StrokeStyle(lineWidth: max(1.6, size * 0.016), lineCap: .round)
-            )
-            .frame(width: size, height: size)
-            .rotationEffect(rotation)
-            .opacity(visualState == .processing ? 1.0 : 0.0)
-            .animation(.easeInOut(duration: 0.25), value: visualState)
-    }
-
-    private var orbGradientColors: [Color] {
-        switch visualState {
-        case .idle:
-            return [Color(hex: "#1E2238"), Color(hex: "#0A0D1F"), Color(hex: "#040611"), Color(hex: "#02030A")]
-        case .listening:
-            return [Color(hex: "#252A44"), Color(hex: "#0C1026"), Color(hex: "#060918"), Color(hex: "#02040D")]
-        case .processing:
-            return [Color(hex: "#28304C"), Color(hex: "#121735"), Color(hex: "#090E24"), Color(hex: "#03050F")]
-        case .error:
-            return [Color.white.opacity(0.22), Color.red.opacity(0.64), Color.red.opacity(0.9), Color.black.opacity(0.92)]
-        }
-    }
-
-    private var glowColor: Color {
-        switch visualState {
-        case .idle:
-            return PromptTheme.orbIdleGlow
-        case .listening:
-            return PromptTheme.orbActiveGlow
-        case .processing:
-            return PromptTheme.orbProcessingGlow
-        case .error:
-            return .red
-        }
-    }
-
-    private var glowStrength: CGFloat {
-        switch visualState {
-        case .idle:
-            return 0.24
-        case .listening:
-            return 0.42 + engine.audioLevel * 0.18
-        case .processing:
-            return 0.36
-        case .error:
-            return 0.85
-        }
-    }
-
-    private var orbSymbol: String {
-        "mic"
-    }
-
 }
 
-private enum OrbVisualState {
-    case idle
-    case listening
-    case processing
-    case error
+// MARK: - Layers
+private extension OrbView {
+    func backgroundAtmosphere(size: CGFloat) -> some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color.white.opacity(0.10),
+                            Color.purple.opacity(0.14),
+                            Color.blue.opacity(0.10),
+                            Color.clear
+                        ],
+                        center: .center,
+                        startRadius: 10,
+                        endRadius: size * 0.52
+                    )
+                )
+                .frame(width: size, height: size)
+                .blur(radius: 18)
+
+            Circle()
+                .stroke(Color.white.opacity(0.08), lineWidth: 1)
+                .frame(width: size * 0.92, height: size * 0.92)
+                .blur(radius: 1)
+        }
+    }
+
+    func equatorialRays(size: CGFloat, time: TimeInterval) -> some View {
+        ZStack {
+            ForEach(0..<14, id: \.self) { i in
+                let phase = Double(i) * 0.35
+                Capsule()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color.clear,
+                                Color.cyan.opacity(0.06),
+                                Color.white.opacity(0.22),
+                                Color.purple.opacity(0.10),
+                                Color.clear
+                            ],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        )
+                    )
+                    .frame(
+                        width: size * (0.72 + 0.04 * sin(time * 1.4 + phase)),
+                        height: 2.0 + CGFloat((i % 3))
+                    )
+                    .blur(radius: 0.8)
+                    .opacity(0.45 + 0.15 * sin(time * 1.8 + phase))
+            }
+        }
+        .rotationEffect(.degrees(sin(time * 0.6) * 4))
+    }
+
+    func reactiveGlowRing(size: CGFloat, time: TimeInterval) -> some View {
+        Circle()
+            .stroke(
+                AngularGradient(
+                    gradient: Gradient(colors: [
+                        Color.white.opacity(0.95),
+                        Color.cyan.opacity(0.85),
+                        Color.blue.opacity(0.75),
+                        Color.purple.opacity(0.85),
+                        Color.white.opacity(0.95)
+                    ]),
+                    center: .center,
+                    angle: .degrees(time * 28)
+                ),
+                lineWidth: 3.0
+            )
+            .frame(width: size, height: size)
+            .blur(radius: 0.6)
+            .shadow(color: Color.cyan.opacity(0.35), radius: 12)
+            .shadow(color: Color.purple.opacity(0.30), radius: 20)
+    }
+
+    func audioWaveHalo(size: CGFloat, time: TimeInterval) -> some View {
+        Circle()
+            .stroke(Color.white.opacity(0.14), lineWidth: 1.4)
+            .frame(
+                width: size + CGFloat(sin(time * 2.2) * 10),
+                height: size + CGFloat(sin(time * 2.2) * 10)
+            )
+            .blur(radius: 2.0)
+            .opacity(0.65)
+    }
+
+    func coreOrb(size: CGFloat, time: TimeInterval) -> some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color.white.opacity(0.95),
+                            Color.cyan.opacity(0.42),
+                            Color.blue.opacity(0.28),
+                            Color.black.opacity(0.92)
+                        ],
+                        center: UnitPoint(x: 0.38, y: 0.28),
+                        startRadius: 2,
+                        endRadius: size * 0.62
+                    )
+                )
+                .overlay {
+                    Circle()
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.28),
+                                    Color.clear,
+                                    Color.purple.opacity(0.08)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                        .blendMode(.screen)
+                }
+                .overlay {
+                    Circle()
+                        .stroke(
+                            LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.65),
+                                    Color.cyan.opacity(0.18),
+                                    Color.purple.opacity(0.14),
+                                    Color.white.opacity(0.30)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            ),
+                            lineWidth: 1.2
+                        )
+                }
+                .shadow(color: Color.blue.opacity(0.20), radius: 18)
+                .shadow(color: Color.purple.opacity(0.18), radius: 28)
+
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [
+                            Color.white.opacity(0.34),
+                            Color.clear
+                        ],
+                        center: UnitPoint(x: 0.34, y: 0.25),
+                        startRadius: 1,
+                        endRadius: size * 0.18
+                    )
+                )
+                .frame(width: size * 0.46, height: size * 0.46)
+                .offset(x: -size * 0.12, y: -size * 0.16)
+
+            sparklesLayer(size: size, time: time)
+        }
+        .frame(width: size, height: size)
+        .scaleEffect(1.0 + CGFloat(sin(time * 1.7)) * 0.012)
+    }
+
+    func sparklesLayer(size: CGFloat, time: TimeInterval) -> some View {
+        ZStack {
+            sparkle(x: -0.18, y: -0.22, size: size * 0.030, opacity: 0.85 + 0.15 * sin(time * 2.1))
+            sparkle(x: 0.22, y: -0.10, size: size * 0.018, opacity: 0.70 + 0.20 * sin(time * 2.7))
+            sparkle(x: 0.12, y: 0.20, size: size * 0.022, opacity: 0.72 + 0.18 * sin(time * 1.9))
+            sparkle(x: -0.24, y: 0.16, size: size * 0.016, opacity: 0.60 + 0.18 * sin(time * 3.2))
+            sparkle(x: 0.00, y: -0.28, size: size * 0.014, opacity: 0.65 + 0.22 * sin(time * 2.4))
+        }
+    }
+
+    func sparkle(x: CGFloat, y: CGFloat, size: CGFloat, opacity: Double) -> some View {
+        Circle()
+            .fill(Color.white.opacity(opacity))
+            .frame(width: size, height: size)
+            .blur(radius: 0.3)
+            .shadow(color: Color.cyan.opacity(0.35), radius: 4)
+            .offset(x: x * 220, y: y * 220)
+    }
+
+    func processingSpinner(size: CGFloat, time: TimeInterval) -> some View {
+        Circle()
+            .trim(from: 0.08, to: 0.32)
+            .stroke(
+                AngularGradient(
+                    gradient: Gradient(colors: [
+                        Color.white.opacity(0.90),
+                        Color.cyan.opacity(0.75),
+                        Color.purple.opacity(0.20),
+                        Color.clear
+                    ]),
+                    center: .center
+                ),
+                style: StrokeStyle(lineWidth: 2.0, lineCap: .round)
+            )
+            .frame(width: size, height: size)
+            .rotationEffect(.degrees(time * 80))
+            .blur(radius: 0.3)
+    }
+}
+
+#Preview {
+    ZStack {
+        LinearGradient(
+            colors: [Color.black, Color(red: 0.08, green: 0.03, blue: 0.16)],
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
+
+        OrbView()
+            .padding(40)
+    }
 }

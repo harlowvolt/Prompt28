@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 struct HomeView: View {
     private enum ActiveSheet: Identifiable {
@@ -34,43 +35,41 @@ struct HomeView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let topSafe = proxy.safeAreaInsets.top
-            let topSpacing = min(64, max(52, proxy.size.height * 0.07))
-            let bottomBreathing = min(34, max(26, proxy.size.height * 0.034))
-
             ZStack {
                 PromptPremiumBackground()
                     .ignoresSafeArea()
 
-                VStack(spacing: 0) {
+                VStack(spacing: AppSpacing.section) {
                     headerSection
-                        .padding(.top, topSafe + topSpacing)
+                        .padding(.top, proxy.safeAreaInsets.top + 6)
 
-                    modePicker
-                        .padding(.top, 26)
+                    subtitleLine
 
-                    modeDescriptionLine
-                        .padding(.top, 20)
+                    modeSelector
 
-                    orbSection
-                        .padding(.top, 36)
+                    Text(modeDescription)
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(PromptTheme.softLilac.opacity(0.6))
+                        .multilineTextAlignment(.center)
 
-                    transcriptSection
-                        .padding(.top, 24)
+                    Spacer(minLength: hasResult ? 8 : 24)
+
+                    orbButton(proxy: proxy)
 
                     if hasResult {
+                        transcriptSection
                         resultSection
-                            .padding(.top, 18)
-                            .frame(maxHeight: .infinity)
                     } else {
-                        Spacer(minLength: 40)
+                        transcriptSection
                     }
 
+                    Spacer(minLength: 0)
+
                     typeInsteadButton
-                        .padding(.top, hasResult ? 20 : 38)
-                        .padding(.bottom, bottomBreathing)
+                        .padding(.bottom, max(12, proxy.safeAreaInsets.bottom + 6))
                 }
-                .frame(width: proxy.size.width, height: proxy.size.height)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .padding(.horizontal, AppSpacing.screenHorizontal)
             }
         }
         .overlay(alignment: .bottom) { copiedToast }
@@ -115,57 +114,48 @@ struct HomeView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        ZStack(alignment: .topTrailing) {
-            VStack(spacing: 12) {
-                Text("\(firstName),")
-                    .font(.system(size: 50, weight: .bold, design: .rounded))
+        HStack {
+            Color.clear
+                .frame(width: 42, height: 42)
+
+            VStack(spacing: 6) {
+                Text(firstName)
+                    .font(.system(size: 44, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
-
-                Text("What do you want to make today?")
-                    .font(.system(size: 16, weight: .regular, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: .infinity)
+            .frame(maxWidth: .infinity, alignment: .center)
 
-            Button { activeSheet = .settings } label: {
+            Button {
+                activeSheet = .settings
+            } label: {
                 Image(systemName: "gearshape.fill")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.8))
-                    .padding(12)
-                    .background(Color.white.opacity(0.06), in: Circle())
-                    .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white)
+                    .frame(width: 42, height: 42)
+                    .background(.ultraThinMaterial)
+                    .clipShape(Circle())
+                    .overlay(Circle().stroke(Color.white.opacity(0.16), lineWidth: 1))
             }
-            .shadow(color: .white.opacity(0.08), radius: 10, y: 3)
-            .padding(.trailing, 2)
-            .padding(.top, 2)
+            .buttonStyle(.plain)
+            .padding(.leading, 6)
         }
-        .padding(.horizontal, 24)
     }
 
-    // MARK: - Mode Picker
-
-    private var modePicker: some View {
-        HStack(spacing: 14) {
-            HStack(spacing: 14) {
-                modePill(label: "AI Mode", mode: .ai)
-                modePill(label: "Human Mode", mode: .human)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, 24)
-    }
-
-    private var modeDescriptionLine: some View {
-        Text(modeDescription)
-            .font(.system(size: 13, weight: .regular, design: .rounded))
-            .foregroundStyle(.white.opacity(0.42))
+    private var subtitleLine: some View {
+        Text("What do you want to make today?")
+            .font(.system(size: 17, weight: .medium, design: .rounded))
+            .foregroundStyle(.white.opacity(0.82))
             .multilineTextAlignment(.center)
-            .transition(.opacity.combined(with: .move(edge: .top)))
-            .animation(.easeInOut(duration: 0.2), value: generateViewModel.selectedMode)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, 24)
+    }
+
+    // MARK: - Mode Selector
+
+    private var modeSelector: some View {
+        HStack(spacing: AppSpacing.element) {
+            modePill(label: "AI Mode", mode: .ai)
+            modePill(label: "Human Mode", mode: .human)
+        }
     }
 
     private var modeDescription: String {
@@ -176,7 +166,7 @@ struct HomeView: View {
     }
 
     private func modePill(label: String, mode: PromptMode) -> some View {
-        let isSelected = generateViewModel.selectedMode == mode
+        let selected = generateViewModel.selectedMode == mode
 
         return Button {
             withAnimation(.easeInOut(duration: 0.18)) {
@@ -184,37 +174,93 @@ struct HomeView: View {
             }
         } label: {
             Text(label)
-                .font(.system(size: 14, weight: isSelected ? .semibold : .medium, design: .rounded))
-                .minimumScaleFactor(0.7)
-                .lineLimit(1)
-                .foregroundStyle(isSelected ? .white : .white.opacity(0.62))
+                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity)
-                .frame(height: 58)
+                .frame(height: AppHeights.segmented)
                 .background {
-                    if isSelected {
-                        Capsule()
-                            .fill(PromptTheme.mutedViolet.opacity(0.4))
-                            .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.45), lineWidth: 1.1))
-                            .shadow(color: PromptTheme.softLilac.opacity(0.18), radius: 12, y: 3)
-                    } else {
-                        Capsule()
-                            .fill(PromptTheme.deepShadow.opacity(0.48))
-                            .background(.ultraThinMaterial, in: Capsule())
-                            .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 1))
-                    }
+                    Capsule()
+                        .fill(
+                            selected
+                            ? LinearGradient(
+                                colors: [
+                                    Color.blue.opacity(0.55),
+                                    Color.purple.opacity(0.45)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            : LinearGradient(
+                                colors: [Color.white.opacity(0.06), Color.white.opacity(0.06)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            )
+                        )
                 }
+                .overlay {
+                    Capsule()
+                        .stroke(
+                            selected
+                            ? LinearGradient(
+                                colors: [
+                                    Color.white.opacity(0.9),
+                                    Color.cyan.opacity(0.8),
+                                    Color.purple.opacity(0.8)
+                                ],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                            : LinearGradient(
+                                colors: [Color.white.opacity(0.18), Color.white.opacity(0.18)],
+                                startPoint: .top,
+                                endPoint: .bottom
+                            ),
+                            lineWidth: selected ? 2 : 1
+                        )
+                }
+                .shadow(color: selected ? Color.blue.opacity(0.35) : .clear, radius: 16)
         }
         .buttonStyle(.plain)
-        .frame(maxWidth: 252)
     }
 
     // MARK: - Orb + Transcript + Result
 
-    private var orbSection: some View {
-        let restingOrb = min(UIScreen.main.bounds.width * 0.90, 360)
-        let resultOrb = min(UIScreen.main.bounds.width * 0.70, 286)
+    private func orbButton(proxy: GeometryProxy) -> some View {
+        let restingOrb = min(proxy.size.width * 0.80, 318)
+        let resultOrb = min(proxy.size.width * 0.70, 286)
+        let orbSize = hasResult ? resultOrb : restingOrb
 
-        return OrbView(engine: orbEngine, onTranscript: generateFromText)
+        return Button {
+            let feedback = UIImpactFeedbackGenerator(style: .light)
+            feedback.impactOccurred()
+            Task {
+                if orbEngine.isRecording {
+                    if let final = await orbEngine.stopListeningAndFinalize() {
+                        generateFromText(final)
+                    }
+                } else {
+                    orbEngine.startListening()
+                }
+            }
+        } label: {
+            orbSection(proxy: proxy)
+                .frame(width: orbSize, height: orbSize)
+                .overlay {
+                    Image(systemName: orbEngine.isRecording ? "waveform" : "mic.fill")
+                        .font(.system(size: orbEngine.isRecording ? 44 : 58, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.white.opacity(0.94))
+                        .shadow(color: .white.opacity(0.24), radius: 8)
+                }
+        }
+        .buttonStyle(.plain)
+        .contentShape(Circle())
+    }
+
+    private func orbSection(proxy: GeometryProxy) -> some View {
+        let restingOrb = min(proxy.size.width * 0.76, 300)
+        let resultOrb = min(proxy.size.width * 0.70, 286)
+
+        return OrbView()
             .frame(width: hasResult ? resultOrb : restingOrb, height: hasResult ? resultOrb : restingOrb)
             .frame(maxWidth: .infinity)
     }
@@ -244,25 +290,24 @@ struct HomeView: View {
     }
     // MARK: - Type Instead
 
+    // HTML #type-btn: pill, rgba(255,255,255,0.07), border rgba(255,255,255,0.14),
+    //   text rgba(255,255,255,0.62), shadow 0 12px 28px rgba(0,0,0,0.45)
     private var typeInsteadButton: some View {
         Button { activeSheet = .typePrompt } label: {
             Text("Type instead")
-                .font(.system(size: 18, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.74))
+                .font(.system(size: 17, weight: .medium, design: .rounded))
+                .foregroundStyle(Color.white.opacity(0.62))
                 .frame(maxWidth: .infinity)
-                .frame(height: 58)
+                .frame(height: AppHeights.primaryButton)
                 .background(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .fill(PromptTheme.deepShadow.opacity(0.5))
-                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                        .overlay(
-                            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                                .stroke(.white.opacity(0.16), lineWidth: 1)
-                        )
+                    Capsule()
+                        .fill(Color.white.opacity(0.07))
+                        .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 1))
+                        .shadow(color: .black.opacity(0.45), radius: 14, y: 12)
                 )
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, 24)
+        .padding(.horizontal, 8)
     }
 
     // MARK: - Toast
@@ -332,10 +377,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(PromptTheme.Spacing.s)
-        .background(PromptTheme.premiumMaterial,
-                    in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
-            .stroke(Color.white.opacity(0.12), lineWidth: 1))
+        .background { PromptTheme.glassCard(cornerRadius: PromptTheme.Radius.large) }
     }
 }
 

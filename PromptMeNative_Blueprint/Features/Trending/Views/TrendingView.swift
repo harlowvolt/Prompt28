@@ -33,36 +33,7 @@ struct TrendingView: View {
     // MARK: - Search Bar
 
     private var searchBar: some View {
-        HStack(spacing: PromptTheme.Spacing.xs) {
-            Image(systemName: "magnifyingglass")
-                .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
-                .font(.system(size: 14, weight: .medium))
-
-            TextField("Search prompts", text: $searchQuery)
-                .font(PromptTheme.Typography.rounded(15, .medium))
-                .foregroundStyle(PromptTheme.paleLilacWhite)
-                .textInputAutocapitalization(.never)
-                .autocorrectionDisabled()
-                .tint(PromptTheme.softLilac)
-
-            if !searchQuery.isEmpty {
-                Button {
-                    searchQuery = ""
-                } label: {
-                    Image(systemName: "xmark.circle.fill")
-                        .font(.system(size: 14))
-                        .foregroundStyle(PromptTheme.softLilac.opacity(0.45))
-                }
-                .buttonStyle(.plain)
-            }
-        }
-        .padding(.horizontal, PromptTheme.Spacing.s)
-        .padding(.vertical, PromptTheme.Spacing.xs)
-        .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 1)
-        )
+        AppSearchField(placeholder: "Search prompts", text: $searchQuery)
     }
 
     // MARK: - Category Picker
@@ -87,8 +58,8 @@ struct TrendingView: View {
                                         .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.30), lineWidth: 1))
                                 } else {
                                     Capsule()
-                                        .fill(.ultraThinMaterial)
-                                        .overlay(Capsule().stroke(Color.white.opacity(0.09), lineWidth: 1))
+                                        .fill(Color.white.opacity(0.07))
+                                        .overlay(Capsule().stroke(Color.white.opacity(0.13), lineWidth: 1))
                                 }
                             }
                     }
@@ -112,7 +83,7 @@ struct TrendingView: View {
         } else if let category = viewModel.selectedCategory {
             let items = filteredItems(from: category)
 
-            VStack(spacing: PromptTheme.Spacing.s) {
+            VStack(spacing: AppSpacing.sectionTight) {
                 categoryPicker
 
                 // Section header
@@ -142,7 +113,7 @@ struct TrendingView: View {
                 if items.isEmpty {
                     noResultsState
                 } else {
-                    LazyVStack(spacing: PromptTheme.Spacing.s) {
+                    LazyVStack(spacing: AppSpacing.sectionTight) {
                         ForEach(items) { item in
                             trendingCard(item)
                         }
@@ -159,7 +130,7 @@ struct TrendingView: View {
     private func trendingCard(_ item: PromptItem) -> some View {
         let isExpanded = expandedItemIDs.contains(item.id)
 
-        return VStack(alignment: .leading, spacing: PromptTheme.Spacing.xs) {
+        return VStack(alignment: .leading, spacing: AppSpacing.element) {
             // Title
             Text(item.title)
                 .font(PromptTheme.Typography.rounded(16, .semibold))
@@ -222,12 +193,8 @@ struct TrendingView: View {
                 .buttonStyle(.plain)
             }
         }
-        .padding(PromptTheme.Spacing.s)
-        .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: PromptTheme.Radius.medium, style: .continuous)
-                .stroke(Color.white.opacity(0.10), lineWidth: 1)
-        )
+        .padding(AppSpacing.cardInset)
+        .appGlassCard()
     }
 
     // MARK: - Action Button
@@ -243,10 +210,11 @@ struct TrendingView: View {
             .foregroundStyle(color)
             .padding(.horizontal, 10)
             .padding(.vertical, 6)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-            .overlay(
+            .background(
                 RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .stroke(color.opacity(0.20), lineWidth: 1)
+                    .fill(Color.white.opacity(0.08))
+                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        .stroke(color.opacity(0.25), lineWidth: 1))
             )
         }
         .buttonStyle(.plain)
@@ -274,12 +242,8 @@ struct TrendingView: View {
                 .font(PromptTheme.Typography.rounded(14, .medium))
                 .foregroundStyle(PromptTheme.softLilac.opacity(0.65))
         }
-        .padding(PromptTheme.Spacing.l)
-        .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
+        .padding(AppSpacing.cardInset)
+        .appGlassCard()
         .frame(maxWidth: .infinity)
         .frame(minHeight: 260, alignment: .center)
     }
@@ -306,12 +270,8 @@ struct TrendingView: View {
             .buttonStyle(.borderedProminent)
             .tint(PromptTheme.mutedViolet)
         }
-        .padding(PromptTheme.Spacing.l)
-        .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
+        .padding(AppSpacing.cardInset)
+        .appGlassCard()
         .frame(maxWidth: .infinity)
         .frame(minHeight: 260, alignment: .center)
     }
@@ -325,12 +285,8 @@ struct TrendingView: View {
                 .font(PromptTheme.Typography.rounded(18, .semibold))
                 .foregroundStyle(PromptTheme.paleLilacWhite)
         }
-        .padding(PromptTheme.Spacing.l)
-        .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
+        .padding(AppSpacing.cardInset)
+        .appGlassCard()
         .frame(maxWidth: .infinity)
         .frame(minHeight: 260, alignment: .center)
     }
@@ -344,12 +300,8 @@ struct TrendingView: View {
                 .font(PromptTheme.Typography.rounded(15, .semibold))
                 .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.8))
         }
-        .padding(PromptTheme.Spacing.l)
-        .background(PromptTheme.premiumMaterial, in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
-                .stroke(Color.white.opacity(0.08), lineWidth: 1)
-        )
+        .padding(AppSpacing.cardInset)
+        .appGlassCard()
         .frame(maxWidth: .infinity)
     }
 
