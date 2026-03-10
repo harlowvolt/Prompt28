@@ -1,8 +1,7 @@
-import AuthenticationServices
 import GoogleSignIn
 import UIKit
 
-// MARK: - Shared errors
+// MARK: - Errors
 
 enum OAuthError: LocalizedError {
     case noWindow
@@ -16,7 +15,7 @@ enum OAuthError: LocalizedError {
     }
 }
 
-// MARK: - Shared helper
+// MARK: - Helpers
 
 /// Walks the VC hierarchy to find whatever is currently on top.
 private func topmostViewController(from base: UIViewController) -> UIViewController {
@@ -34,12 +33,6 @@ private func topmostViewController(from base: UIViewController) -> UIViewControl
     return base
 }
 
-private func foregroundWindowScene() -> UIWindowScene? {
-    UIApplication.shared.connectedScenes
-        .compactMap({ $0 as? UIWindowScene })
-        .first(where: { $0.activationState == .foregroundActive })
-}
-
 // MARK: - Google Sign-In
 
 @MainActor
@@ -48,7 +41,9 @@ final class OAuthCoordinator {
     /// Presents the Google Sign-In sheet and returns the ID token your backend expects.
     static func googleIDToken() async throws -> String {
         guard
-            let windowScene = foregroundWindowScene(),
+            let windowScene = UIApplication.shared.connectedScenes
+                .compactMap({ $0 as? UIWindowScene })
+                .first(where: { $0.activationState == .foregroundActive }),
             let rootVC = windowScene.keyWindow?.rootViewController
         else {
             throw OAuthError.noWindow
@@ -62,64 +57,5 @@ final class OAuthCoordinator {
         }
 
         return idToken
-    }
-}
-
-// MARK: - Apple Sign-In
-
-/// Bridges ASAuthorizationController (UIKit delegate pattern) to async/await.
-/// Using a plain SwiftUI Button + this helper avoids UIKit/SwiftUI gesture
-/// conflicts that make SignInWithAppleButton unresponsive inside ScrollViews.
-@MainActor
-final class AppleSignInHelper: NSObject,
-    ASAuthorizationControllerDelegate,
-    ASAuthorizationControllerPresentationContextProviding
-{
-    private var continuation: CheckedContinuation<ASAuthorization, Error>?
-
-    func signIn() async throws -> ASAuthorization {
-        return try await withCheckedThrowingContinuation { continuation in
-            self.continuation = continuation
-
-            let request = ASAuthorizationAppleIDProvider().createRequest()
-            request.requestedScopes = [.email, .fullName]
-
-            let controller = ASAuthorizationController(authorizationRequests: [request])
-            controller.delegate = self
-            controller.presentationContextProvider = self
-            controller.performRequests()
-        }
-    }
-
-    // MARK: ASAuthorizationControllerPresentationContextProviding
-
-    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        guard let scene = foregroundWindowScene(),
-              let window = scene.keyWindow else {
-            // Fallback: create a window attached to the scene if possible
-            if let scene = foregroundWindowScene() {
-                return UIWindow(windowScene: scene)
-            }
-            return UIWindow()
-        }
-        return window
-    }
-
-    // MARK: ASAuthorizationControllerDelegate
-
-    func authorizationController(
-        controller: ASAuthorizationController,
-        didCompleteWithAuthorization authorization: ASAuthorization
-    ) {
-        continuation?.resume(returning: authorization)
-        continuation = nil
-    }
-
-    func authorizationController(
-        controller: ASAuthorizationController,
-        didCompleteWithError error: Error
-    ) {
-        continuation?.resume(throwing: error)
-        continuation = nil
     }
 }
