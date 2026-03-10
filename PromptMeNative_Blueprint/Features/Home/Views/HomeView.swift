@@ -40,34 +40,30 @@ struct HomeView: View {
                 PromptPremiumBackground()
                     .ignoresSafeArea()
 
-                VStack(spacing: 0) {
+                // The fix: Using AppSpacing.section globally instead of random paddings
+                VStack(spacing: AppSpacing.section) {
                     headerSection
-                        .padding(.top, topSafe + AppSpacing.top)
 
-                    modePicker
-                        .padding(.top, AppSpacing.section)
-
-                    modeDescriptionLine
-                        .padding(.top, 24)
+                    VStack(spacing: AppSpacing.element) {
+                        modePicker
+                        modeDescriptionLine
+                    }
 
                     orbSection(screenWidth: proxy.size.width)
-                        .padding(.top, AppSpacing.section)
 
                     transcriptSection
-                        .padding(.top, 24)
 
                     if hasResult {
                         resultSection
-                            .padding(.top, 18)
                             .frame(maxHeight: .infinity)
                     } else {
                         Spacer(minLength: 40)
                     }
 
                     typeInsteadButton
-                        .padding(.top, hasResult ? 14 : 24)
-                        .padding(.bottom, AppSpacing.bottomContentClearance)
                 }
+                .padding(.top, topSafe + AppSpacing.top)
+                .padding(.bottom, AppSpacing.bottomContentClearance)
                 .frame(width: proxy.size.width, height: proxy.size.height)
             }
         }
@@ -114,7 +110,7 @@ struct HomeView: View {
 
     private var headerSection: some View {
         ZStack(alignment: .topTrailing) {
-            VStack(spacing: 12) {
+            VStack(spacing: AppSpacing.element) {
                 Text("\(firstName),")
                     .font(.system(size: 50, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
@@ -136,7 +132,6 @@ struct HomeView: View {
                     .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
             }
             .shadow(color: .white.opacity(0.08), radius: 10, y: 3)
-            .padding(.trailing, 2)
             .padding(.top, 2)
         }
         .padding(.horizontal, AppSpacing.screenHorizontal)
@@ -145,11 +140,9 @@ struct HomeView: View {
     // MARK: - Mode Picker
 
     private var modePicker: some View {
-        HStack(spacing: 14) {
-            HStack(spacing: 14) {
-                modePill(label: "AI Mode", mode: .ai)
-                modePill(label: "Human Mode", mode: .human)
-            }
+        HStack(spacing: AppSpacing.element) {
+            modePill(label: "AI Mode", mode: .ai)
+            modePill(label: "Human Mode", mode: .human)
         }
         .frame(maxWidth: .infinity)
         .padding(.horizontal, AppSpacing.screenHorizontal)
@@ -196,14 +189,13 @@ struct HomeView: View {
                             .shadow(color: PromptTheme.softLilac.opacity(0.18), radius: 12, y: 3)
                     } else {
                         Capsule()
-                            .fill(PromptTheme.deepShadow.opacity(0.48))
-                            .background(.ultraThinMaterial, in: Capsule())
+                            .fill(.ultraThinMaterial)
                             .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 1))
                     }
                 }
         }
         .buttonStyle(.plain)
-        .frame(maxWidth: 252)
+        // Removed the hardcoded maxWidth that was breaking alignment
     }
 
     // MARK: - Orb + Transcript + Result
@@ -222,12 +214,12 @@ struct HomeView: View {
             .font(PromptTheme.Typography.rounded(16, .regular))
             .foregroundStyle(PromptTheme.paleLilacWhite.opacity(hasResult ? 0.82 : 0.72))
             .multilineTextAlignment(.center)
-            .padding(.horizontal, PromptTheme.Spacing.l)
+            .padding(.horizontal, AppSpacing.screenHorizontal)
     }
 
     private var resultSection: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 12) {
+            VStack(spacing: AppSpacing.element) {
                 ResultView(viewModel: generateViewModel)
 
                 if let err = generateViewModel.errorMessage {
@@ -236,10 +228,11 @@ struct HomeView: View {
 
                 Color.clear.frame(height: 20)
             }
-            .padding(.horizontal, PromptTheme.Spacing.m)
-            .padding(.top, PromptTheme.Spacing.m)
+            .padding(.horizontal, AppSpacing.screenHorizontal)
+            .padding(.top, AppSpacing.element)
         }
     }
+    
     // MARK: - Type Instead
 
     private var typeInsteadButton: some View {
@@ -248,11 +241,10 @@ struct HomeView: View {
                 .font(.system(size: 18, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.74))
                 .frame(maxWidth: .infinity)
-                .frame(height: 58)
+                .frame(height: AppHeights.floatingTabBar)
                 .background(
                     Capsule()
-                        .fill(PromptTheme.deepShadow.opacity(0.5))
-                        .background(.ultraThinMaterial, in: Capsule())
+                        .fill(.ultraThinMaterial)
                         .overlay(
                             Capsule()
                                 .stroke(.white.opacity(0.16), lineWidth: 1)

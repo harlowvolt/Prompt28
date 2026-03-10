@@ -450,7 +450,7 @@ struct AuthFlowView: View {
             return "Apple credential import failed."
         case .credentialExport:
             return "Apple credential export failed."
-        @unknown default:
+        default:
             return "Apple Sign In failed with an unknown error."
         }
     }

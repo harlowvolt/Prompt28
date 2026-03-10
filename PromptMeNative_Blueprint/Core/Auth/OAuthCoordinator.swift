@@ -98,8 +98,14 @@ final class AppleSignInHelper: NSObject,
             return window
         }
 
-        // Last-resort empty anchor avoids crashing; caller will receive auth error instead.
-        return ASPresentationAnchor()
+        if let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first {
+            return ASPresentationAnchor(windowScene: scene)
+        }
+
+        // Last-resort anchor avoids deprecated empty initializer.
+        return ASPresentationAnchor(frame: .zero)
     }
 
     func authorizationController(controller: ASAuthorizationController,
