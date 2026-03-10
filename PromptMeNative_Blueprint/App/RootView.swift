@@ -3,6 +3,7 @@ import UIKit
 
 struct RootView: View {
     @EnvironmentObject private var env: AppEnvironment
+    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var didBootstrap = false
     @State private var selectedTab: MainTab = .home
     private let tabBarProtectedInset: CGFloat = 84
@@ -35,7 +36,15 @@ struct RootView: View {
             if !didBootstrap || env.authManager.isBootstrapping {
                 launchView
             } else if env.authManager.isAuthenticated {
-                mainTabs
+                if !hasSeenOnboarding {
+                    OnboardingView {
+                        withAnimation(.easeInOut(duration: 0.35)) {
+                            hasSeenOnboarding = true
+                        }
+                    }
+                } else {
+                    mainTabs
+                }
             } else {
                 AuthFlowView()
             }

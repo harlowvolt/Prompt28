@@ -9,6 +9,7 @@ final class AppEnvironment: ObservableObject {
     let historyStore: HistoryStore
     let preferencesStore: PreferencesStore
     let router: AppRouter
+    let storeManager: StoreManager
 
     private var cancellables = Set<AnyCancellable>()
 
@@ -23,6 +24,7 @@ final class AppEnvironment: ObservableObject {
         self.historyStore = HistoryStore()
         self.preferencesStore = PreferencesStore()
         self.router = AppRouter()
+        self.storeManager = StoreManager()
 
         // Forward authManager changes to AppEnvironment so RootView re-renders on login/logout
         self.authManager.objectWillChange

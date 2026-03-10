@@ -11,10 +11,12 @@ struct OrbView: View {
             Button {
                 Task {
                     if engine.isRecording {
+                        HapticService.impact(.light)
                         if let final = await engine.stopListeningAndFinalize() {
                             onTranscript(final)
                         }
                     } else {
+                        HapticService.impact(.heavy)
                         engine.startListening()
                     }
                 }

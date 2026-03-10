@@ -93,19 +93,18 @@ final class AppleSignInHelper: NSObject,
     }
 
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        // Prefer active scene window lookup so auth UI can always present.
+        // Prefer the active key window — best option for presentation.
         if let window = foregroundKeyWindow() {
             return window
         }
-
+        // Fall back to any connected window scene (uses non-deprecated init).
         if let scene = UIApplication.shared.connectedScenes
             .compactMap({ $0 as? UIWindowScene })
             .first {
             return ASPresentationAnchor(windowScene: scene)
         }
-
-        // Last-resort anchor avoids deprecated empty initializer.
-        return ASPresentationAnchor(frame: .zero)
+        // Should never be reached on a running iOS app, but satisfies the compiler.
+        fatalError("No UIWindowScene available — app is not in a valid state.")
     }
 
     func authorizationController(controller: ASAuthorizationController,

@@ -1,5 +1,6 @@
 import Combine
 import Foundation
+import UIKit
 
 @MainActor
 final class GenerateViewModel: ObservableObject {
@@ -12,6 +13,7 @@ final class GenerateViewModel: ObservableObject {
     @Published private(set) var latestHistoryItemID: UUID?
     @Published private(set) var isLatestFavorite = false
     @Published var errorMessage: String?
+    @Published var showPaywall = false
 
     private let apiClient: APIClient
     private let authManager: AuthManager
@@ -55,11 +57,13 @@ final class GenerateViewModel: ObservableObject {
 
     func generateFromOrb(text: String) async {
         inputText = text
+        AnalyticsService.shared.track(.generateTapped(mode: selectedMode.rawValue))
         await runGenerate(input: text, refinement: nil)
     }
 
     func refine() async {
         guard let latestResult else { return }
+        AnalyticsService.shared.track(.refinePrompt)
         await runGenerate(input: latestResult.professional, refinement: refinementText)
     }
 
@@ -67,6 +71,7 @@ final class GenerateViewModel: ObservableObject {
         let cleanedInput = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanedInput.isEmpty else {
             errorMessage = "No speech detected. Try again and speak a little longer."
+            HapticService.notification(.error)
             return
         }
 
@@ -93,11 +98,30 @@ final class GenerateViewModel: ObservableObject {
                 latestResult = nil
                 latestHistoryItemID = nil
                 isLatestFavorite = false
+                HapticService.notification(.error)
                 return
             }
 
             latestResult = response
             latestInput = cleanedInput
+
+            // Analytics: track success
+            let wordCount = promptText.split(separator: " ").count
+            AnalyticsService.shared.track(.generateSuccess(mode: selectedMode.rawValue, wordCount: wordCount))
+
+            // Haptics: success pulse
+            HapticService.notification(.success)
+
+            // Paywall: show if user has run out of prompts
+            if let remaining = response.prompts_remaining, remaining <= 0 {
+                showPaywall = true
+                AnalyticsService.shared.track(.paywallShown)
+            }
+
+            // Notifications: low-usage local alert
+            if let remaining = response.prompts_remaining {
+                NotificationService.scheduleLowUsageAlert(remaining: remaining)
+            }
 
             if preferencesStore.preferences.saveHistory {
                 let item = PromptHistoryItem(
@@ -109,6 +133,11 @@ final class GenerateViewModel: ObservableObject {
                 historyStore.add(item)
                 latestHistoryItemID = item.id
                 isLatestFavorite = item.favorite
+
+                // Notifications: request permission on first-ever successful save
+                if historyStore.items.count == 1 {
+                    Task { _ = await NotificationService.requestPermission() }
+                }
             } else {
                 latestHistoryItemID = nil
                 isLatestFavorite = false
@@ -116,14 +145,22 @@ final class GenerateViewModel: ObservableObject {
 
             await authManager.refreshMe()
         } catch {
+            HapticService.notification(.error)
             if let network = error as? NetworkError {
                 if network.isSessionExpired {
                     authManager.logout()
+                }
+                // Show paywall on rate limit
+                if case .rateLimited = network {
+                    showPaywall = true
+                    AnalyticsService.shared.track(.generateRateLimited)
+                    AnalyticsService.shared.track(.paywallShown)
                 }
                 errorMessage = network.errorDescription
             } else {
                 errorMessage = error.localizedDescription
             }
+            AnalyticsService.shared.track(.generateError(message: error.localizedDescription))
         }
     }
 
@@ -145,6 +182,8 @@ final class GenerateViewModel: ObservableObject {
 
     func toggleFavoriteForLatest() {
         guard let latestResult else { return }
+        HapticService.impact(.medium)
+        AnalyticsService.shared.track(.favoriteTapped)
 
         if let id = latestHistoryItemID {
             historyStore.toggleFavorite(id: id)

@@ -64,6 +64,13 @@
 		CCAB0BE32F5D780200C29A7E /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B832F5D780200C29A7E /* HomeView.swift */; };
 		CCAB0BF12F5D780200C29A7E /* AppUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0BF02F5D780200C29A7E /* AppUI.swift */; };
 		CCAB0BF22F5D780200C29A7E /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B812F5D780200C29A7E /* HomeViewModel.swift */; };
+		CCDE00000000000000000002 /* HapticService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000001 /* HapticService.swift */; };
+		CCDE00000000000000000004 /* AnalyticsService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000003 /* AnalyticsService.swift */; };
+		CCDE00000000000000000006 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000005 /* OnboardingView.swift */; };
+		CCDE00000000000000000008 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000007 /* PrivacyInfo.xcprivacy */; };
+		CCDE00000000000000000011 /* StoreConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000010 /* StoreConfig.swift */; };
+		CCDE00000000000000000013 /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000012 /* StoreManager.swift */; };
+		CCDE00000000000000000016 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000015 /* NotificationService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -143,6 +150,13 @@
 		CCD1CDF92F5C55F700566BCF /* Prompt28.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Prompt28.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CCD1CE082F5C55FC00566BCF /* Prompt28Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Prompt28Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CCD1CE122F5C55FC00566BCF /* Prompt28UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Prompt28UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CCDE00000000000000000001 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
+		CCDE00000000000000000003 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
+		CCDE00000000000000000005 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
+		CCDE00000000000000000007 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = file.xcprivacy; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		CCDE00000000000000000010 /* StoreConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreConfig.swift; sourceTree = "<group>"; };
+		CCDE00000000000000000012 /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
+		CCDE00000000000000000015 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -257,6 +271,8 @@
 			children = (
 				CCAB0B662F5D780200C29A7E /* Date+Extensions.swift */,
 				CCAB0B672F5D780200C29A7E /* JSONCoding.swift */,
+				CCDE00000000000000000001 /* HapticService.swift */,
+				CCDE00000000000000000003 /* AnalyticsService.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -269,6 +285,8 @@
 				CCAB0B612F5D780200C29A7E /* Networking */,
 				CCAB0B652F5D780200C29A7E /* Storage */,
 				CCAB0B682F5D780200C29A7E /* Utils */,
+				CCDE00000000000000000014 /* Store */,
+				CCDE00000000000000000017 /* Notifications */,
 			);
 			path = Core;
 			sourceTree = "<group>";
@@ -446,6 +464,7 @@
 				CCAB0B792F5D780200C29A7E /* Auth */,
 				CCAB0B7F2F5D780200C29A7E /* History */,
 				CCAB0B882F5D780200C29A7E /* Home */,
+				CCDE00000000000000000009 /* Onboarding */,
 				CCAB0B8E2F5D780200C29A7E /* Settings */,
 				CCAB0B942F5D780200C29A7E /* Trending */,
 			);
@@ -523,6 +542,7 @@
 				CCAB0BA22F5D780200C29A7E /* Resources */,
 				CCAB0BAA2F5D780200C29A7E /* UITests */,
 				CCAB0BAB2F5D780200C29A7E /* PromptMeNativeApp.swift */,
+				CCDE00000000000000000007 /* PrivacyInfo.xcprivacy */,
 			);
 			path = PromptMeNative_Blueprint;
 			sourceTree = "<group>";
@@ -546,6 +566,39 @@
 				CCD1CE122F5C55FC00566BCF /* Prompt28UITests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		CCDE00000000000000000009 /* Onboarding */ = {
+			isa = PBXGroup;
+			children = (
+				CCDE0000000000000000000A /* Views */,
+			);
+			path = Onboarding;
+			sourceTree = "<group>";
+		};
+		CCDE0000000000000000000A /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				CCDE00000000000000000005 /* OnboardingView.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		CCDE00000000000000000014 /* Store */ = {
+			isa = PBXGroup;
+			children = (
+				CCDE00000000000000000010 /* StoreConfig.swift */,
+				CCDE00000000000000000012 /* StoreManager.swift */,
+			);
+			path = Store;
+			sourceTree = "<group>";
+		};
+		CCDE00000000000000000017 /* Notifications */ = {
+			isa = PBXGroup;
+			children = (
+				CCDE00000000000000000015 /* NotificationService.swift */,
+			);
+			path = Notifications;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -670,6 +723,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CCDE00000000000000000008 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -749,6 +803,12 @@
 				CCAB0BE32F5D780200C29A7E /* HomeView.swift in Sources */,
 				CCAB0BF12F5D780200C29A7E /* AppUI.swift in Sources */,
 				CCAB0BF22F5D780200C29A7E /* HomeViewModel.swift in Sources */,
+				CCDE00000000000000000002 /* HapticService.swift in Sources */,
+				CCDE00000000000000000004 /* AnalyticsService.swift in Sources */,
+				CCDE00000000000000000006 /* OnboardingView.swift in Sources */,
+				CCDE00000000000000000011 /* StoreConfig.swift in Sources */,
+				CCDE00000000000000000013 /* StoreManager.swift in Sources */,
+				CCDE00000000000000000016 /* NotificationService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

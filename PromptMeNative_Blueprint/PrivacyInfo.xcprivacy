@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <!--
+        Prompt28 Privacy Manifest  (PrivacyInfo.xcprivacy)
+        ──────────────────────────────────────────────────
+        Required by Apple for App Store submission as of Spring 2024.
+        Add this file to your Xcode target's "Copy Bundle Resources" build phase.
+
+        How to add in Xcode:
+          1. Drag this file into the PromptMeNative_Blueprint group in the Project Navigator.
+          2. When prompted, check "Add to targets: PromptMeNative_Blueprint".
+          3. Confirm it appears in Build Phases → Copy Bundle Resources.
+
+        Update this file whenever you add new APIs or data collection.
+    -->
+
+    <!-- ── Data collected and linked to the user ─────────────────────────── -->
+    <key>NSPrivacyCollectedDataTypes</key>
+    <array>
+
+        <!-- Email address (used for Sign in with Apple / Google auth) -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeEmailAddress</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+        <!-- Name (first name shown in greeting from Sign in with Apple) -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeName</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+        <!-- User-generated content (voice input text sent to the API) -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeOtherUserContent</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <true/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+        <!-- Product interaction analytics (button taps, mode switches, etc.) -->
+        <dict>
+            <key>NSPrivacyCollectedDataType</key>
+            <string>NSPrivacyCollectedDataTypeProductInteraction</string>
+            <key>NSPrivacyCollectedDataTypeLinked</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypeTracking</key>
+            <false/>
+            <key>NSPrivacyCollectedDataTypePurposes</key>
+            <array>
+                <string>NSPrivacyCollectedDataTypePurposeAnalytics</string>
+                <string>NSPrivacyCollectedDataTypePurposeAppFunctionality</string>
+            </array>
+        </dict>
+
+    </array>
+
+    <!-- ── Required-reason APIs used by this app ─────────────────────────── -->
+    <key>NSPrivacyAccessedAPITypes</key>
+    <array>
+
+        <!--
+            UserDefaults — @AppStorage keys:
+              • hasSeenOnboarding (Bool)
+              • selectedMode (PromptMode raw value via PreferencesStore)
+              • saveHistory (Bool via PreferencesStore)
+        -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryUserDefaults</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- CA92.1: Accessing info from the same app that wrote it -->
+                <string>CA92.1</string>
+            </array>
+        </dict>
+
+        <!--
+            File timestamp APIs — used by HistoryStore when persisting
+            PromptHistoryItem records (JSONEncoder/FileManager).
+        -->
+        <dict>
+            <key>NSPrivacyAccessedAPIType</key>
+            <string>NSPrivacyAccessedAPICategoryFileTimestamp</string>
+            <key>NSPrivacyAccessedAPITypeReasons</key>
+            <array>
+                <!-- C617.1: Inside app sandbox, not used for fingerprinting -->
+                <string>C617.1</string>
+            </array>
+        </dict>
+
+    </array>
+
+    <!-- ── Tracking declaration ───────────────────────────────────────────── -->
+    <!--
+        Set to true ONLY if you add a cross-app tracking SDK
+        (e.g. Meta Audience Network, AppLovin, etc.).
+        Leave false for analytics-only SDKs like Mixpanel / Amplitude.
+    -->
+    <key>NSPrivacyTracking</key>
+    <false/>
+
+    <!-- Leave empty unless you use cross-app tracking domains -->
+    <key>NSPrivacyTrackingDomains</key>
+    <array/>
+
+</dict>
+</plist>

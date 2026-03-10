@@ -2,12 +2,13 @@ import SwiftUI
 
 struct HomeView: View {
     private enum ActiveSheet: Identifiable {
-        case typePrompt, settings
+        case typePrompt, settings, upgrade
 
         var id: String {
             switch self {
             case .typePrompt: return "typePrompt"
             case .settings:   return "settings"
+            case .upgrade:    return "upgrade"
             }
         }
     }
@@ -15,6 +16,7 @@ struct HomeView: View {
     @EnvironmentObject private var env: AppEnvironment
     @StateObject private var orbEngine = OrbEngine.makeDefault()
     @StateObject private var generateViewModel: GenerateViewModel
+    @StateObject private var settingsViewModel = SettingsViewModel()
 
     @State private var activeSheet: ActiveSheet?
     @State private var showCopiedToast = false
@@ -40,14 +42,10 @@ struct HomeView: View {
                 PromptPremiumBackground()
                     .ignoresSafeArea()
 
-                // The fix: Using AppSpacing.section globally instead of random paddings
                 VStack(spacing: AppSpacing.section) {
                     headerSection
 
-                    VStack(spacing: AppSpacing.element) {
-                        modePicker
-                        modeDescriptionLine
-                    }
+                    modePicker
 
                     orbSection(screenWidth: proxy.size.width)
 
@@ -64,7 +62,7 @@ struct HomeView: View {
                 }
                 .padding(.top, topSafe + AppSpacing.top)
                 .padding(.bottom, AppSpacing.bottomContentClearance)
-                .frame(width: proxy.size.width, height: proxy.size.height)
+                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
             }
         }
         .overlay(alignment: .bottom) { copiedToast }
@@ -96,6 +94,13 @@ struct HomeView: View {
                 .presentationDragIndicator(.visible)
                 .presentationBackground(.regularMaterial)
                 .presentationCornerRadius(32)
+
+            case .upgrade:
+                UpgradeView(viewModel: settingsViewModel)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationBackground(.regularMaterial)
+                    .presentationCornerRadius(32)
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: .prompt28DidCopyPrompt)) { _ in
@@ -103,6 +108,17 @@ struct HomeView: View {
             DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
                 withAnimation(.easeInOut(duration: 0.2)) { showCopiedToast = false }
             }
+        }
+        .onChange(of: generateViewModel.showPaywall) { _, show in
+            if show { activeSheet = .upgrade }
+        }
+        .task {
+            settingsViewModel.bind(
+                apiClient: env.apiClient,
+                authManager: env.authManager,
+                preferencesStore: env.preferencesStore,
+                historyStore: env.historyStore
+            )
         }
     }
 
@@ -112,7 +128,7 @@ struct HomeView: View {
         ZStack(alignment: .topTrailing) {
             VStack(spacing: AppSpacing.element) {
                 Text("\(firstName),")
-                    .font(.system(size: 50, weight: .bold, design: .rounded))
+                    .font(.system(size: 40, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
                     .multilineTextAlignment(.center)
 
@@ -120,6 +136,38 @@ struct HomeView: View {
                     .font(.system(size: 16, weight: .regular, design: .rounded))
                     .foregroundStyle(.white.opacity(0.55))
                     .multilineTextAlignment(.center)
+
+                if let remaining = promptsRemaining {
+                    Button { activeSheet = .upgrade } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: remaining > 0 ? "bolt.fill" : "lock.fill")
+                                .font(.system(size: 10, weight: .semibold))
+                            Text(remaining > 0
+                                 ? "\(remaining) prompt\(remaining == 1 ? "" : "s") left"
+                                 : "Upgrade for more")
+                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        }
+                        .foregroundStyle(remaining > 0
+                                         ? PromptTheme.softLilac.opacity(0.88)
+                                         : Color.yellow.opacity(0.92))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 5)
+                        .background(
+                            Capsule()
+                                .fill(remaining > 0
+                                      ? PromptTheme.mutedViolet.opacity(0.22)
+                                      : Color.yellow.opacity(0.12))
+                                .overlay(Capsule().stroke(
+                                    remaining > 0
+                                    ? PromptTheme.softLilac.opacity(0.28)
+                                    : Color.yellow.opacity(0.30),
+                                    lineWidth: 1))
+                        )
+                    }
+                    .buttonStyle(.plain)
+                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                    .animation(.easeInOut(duration: 0.25), value: remaining)
+                }
             }
             .frame(maxWidth: .infinity)
 
@@ -148,24 +196,6 @@ struct HomeView: View {
         .padding(.horizontal, AppSpacing.screenHorizontal)
     }
 
-    private var modeDescriptionLine: some View {
-        Text(modeDescription)
-            .font(.system(size: 13, weight: .regular, design: .rounded))
-            .foregroundStyle(.white.opacity(0.42))
-            .multilineTextAlignment(.center)
-            .transition(.opacity.combined(with: .move(edge: .top)))
-            .animation(.easeInOut(duration: 0.2), value: generateViewModel.selectedMode)
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, AppSpacing.screenHorizontal)
-    }
-
-    private var modeDescription: String {
-        switch generateViewModel.selectedMode {
-        case .ai:    return "Standard AI prompt style"
-        case .human: return "Sounds like a real human wrote it"
-        }
-    }
-
     private func modePill(label: String, mode: PromptMode) -> some View {
         let isSelected = generateViewModel.selectedMode == mode
 
@@ -173,6 +203,8 @@ struct HomeView: View {
             withAnimation(.easeInOut(duration: 0.18)) {
                 generateViewModel.selectedMode = mode
             }
+            HapticService.selection()
+            AnalyticsService.shared.track(.modeSwitched(to: mode.rawValue))
         } label: {
             Text(label)
                 .font(.system(size: 14, weight: isSelected ? .semibold : .medium, design: .rounded))
@@ -201,8 +233,8 @@ struct HomeView: View {
     // MARK: - Orb + Transcript + Result
 
     private func orbSection(screenWidth: CGFloat) -> some View {
-        let restingOrb = min(screenWidth * 0.90, 360)
-        let resultOrb = min(screenWidth * 0.70, 286)
+        let restingOrb = min(screenWidth * 0.72, 280)
+        let resultOrb = min(screenWidth * 0.55, 220)
 
         return OrbView(engine: orbEngine, onTranscript: generateFromText)
             .frame(width: hasResult ? resultOrb : restingOrb, height: hasResult ? resultOrb : restingOrb)
@@ -279,6 +311,12 @@ struct HomeView: View {
     // MARK: - Helpers
 
     private var hasResult: Bool { !generateViewModel.latestPromptText.isEmpty }
+
+    /// Returns remaining prompt count from the most recent API response, or nil before first generation.
+    private var promptsRemaining: Int? {
+        guard let remaining = generateViewModel.latestResult?.prompts_remaining else { return nil }
+        return remaining
+    }
 
     private var firstName: String {
         let full = env.authManager.currentUser?.name ?? ""
