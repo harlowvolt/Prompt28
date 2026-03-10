@@ -145,25 +145,7 @@
 		CCD1CE122F5C55FC00566BCF /* Prompt28UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Prompt28UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		CCF30A312F5D9967004405D8 /* Exceptions for "Prompt28" folder in "Prompt28" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = CCD1CDF82F5C55F700566BCF /* Prompt28 */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		CCD1CDFB2F5C55F700566BCF /* Prompt28 */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				CCF30A312F5D9967004405D8 /* Exceptions for "Prompt28" folder in "Prompt28" target */,
-			);
-			path = Prompt28;
-			sourceTree = "<group>";
-		};
 		CCD1CE0B2F5C55FC00566BCF /* Prompt28Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = Prompt28Tests;
@@ -549,7 +531,6 @@
 			isa = PBXGroup;
 			children = (
 				CCAB0BAC2F5D780200C29A7E /* PromptMeNative_Blueprint */,
-				CCD1CDFB2F5C55F700566BCF /* Prompt28 */,
 				CCD1CE0B2F5C55FC00566BCF /* Prompt28Tests */,
 				CCD1CE152F5C55FC00566BCF /* Prompt28UITests */,
 				CC564D062F5FD40F008BE78E /* Frameworks */,
@@ -581,9 +562,6 @@
 			buildRules = (
 			);
 			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				CCD1CDFB2F5C55F700566BCF /* Prompt28 */,
 			);
 			name = Prompt28;
 			packageProductDependencies = (
