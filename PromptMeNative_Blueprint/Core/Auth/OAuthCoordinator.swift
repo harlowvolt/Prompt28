@@ -1,3 +1,4 @@
+import AuthenticationServices
 import GoogleSignIn
 import UIKit
 
@@ -15,16 +16,14 @@ enum OAuthError: LocalizedError {
     }
 }
 
-// MARK: - Helpers
+// MARK: - Private helpers
 
 /// Walks the VC hierarchy to find whatever is currently on top.
 private func topmostViewController(from base: UIViewController) -> UIViewController {
-    if let nav = base as? UINavigationController,
-       let visible = nav.visibleViewController {
+    if let nav = base as? UINavigationController, let visible = nav.visibleViewController {
         return topmostViewController(from: visible)
     }
-    if let tab = base as? UITabBarController,
-       let selected = tab.selectedViewController {
+    if let tab = base as? UITabBarController, let selected = tab.selectedViewController {
         return topmostViewController(from: selected)
     }
     if let presented = base.presentedViewController {
@@ -33,29 +32,66 @@ private func topmostViewController(from base: UIViewController) -> UIViewControl
     return base
 }
 
+private func foregroundKeyWindow() -> UIWindow? {
+    UIApplication.shared.connectedScenes
+        .compactMap { $0 as? UIWindowScene }
+        .first(where: { $0.activationState == .foregroundActive })?
+        .keyWindow
+}
+
 // MARK: - Google Sign-In
 
 @MainActor
 final class OAuthCoordinator {
 
-    /// Presents the Google Sign-In sheet and returns the ID token your backend expects.
     static func googleIDToken() async throws -> String {
-        guard
-            let windowScene = UIApplication.shared.connectedScenes
-                .compactMap({ $0 as? UIWindowScene })
-                .first(where: { $0.activationState == .foregroundActive }),
-            let rootVC = windowScene.keyWindow?.rootViewController
-        else {
+        guard let rootVC = foregroundKeyWindow()?.rootViewController else {
             throw OAuthError.noWindow
         }
-
         let presenter = topmostViewController(from: rootVC)
         let result = try await GIDSignIn.sharedInstance.signIn(withPresenting: presenter)
-
         guard let idToken = result.user.idToken?.tokenString else {
             throw OAuthError.missingToken
         }
-
         return idToken
+    }
+}
+
+// MARK: - Apple Sign-In
+// Kept in this file so no new Xcode project registration is needed.
+
+@MainActor
+final class AppleSignInHelper: NSObject,
+    ASAuthorizationControllerDelegate,
+    ASAuthorizationControllerPresentationContextProviding
+{
+    private var continuation: CheckedContinuation<ASAuthorization, Error>?
+
+    func signIn() async throws -> ASAuthorization {
+        try await withCheckedThrowingContinuation { continuation in
+            self.continuation = continuation
+            let request = ASAuthorizationAppleIDProvider().createRequest()
+            request.requestedScopes = [.email, .fullName]
+            let controller = ASAuthorizationController(authorizationRequests: [request])
+            controller.delegate = self
+            controller.presentationContextProvider = self
+            controller.performRequests()
+        }
+    }
+
+    func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
+        foregroundKeyWindow() ?? UIWindow()
+    }
+
+    func authorizationController(controller: ASAuthorizationController,
+                                 didCompleteWithAuthorization authorization: ASAuthorization) {
+        continuation?.resume(returning: authorization)
+        continuation = nil
+    }
+
+    func authorizationController(controller: ASAuthorizationController,
+                                 didCompleteWithError error: Error) {
+        continuation?.resume(throwing: error)
+        continuation = nil
     }
 }
