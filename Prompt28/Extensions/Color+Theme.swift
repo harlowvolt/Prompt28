@@ -16,9 +16,4 @@ extension LinearGradient {
     )
 }
 
-enum PromptMode: String, CaseIterable, Identifiable {
-    case ai = "AI Mode"
-    case human = "Human Mode"
-
-    var id: String { rawValue }
-}
+// PromptMode is defined in GenerateModels.swift — do not redeclare here

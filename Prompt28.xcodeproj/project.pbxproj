@@ -61,6 +61,9 @@
 		CCAB0BE02F5D780200C29A7E /* GenerateViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B802F5D780200C29A7E /* GenerateViewModel.swift */; };
 		CCAB0BE12F5D780200C29A7E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B8B2F5D780200C29A7E /* SettingsView.swift */; };
 		CCAB0BE22F5D780200C29A7E /* TrendingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B922F5D780200C29A7E /* TrendingView.swift */; };
+		CCAB0BE32F5D780200C29A7E /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B832F5D780200C29A7E /* HomeView.swift */; };
+		CCAB0BF12F5D780200C29A7E /* AppUI.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0BF02F5D780200C29A7E /* AppUI.swift */; };
+		CCAB0BF22F5D780200C29A7E /* HomeViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B812F5D780200C29A7E /* HomeViewModel.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -88,6 +91,7 @@
 		CCAB0B512F5D780200C29A7E /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
 		CCAB0B532F5D780200C29A7E /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		CCAB0B542F5D780200C29A7E /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
+		CCAB0BF02F5D780200C29A7E /* AppUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUI.swift; sourceTree = "<group>"; };
 		CCAB0B562F5D780200C29A7E /* OrbEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrbEngine.swift; sourceTree = "<group>"; };
 		CCAB0B572F5D780200C29A7E /* SpeechRecognizerService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechRecognizerService.swift; sourceTree = "<group>"; };
 		CCAB0B592F5D780200C29A7E /* AuthManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthManager.swift; sourceTree = "<group>"; };
@@ -221,6 +225,7 @@
 				CCAB0B532F5D780200C29A7E /* AppEnvironment.swift */,
 				CCA100001122334455667704 /* PremiumTabScreen.swift */,
 				CCAB0B542F5D780200C29A7E /* RootView.swift */,
+				CCAB0BF02F5D780200C29A7E /* AppUI.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -763,6 +768,9 @@
 				CCAB0BE02F5D780200C29A7E /* GenerateViewModel.swift in Sources */,
 				CCAB0BE12F5D780200C29A7E /* SettingsView.swift in Sources */,
 				CCAB0BE22F5D780200C29A7E /* TrendingView.swift in Sources */,
+			CCAB0BE32F5D780200C29A7E /* HomeView.swift in Sources */,
+				CCAB0BF12F5D780200C29A7E /* AppUI.swift in Sources */,
+				CCAB0BF22F5D780200C29A7E /* HomeViewModel.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
