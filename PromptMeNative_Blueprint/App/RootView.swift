@@ -10,9 +10,13 @@ struct RootView: View {
     init() {
         let appearance = UITabBarAppearance()
         appearance.configureWithTransparentBackground()
-        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
+        appearance.backgroundEffect = UIBlurEffect(style: .systemThinMaterialDark)
         appearance.backgroundColor = PromptTheme.tabBackground
         appearance.shadowColor = PromptTheme.tabShadow
+        appearance.selectionIndicatorImage = UIImage.tabSelectionIndicator(
+            color: UIColor(red: 0.80, green: 0.82, blue: 0.90, alpha: 0.18),
+            stroke: UIColor(red: 0.92, green: 0.94, blue: 1.0, alpha: 0.18)
+        )
 
         appearance.stackedLayoutAppearance.selected.iconColor = PromptTheme.tabSelected
         appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: PromptTheme.tabSelected]
@@ -112,40 +116,77 @@ struct PromptPremiumBackground: View {
     var body: some View {
         GeometryReader { geo in
             let size = geo.size
-            let maxDimension = max(size.width, size.height)
 
             ZStack {
                 PromptTheme.backgroundBase
 
                 LinearGradient(
                     colors: [
-                        PromptTheme.deepShadow.opacity(0.96),
-                        PromptTheme.plum.opacity(0.84),
-                        PromptTheme.backgroundBase.opacity(0.98)
+                        PromptTheme.backgroundBase.opacity(1.0),
+                        PromptTheme.deepShadow.opacity(0.98),
+                        PromptTheme.plum.opacity(0.88),
+                        PromptTheme.backgroundBase.opacity(1.0)
                     ],
-                    startPoint: .topLeading,
-                    endPoint: .bottomTrailing
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
 
-                RadialGradient(
-                    colors: [
-                        PromptTheme.plum.opacity(0.62),
-                        PromptTheme.deepShadow.opacity(0.26),
-                        .clear
-                    ],
-                    center: UnitPoint(x: 0.5, y: 0.22),
-                    startRadius: maxDimension * 0.03,
-                    endRadius: maxDimension * 0.74
-                )
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                .clear,
+                                PromptTheme.softLilac.opacity(0.11),
+                                .clear
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: size.width * 0.34)
+                    .position(x: size.width * 0.5, y: size.height * 0.52)
+                    .blur(radius: 50)
 
-                RadialGradient(
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                .clear,
+                                PromptTheme.mutedViolet.opacity(0.08),
+                                .clear
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: size.width * 0.16)
+                    .position(x: size.width * 0.28, y: size.height * 0.46)
+                    .blur(radius: 44)
+
+                Rectangle()
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                .clear,
+                                PromptTheme.mutedViolet.opacity(0.07),
+                                .clear
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                    )
+                    .frame(width: size.width * 0.14)
+                    .position(x: size.width * 0.74, y: size.height * 0.48)
+                    .blur(radius: 42)
+
+                LinearGradient(
                     colors: [
-                        PromptTheme.mutedViolet.opacity(0.25),
-                        .clear
+                        Color.black.opacity(0.18),
+                        .clear,
+                        Color.black.opacity(0.22)
                     ],
-                    center: UnitPoint(x: 0.84, y: 0.06),
-                    startRadius: maxDimension * 0.02,
-                    endRadius: maxDimension * 0.42
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
             }
             .frame(width: size.width, height: size.height)
@@ -155,15 +196,15 @@ struct PromptPremiumBackground: View {
 }
 
 enum PromptTheme {
-    static let backgroundBase = Color(hex: "#08070D")
-    static let deepShadow = Color(hex: "#151021")
-    static let plum = Color(hex: "#24192F")
-    static let mutedViolet = Color(hex: "#6F5AA8")
-    static let softLilac = Color(hex: "#CFC3F6")
-    static let paleLilacWhite = Color(hex: "#EEE9FF")
+    static let backgroundBase = Color(hex: "#04050C")
+    static let deepShadow = Color(hex: "#0A0D1A")
+    static let plum = Color(hex: "#131A2A")
+    static let mutedViolet = Color(hex: "#5D628A")
+    static let softLilac = Color(hex: "#CFD7FF")
+    static let paleLilacWhite = Color(hex: "#F2F5FF")
 
-    static let glassFill = Color(red: 0.17, green: 0.13, blue: 0.22).opacity(0.52)
-    static let glassStroke = Color(red: 0.72, green: 0.67, blue: 0.82).opacity(0.26)
+    static let glassFill = Color(red: 0.10, green: 0.12, blue: 0.21).opacity(0.56)
+    static let glassStroke = Color(red: 0.76, green: 0.80, blue: 0.93).opacity(0.24)
 
     static let backgroundGradient = LinearGradient(
         colors: [backgroundBase, deepShadow, plum, backgroundBase],
@@ -171,14 +212,14 @@ enum PromptTheme {
         endPoint: .bottom
     )
 
-    static let orbIdleGlow = Color(hex: "#6F5AA8")
-    static let orbActiveGlow = Color(hex: "#8A74BE")
-    static let orbProcessingGlow = Color(hex: "#9D8ACB")
+    static let orbIdleGlow = Color(hex: "#95A7FF")
+    static let orbActiveGlow = Color(hex: "#A9BAFF")
+    static let orbProcessingGlow = Color(hex: "#B9C6FF")
 
-    static let tabBackground = UIColor(red: 0.08, green: 0.06, blue: 0.12, alpha: 0.64)
-    static let tabShadow = UIColor(red: 0.78, green: 0.74, blue: 0.88, alpha: 0.07)
-    static let tabSelected = UIColor(red: 0.81, green: 0.76, blue: 0.96, alpha: 1.0)
-    static let tabUnselected = UIColor(red: 0.57, green: 0.52, blue: 0.67, alpha: 1.0)
+    static let tabBackground = UIColor(red: 0.08, green: 0.09, blue: 0.15, alpha: 0.72)
+    static let tabShadow = UIColor(red: 0.83, green: 0.87, blue: 0.98, alpha: 0.10)
+    static let tabSelected = UIColor(red: 0.92, green: 0.94, blue: 1.0, alpha: 1.0)
+    static let tabUnselected = UIColor(red: 0.61, green: 0.63, blue: 0.72, alpha: 1.0)
 
     enum Typography {
         static func rounded(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
@@ -214,5 +255,27 @@ extension Color {
         let blue = Double(value & 0xFF) / 255.0
 
         self.init(.sRGB, red: red, green: green, blue: blue, opacity: 1)
+    }
+}
+
+private extension UIImage {
+    static func tabSelectionIndicator(color: UIColor, stroke: UIColor) -> UIImage {
+        let size = CGSize(width: 86, height: 62)
+        let rect = CGRect(origin: .zero, size: size).insetBy(dx: 6, dy: 7)
+        let radius: CGFloat = 21
+
+        let image = UIGraphicsImageRenderer(size: size).image { ctx in
+            let path = UIBezierPath(roundedRect: rect, cornerRadius: radius)
+            color.setFill()
+            path.fill()
+            stroke.setStroke()
+            path.lineWidth = 1.0
+            path.stroke()
+        }
+
+        return image.resizableImage(
+            withCapInsets: UIEdgeInsets(top: radius, left: radius, bottom: radius, right: radius),
+            resizingMode: .stretch
+        )
     }
 }
