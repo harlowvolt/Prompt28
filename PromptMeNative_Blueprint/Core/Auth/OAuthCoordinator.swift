@@ -80,7 +80,18 @@ final class AppleSignInHelper: NSObject,
     }
 
     func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {
-        foregroundKeyWindow() ?? UIWindow()
+        if let window = foregroundKeyWindow() {
+            return window
+        }
+
+        if let scene = UIApplication.shared.connectedScenes
+            .compactMap({ $0 as? UIWindowScene })
+            .first(where: { $0.activationState == .foregroundActive }),
+           let window = scene.windows.first {
+            return window
+        }
+
+        fatalError("Unable to find a valid window for Apple Sign In")
     }
 
     func authorizationController(controller: ASAuthorizationController,
