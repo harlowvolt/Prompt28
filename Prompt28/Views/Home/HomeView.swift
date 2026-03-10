@@ -82,7 +82,7 @@ struct HomeView: View {
                     viewModel.openSettings()
                 }
                 .padding(.top, geo.safeAreaInsets.top + 18)
-                .padding(.trailing, 20)
+                .padding(.trailing, AppSpacing.screenHorizontal)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }
         }
