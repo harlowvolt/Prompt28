@@ -53,7 +53,7 @@ enum AppShadows {
 struct AppScreenContainer<Content: View>: View {
     let title: String
     var isScrollable: Bool = true
-    var horizontalPadding: CGFloat = AppSpacing.screenHorizontal
+    var horizontalPadding: CGFloat = 0
     var topSpacing: CGFloat = AppSpacing.screenTopLarge
     var contentSpacing: CGFloat = AppSpacing.section
     @ViewBuilder var content: () -> Content

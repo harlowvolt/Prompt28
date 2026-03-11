@@ -18,6 +18,7 @@ struct ResultView: View {
                     expertPromptCard(result: result)
                 }
                 .frame(maxWidth: .infinity)
+                .padding(.horizontal, 16)
             } else {
                 emptyCard
             }
