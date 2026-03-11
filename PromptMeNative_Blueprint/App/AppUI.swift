@@ -22,8 +22,8 @@ enum AppHeights {
 // MARK: - Shared Layout Compatibility
 
 extension AppSpacing {
-    static let top: CGFloat = section
-    static let screenTopLarge: CGFloat = 32
+    static let top: CGFloat = 8
+    static let screenTopLarge: CGFloat = 8
     static let sectionTight: CGFloat = 16
     static let cardInset: CGFloat = 22
     static let elementTight: CGFloat = 8
