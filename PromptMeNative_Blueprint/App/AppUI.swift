@@ -61,6 +61,9 @@ struct AppScreenContainer<Content: View>: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
+                PromptPremiumBackground()
+                    .ignoresSafeArea()
+
                 Group {
                     if isScrollable {
                         ScrollView(showsIndicators: false) {
