@@ -23,6 +23,12 @@ struct OnboardingView: View {
             iconColor: Color(red: 0.60, green: 0.75, blue: 1.0),
             title: "Two Modes, One Tap",
             subtitle: "AI Mode makes structured prompts. Human Mode sounds like you wrote it yourself."
+        ),
+        OnboardingPage(
+            icon: "mic.badge.plus",
+            iconColor: Color(red: 0.90, green: 0.78, blue: 1.0),
+            title: "Your Privacy Matters",
+            subtitle: "Prompt28 records audio through your microphone to transcribe your voice. Your audio is sent to a third-party AI service to generate prompts and is never stored permanently. You can revoke access at any time in iOS Settings."
         )
     ]
 

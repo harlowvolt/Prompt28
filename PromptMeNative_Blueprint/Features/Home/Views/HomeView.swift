@@ -43,6 +43,13 @@ struct HomeView: View {
                 VStack(spacing: AppSpacing.sectionTight) {
                     Spacer()
 
+                    // Show permission denied banner if mic/speech access is blocked
+                    if case .microphoneDenied = orbEngine.permissionStatus {
+                        permissionDeniedBanner(message: "Microphone access is required to use the Orb.")
+                    } else if case .speechDenied = orbEngine.permissionStatus {
+                        permissionDeniedBanner(message: "Speech recognition access is required to use the Orb.")
+                    }
+
                     modePicker(hPad: AppSpacing.screenHorizontal)
                         .padding(.bottom, AppSpacing.element)
 
@@ -267,6 +274,41 @@ struct HomeView: View {
         if orbEngine.isRecording || orbEngine.state == .listening { return "Listening..." }
         if orbEngine.state == .transcribing || orbEngine.state == .generating { return "Processing..." }
         return "Tap to speak"
+    }
+
+    private func permissionDeniedBanner(message: String) -> some View {
+        VStack(spacing: AppSpacing.elementTight) {
+            HStack(spacing: 10) {
+                Image(systemName: "mic.slash.fill")
+                    .foregroundStyle(.yellow)
+                Text(message)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(PromptTheme.paleLilacWhite)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+            Button {
+                if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            } label: {
+                Text("Open iOS Settings")
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 8)
+                    .background(Capsule().fill(PromptTheme.mutedViolet.opacity(0.5)))
+                    .overlay(Capsule().stroke(.white.opacity(0.2), lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(AppSpacing.element)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.yellow.opacity(0.08))
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.yellow.opacity(0.25), lineWidth: 1))
+        )
+        .padding(.horizontal, AppSpacing.screenHorizontal)
     }
 
     private func errorBanner(text: String) -> some View {

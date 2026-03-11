@@ -214,8 +214,10 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
             guard let self else { return }
             self.recognitionRequest?.append(buffer)
+            // Compute RMS entirely on the audio thread — only dispatch the scalar to main
+            let level = SpeechRecognizerService.computeAudioLevel(from: buffer)
             Task { @MainActor in
-                self.updateAudioLevel(from: buffer)
+                self.audioLevel = level
             }
         }
 
@@ -315,17 +317,11 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
         return false
     }
 
-    private func updateAudioLevel(from buffer: AVAudioPCMBuffer) {
-        guard let channelData = buffer.floatChannelData?[0] else {
-            audioLevel = 0
-            return
-        }
-
+    /// Pure function — safe to call from any thread. Returns a 0–1 normalised level.
+    private static func computeAudioLevel(from buffer: AVAudioPCMBuffer) -> CGFloat {
+        guard let channelData = buffer.floatChannelData?[0] else { return 0 }
         let frameLength = Int(buffer.frameLength)
-        guard frameLength > 0 else {
-            audioLevel = 0
-            return
-        }
+        guard frameLength > 0 else { return 0 }
 
         var sum: Float = 0
         for i in 0..<frameLength {
@@ -333,8 +329,7 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
         }
 
         let average = sum / Float(frameLength)
-        let normalized = min(max(CGFloat(average * 8), 0), 1)
-        audioLevel = normalized
+        return min(max(CGFloat(average * 8), 0), 1)
     }
 }
 
