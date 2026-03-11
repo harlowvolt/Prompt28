@@ -167,10 +167,9 @@ struct PromptPremiumBackground: View {
 
                 LinearGradient(
                     colors: [
-                        PromptTheme.backgroundBase.opacity(1.0),
-                        PromptTheme.deepShadow.opacity(0.98),
-                        PromptTheme.plum.opacity(0.88),
-                        PromptTheme.backgroundBase.opacity(1.0)
+                        Color(hex: "#13111C"),
+                        Color(hex: "#110F1A"),
+                        Color(hex: "#0E0C16")
                     ],
                     startPoint: .top,
                     endPoint: .bottom

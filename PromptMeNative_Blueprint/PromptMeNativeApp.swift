@@ -7,12 +7,7 @@ struct PromptMeNativeApp: App {
     @State private var env = AppEnvironment()
 
     init() {
-        // 1. Sets the actual iOS Window background to match your theme
-        // This ensures the "void" behind SwiftUI matches your dark navy aesthetic
-        UIWindow.appearance().backgroundColor = UIColor(PromptTheme.backgroundBase)
-        
-        // 2. Makes the SwiftUI container background transparent
-        // Using <AnyView> fixes the 'Generic parameter Content could not be inferred' error
+        UIWindow.appearance().backgroundColor = UIColor(red: 14/255, green: 12/255, blue: 22/255, alpha: 1)
         UIView.appearance(whenContainedInInstancesOf: [UIHostingController<AnyView>.self]).backgroundColor = .clear
     }
 

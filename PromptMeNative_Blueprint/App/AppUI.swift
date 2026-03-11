@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum AppSpacing {
-    static let screenHorizontal: CGFloat = 20   // standard side margin — keeps content off screen edges
+    static let screenHorizontal: CGFloat = 18
     static let section: CGFloat = 24
     static let largeSection: CGFloat = 34
     static let element: CGFloat = 12

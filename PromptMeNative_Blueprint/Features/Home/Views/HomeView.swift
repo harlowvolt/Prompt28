@@ -98,6 +98,7 @@ struct HomeView: View {
                     }
                 }
                 .frame(maxWidth: .infinity)
+                .padding(.horizontal, AppSpacing.screenHorizontal)
                 .padding(.bottom, AppSpacing.bottomContentClearance)
             }
             .toolbar(.hidden, for: .navigationBar)
