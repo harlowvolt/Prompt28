@@ -23,16 +23,13 @@ struct OrbView: View {
             } label: {
                 GeometryReader { proxy in
                     let size = min(proxy.size.width, proxy.size.height)
-                    let orbSize = size * 0.72
-                    let ringSize = orbSize * 1.06
+                    let orbSize = size * 0.78
 
-                    TimelineView(.animation(minimumInterval: 1.0 / 60.0, paused: false)) { timeline in
+                    TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: visualState == .idle)) { timeline in
                         let t = timeline.date.timeIntervalSinceReferenceDate
 
                         ZStack {
-                            backgroundAtmosphere(size: size * 0.92)
-                            reactiveGlowRing(size: ringSize, time: t)
-                            audioWaveHalo(size: ringSize * 1.02, time: t)
+                            backgroundAtmosphere(size: size * 0.76)
                             coreOrb(size: orbSize, time: t)
                             processingSpinner(size: orbSize * 1.04, time: t)
                         }
@@ -87,13 +84,13 @@ struct OrbView: View {
             .fill(
                 RadialGradient(
                     colors: [
-                        PromptTheme.softLilac.opacity(0.07),
-                        PromptTheme.orbActiveGlow.opacity(0.05),
+                        PromptTheme.softLilac.opacity(0.04),
+                        PromptTheme.orbActiveGlow.opacity(0.025),
                         Color.black.opacity(0.0)
                     ],
                     center: .center,
                     startRadius: size * 0.12,
-                    endRadius: size * 0.52
+                    endRadius: size * 0.40
                 )
             )
             .frame(width: size, height: size)
@@ -134,10 +131,10 @@ struct OrbView: View {
                 )
 
             Circle()
-                .strokeBorder(PromptTheme.softLilac.opacity(0.72), lineWidth: max(1.2, size * 0.008))
+                .strokeBorder(PromptTheme.softLilac.opacity(0.62), lineWidth: max(1.2, size * 0.008))
                 .overlay(
                     Circle()
-                        .strokeBorder(Color.white.opacity(0.52), lineWidth: max(0.6, size * 0.0032))
+                        .strokeBorder(Color.white.opacity(0.42), lineWidth: max(0.6, size * 0.0032))
                 )
 
             Circle()
@@ -176,14 +173,14 @@ struct OrbView: View {
             .stroke(
                 AngularGradient(
                     colors: [
-                        glowColor.opacity(0.08),
-                        glowColor.opacity(0.36),
-                        Color.white.opacity(0.34),
-                        glowColor.opacity(0.08)
+                        glowColor.opacity(0.05),
+                        glowColor.opacity(0.26),
+                        Color.white.opacity(0.24),
+                        glowColor.opacity(0.05)
                     ],
                     center: .center
                 ),
-                lineWidth: max(1.4, size * 0.014)
+                lineWidth: max(1.0, size * 0.010)
             )
             .hueRotation(hue)
             .blur(radius: size * 0.008)
@@ -241,7 +238,8 @@ struct OrbView: View {
                 ),
                 style: StrokeStyle(lineWidth: max(1.6, size * 0.016), lineCap: .round)
             )
-            .frame(width: size, height: size)
+            .shadow(color: glowColor.opacity(glowStrength), radius: size * 0.10)
+            .shadow(color: Color.white.opacity(0.12), radius: size * 0.04)
             .rotationEffect(rotation)
             .opacity(visualState == .processing ? 1.0 : 0.0)
             .animation(.easeInOut(duration: 0.25), value: visualState)
@@ -250,11 +248,11 @@ struct OrbView: View {
     private var orbGradientColors: [Color] {
         switch visualState {
         case .idle:
-            return [Color(hex: "#1E2238"), Color(hex: "#0A0D1F"), Color(hex: "#040611"), Color(hex: "#02030A")]
+            return [Color(hex: "#202A4A"), Color(hex: "#111A34"), Color(hex: "#070D22"), Color(hex: "#02050F")]
         case .listening:
-            return [Color(hex: "#252A44"), Color(hex: "#0C1026"), Color(hex: "#060918"), Color(hex: "#02040D")]
+            return [Color(hex: "#263359"), Color(hex: "#131D3D"), Color(hex: "#08102A"), Color(hex: "#020612")]
         case .processing:
-            return [Color(hex: "#28304C"), Color(hex: "#121735"), Color(hex: "#090E24"), Color(hex: "#03050F")]
+            return [Color(hex: "#2B3960"), Color(hex: "#162246"), Color(hex: "#0A1330"), Color(hex: "#030712")]
         case .error:
             return [Color.white.opacity(0.22), Color.red.opacity(0.64), Color.red.opacity(0.9), Color.black.opacity(0.92)]
         }
@@ -276,11 +274,11 @@ struct OrbView: View {
     private var glowStrength: CGFloat {
         switch visualState {
         case .idle:
-            return 0.24
+            return 0.2
         case .listening:
-            return 0.42 + engine.audioLevel * 0.18
+            return 0.4 + engine.audioLevel * 0.16
         case .processing:
-            return 0.36
+            return 0.3
         case .error:
             return 0.85
         }

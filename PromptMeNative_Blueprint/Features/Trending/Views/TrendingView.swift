@@ -19,15 +19,15 @@ struct TrendingView: View {
                             Text("Trending")
                                 .font(.system(size: 34, weight: .bold, design: .rounded))
                                 .foregroundStyle(PromptTheme.paleLilacWhite)
-                                .padding(.top, proxy.safeAreaInsets.top + 18)
+                                .padding(.top, proxy.safeAreaInsets.top + 8)
 
                             Text("Copy-paste prompts people actually use")
                                 .font(.system(size: 16, weight: .regular, design: .rounded))
                                 .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.68))
-                                .padding(.top, 8)
+                                .padding(.top, 6)
 
                             searchBar
-                                .padding(.top, 20)
+                                .padding(.top, 14)
 
                             content
 
@@ -71,9 +71,9 @@ struct TrendingView: View {
         .padding(.horizontal, 16)
         .frame(height: 56)
         .background(
-            RoundedRectangle(cornerRadius: 23, style: .continuous)
-                .fill(.ultraThinMaterial)
-                .overlay(RoundedRectangle(cornerRadius: 23, style: .continuous).stroke(Color.white.opacity(0.14), lineWidth: 0.6))
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(PromptTheme.glassFill)
+                .overlay(RoundedRectangle(cornerRadius: 28, style: .continuous).stroke(Color.white.opacity(0.12), lineWidth: 0.5))
         )
     }
 
@@ -95,13 +95,19 @@ struct TrendingView: View {
                             .background {
                                 if isSelected {
                                     Capsule()
-                                        .fill(LinearGradient(colors: [Color(red: 0.39, green: 0.31, blue: 0.65), Color(red: 0.24, green: 0.20, blue: 0.42)], startPoint: .topLeading, endPoint: .bottomTrailing))
-                                        .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.30), lineWidth: 1))
-                                        .shadow(color: Color(red: 0.63, green: 0.40, blue: 1.0).opacity(0.34), radius: 10)
+                                        .fill(
+                                            LinearGradient(
+                                                colors: [Color(hex: "#5A638A").opacity(0.90), Color(hex: "#3F4766").opacity(0.88)],
+                                                startPoint: .topLeading,
+                                                endPoint: .bottomTrailing
+                                            )
+                                        )
+                                        .overlay(Capsule().stroke(Color.white.opacity(0.20), lineWidth: 0.8))
+                                        .shadow(color: Color(hex: "#5E6E9B").opacity(0.20), radius: 10)
                                 } else {
                                     Capsule()
-                                        .fill(Color.white.opacity(0.07))
-                                        .overlay(Capsule().stroke(Color.white.opacity(0.13), lineWidth: 1))
+                                        .fill(PromptTheme.glassFill)
+                                        .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.5))
                                 }
                             }
                     }
@@ -110,6 +116,7 @@ struct TrendingView: View {
             }
             .padding(.vertical, 12)
         }
+        .padding(.bottom, 18)
     }
 
     // MARK: - Content
@@ -132,7 +139,7 @@ struct TrendingView: View {
                 HStack(spacing: 6) {
                     Text(category.name.uppercased())
                         .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
+                        .foregroundStyle(.white.opacity(0.48))
 
                     Text("·")
                         .font(.system(size: 11, weight: .bold, design: .rounded))
@@ -140,7 +147,7 @@ struct TrendingView: View {
 
                     Text("\(items.count)")
                         .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
+                        .foregroundStyle(.white.opacity(0.48))
 
                     Spacer()
 
@@ -155,7 +162,7 @@ struct TrendingView: View {
                 if items.isEmpty {
                     noResultsState
                 } else {
-                    LazyVStack(spacing: AppSpacing.sectionTight) {
+                    LazyVStack(spacing: 20) {
                         ForEach(items) { item in
                             trendingCard(item)
                         }
@@ -182,7 +189,7 @@ struct TrendingView: View {
             VStack(alignment: .leading, spacing: 6) {
                 Text(item.prompt)
                     .font(.system(size: 16, weight: .regular, design: .rounded))
-                    .foregroundStyle(PromptTheme.softLilac.opacity(0.78))
+                    .foregroundStyle(.white.opacity(0.74))
                     .lineLimit(isExpanded ? nil : 3)
                     .animation(.easeInOut(duration: 0.2), value: isExpanded)
 
@@ -198,7 +205,7 @@ struct TrendingView: View {
                 } label: {
                     Text(isExpanded ? "Collapse" : "Expand")
                         .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundStyle(PromptTheme.mutedViolet.opacity(0.9))
+                        .foregroundStyle(Color(hex: "#8A97C3"))
                 }
                 .buttonStyle(.plain)
             }
@@ -222,8 +229,8 @@ struct TrendingView: View {
                     .frame(width: 110, height: 44)
                     .background(
                         Capsule()
-                            .fill(Color.white.opacity(0.10))
-                            .overlay(Capsule().stroke(Color.white.opacity(0.18), lineWidth: 1))
+                            .fill(PromptTheme.glassFill)
+                            .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.5))
                     )
                 }
                 .buttonStyle(.plain)
@@ -244,17 +251,17 @@ struct TrendingView: View {
                             .font(.system(size: 17, weight: .semibold, design: .rounded))
                     }
                     .foregroundStyle(.white)
-                    .frame(width: 100, height: 44)
+                    .frame(width: 118, height: 44)
                     .background(
                         Capsule()
                             .fill(
                                 LinearGradient(
-                                    colors: [Color(red: 0.56, green: 0.26, blue: 0.95), Color(red: 0.48, green: 0.20, blue: 0.89)],
+                                    colors: [Color(hex: "#586389"), Color(hex: "#3D4665")],
                                     startPoint: .topLeading, endPoint: .bottomTrailing
                                 )
                             )
-                            .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.22), lineWidth: 1))
-                            .shadow(color: Color(red: 0.56, green: 0.26, blue: 0.95).opacity(0.38), radius: 12)
+                            .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 0.5))
+                            .shadow(color: Color(hex: "#52618A").opacity(0.24), radius: 12, y: 5)
                     )
                 }
                 .buttonStyle(.plain)
@@ -263,10 +270,10 @@ struct TrendingView: View {
         .padding(20)
         .background(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(.ultraThinMaterial)
+                .fill(PromptTheme.glassFill)
                 .overlay(
                     RoundedRectangle(cornerRadius: 28, style: .continuous)
-                        .stroke(Color.white.opacity(0.14), lineWidth: 0.7)
+                        .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
                 )
         )
     }

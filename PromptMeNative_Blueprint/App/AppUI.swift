@@ -208,7 +208,7 @@ extension View {
     func appGlassCard(radius: CGFloat = AppRadii.card) -> some View {
         self
             .background { PromptTheme.glassCard(cornerRadius: radius) }
-            .shadow(color: .black.opacity(0.34), radius: 16, y: 10)
+            .shadow(color: .black.opacity(0.28), radius: 16, y: 10)
     }
 }
 
@@ -216,6 +216,10 @@ extension PromptTheme {
     static func glassCard(cornerRadius: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
             .fill(.ultraThinMaterial)
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(PromptTheme.glassFill)
+            )
             .overlay(
                 GeometryReader { geo in
                     RadialGradient(

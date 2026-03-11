@@ -41,20 +41,20 @@ struct HomeView: View {
                 VStack(spacing: 0) {
                     topBar
                         .padding(.horizontal, 24)
-                        .padding(.top, 8)
+                        .padding(.top, 16)
 
                     if !hasResult {
                         greetingHeader
-                            .padding(.top, 20)
+                            .padding(.top, 16)
 
-                        modePicker(hPad: 24)
-                            .padding(.top, 26)
+                        modePicker(hPad: 32)
+                            .padding(.top, 18)
 
                         Text(generateViewModel.selectedMode == .ai
                              ? "Standard AI prompt style"
                              : "Writes like a real person, not an AI")
                             .font(.system(size: 13, weight: .regular, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.58))
+                            .foregroundStyle(.white.opacity(0.40))
                             .padding(.top, 14)
                     }
 
@@ -68,19 +68,15 @@ struct HomeView: View {
 
                     OrbView(engine: orbEngine, onTranscript: generateFromText)
                         .frame(
-                            width: hasResult ? 190 : 280,
-                            height: hasResult ? 190 : 280
-                        )
-                        .overlay(
-                            Circle()
-                                .stroke(Color.white.opacity(0.45), lineWidth: 1)
+                            width: hasResult ? 190 : 300,
+                            height: hasResult ? 190 : 300
                         )
                         .shadow(color: PromptTheme.softLilac.opacity(0.42), radius: 26)
-                        .padding(.top, hasResult ? 18 : 30)
+                        .padding(.top, hasResult ? 14 : 20)
                         .animation(.spring(response: 0.4, dampingFraction: 0.82), value: hasResult)
 
                     transcriptSection(hPad: 24)
-                        .padding(.top, 22)
+                        .padding(.top, 14)
 
                     if hasResult {
                         resultSection(hPad: 0)
@@ -91,20 +87,23 @@ struct HomeView: View {
                             Text("Type instead")
                                 .font(.system(size: 17, weight: .medium, design: .rounded))
                                 .foregroundStyle(.white.opacity(0.78))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 56)
+                                .frame(width: 158, height: 50)
                                 .background(
-                                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                    RoundedRectangle(cornerRadius: 25, style: .continuous)
                                         .fill(.ultraThinMaterial)
                                         .overlay(
-                                            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                            RoundedRectangle(cornerRadius: 25, style: .continuous)
+                                                .fill(PromptTheme.glassFill)
+                                        )
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 25, style: .continuous)
                                                 .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
                                         )
                                 )
                         }
                         .buttonStyle(.plain)
-                        .padding(.horizontal, 36)
-                        .padding(.top, 26)
+                            .frame(maxWidth: .infinity)
+                        .padding(.top, 18)
 
                         Spacer()
                     }
@@ -183,12 +182,13 @@ struct HomeView: View {
                     .background(
                         Circle()
                             .fill(.ultraThinMaterial)
+                            .overlay(Circle().fill(PromptTheme.glassFill))
                             .overlay(
                                 Circle()
-                                    .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
+                                    .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
                             )
                     )
-                    .shadow(color: .black.opacity(0.18), radius: 10)
+                    .shadow(color: .black.opacity(0.20), radius: 10, y: 6)
             }
             .buttonStyle(.plain)
         }
@@ -216,7 +216,7 @@ struct HomeView: View {
             AnalyticsService.shared.track(.modeSwitched(to: mode.rawValue))
         } label: {
             Text(label)
-                .font(.system(size: 15, weight: isSelected ? .semibold : .medium, design: .rounded))
+                .font(.system(size: 14, weight: .semibold, design: .rounded))
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
                 .foregroundStyle(isSelected ? .white : .white.opacity(0.66))
@@ -227,19 +227,33 @@ struct HomeView: View {
                         RoundedRectangle(cornerRadius: 25, style: .continuous)
                             .fill(
                                 LinearGradient(
-                                    colors: [Color(red: 0.36, green: 0.32, blue: 0.58), Color(red: 0.24, green: 0.20, blue: 0.42)],
+                                    colors: [Color(hex: "#5B6388").opacity(0.90), Color(hex: "#3F4766").opacity(0.88)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 25, style: .continuous)
-                                    .stroke(Color.white.opacity(0.20), lineWidth: 0.8)
+                                    .stroke(Color.white.opacity(0.22), lineWidth: 0.8)
                             )
-                            .shadow(color: PromptTheme.softLilac.opacity(0.2), radius: 14, y: 4)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 25, style: .continuous)
+                                    .fill(
+                                        LinearGradient(
+                                            colors: [Color.white.opacity(0.09), .clear],
+                                            startPoint: .top,
+                                            endPoint: .center
+                                        )
+                                    )
+                            )
+                            .shadow(color: Color(hex: "#5F709E").opacity(0.20), radius: 12, y: 4)
                     } else {
                         RoundedRectangle(cornerRadius: 25, style: .continuous)
                             .fill(.ultraThinMaterial)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 25, style: .continuous)
+                                    .fill(PromptTheme.glassFill)
+                            )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 25, style: .continuous)
                                     .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
@@ -254,8 +268,8 @@ struct HomeView: View {
 
     private func transcriptSection(hPad: CGFloat) -> some View {
         Text(primaryTranscriptText)
-            .font(.system(size: 15, weight: .medium, design: .rounded))
-            .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.65))
+            .font(.system(size: 15, weight: .regular, design: .rounded))
+            .foregroundStyle(.white.opacity(0.58))
             .multilineTextAlignment(.center)
             .padding(.horizontal, hPad)
     }
@@ -313,7 +327,7 @@ struct HomeView: View {
 
             Text("What do you want to make today?")
                 .font(.system(size: 16, weight: .regular, design: .rounded))
-                .foregroundStyle(.white.opacity(0.65))
+                .foregroundStyle(.white.opacity(0.58))
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)

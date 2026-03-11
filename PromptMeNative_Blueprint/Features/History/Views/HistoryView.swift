@@ -37,14 +37,14 @@ struct HistoryView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 0) {
                             headerRow
-                                .padding(.top, proxy.safeAreaInsets.top + 18)
+                                .padding(.top, proxy.safeAreaInsets.top + 8)
 
                             searchField
-                                .padding(.top, 18)
+                                .padding(.top, 14)
 
                             if viewModel.items.isEmpty {
                                 emptyState
-                                    .padding(.top, 22)
+                                    .padding(.top, 42)
                             } else {
                                 LazyVStack(spacing: 14) {
                                     ForEach(viewModel.filteredItems) { item in
@@ -229,8 +229,8 @@ struct HistoryView: View {
             .frame(height: 54)
             .background(
                 RoundedRectangle(cornerRadius: 23, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .overlay(RoundedRectangle(cornerRadius: 23, style: .continuous).stroke(Color.white.opacity(0.14), lineWidth: 0.6))
+                    .fill(PromptTheme.glassFill)
+                    .overlay(RoundedRectangle(cornerRadius: 23, style: .continuous).stroke(Color.white.opacity(0.12), lineWidth: 0.5))
             )
 
             ShareLink(item: viewModel.items.map { "[\($0.mode == .ai ? "AI" : "Human")] \($0.customName ?? $0.input)\n\($0.professional)" }.joined(separator: "\n\n---\n\n")) {
@@ -241,8 +241,8 @@ struct HistoryView: View {
                     .frame(height: 46)
                     .background(
                         Capsule()
-                            .fill(.ultraThinMaterial)
-                            .overlay(Capsule().stroke(Color.white.opacity(0.16), lineWidth: 0.7))
+                            .fill(PromptTheme.glassFill)
+                            .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.5))
                     )
             }
             .buttonStyle(.plain)
@@ -257,8 +257,8 @@ struct HistoryView: View {
                     .frame(height: 46)
                     .background(
                         Capsule()
-                            .fill(.ultraThinMaterial)
-                            .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 0.7))
+                            .fill(PromptTheme.glassFill)
+                            .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.5))
                     )
             }
             .buttonStyle(.plain)
@@ -270,22 +270,32 @@ struct HistoryView: View {
     private var emptyState: some View {
         VStack(spacing: PromptTheme.Spacing.xs) {
             Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(PromptTheme.softLilac.opacity(0.6))
+                .font(.system(size: 40, weight: .semibold))
+                .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
 
             Text("No History Yet")
-                .font(PromptTheme.Typography.rounded(18, .semibold))
+                .font(.system(size: 22, weight: .semibold, design: .rounded))
                 .foregroundStyle(PromptTheme.paleLilacWhite)
 
             Text("Your generated prompts will appear here.")
-                .font(PromptTheme.Typography.rounded(14, .medium))
-                .foregroundStyle(PromptTheme.softLilac.opacity(0.60))
+                .font(.system(size: 16, weight: .regular, design: .rounded))
+                .foregroundStyle(.white.opacity(0.54))
                 .multilineTextAlignment(.center)
         }
-        .padding(AppSpacing.cardInset)
-        .appGlassCard()
+        .padding(.vertical, 24)
+        .padding(.horizontal, 22)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(PromptTheme.glassFill)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
+                )
+        )
+        .shadow(color: .black.opacity(0.28), radius: 16, y: 10)
         .frame(maxWidth: .infinity)
-        .frame(minHeight: 260, alignment: .center)
+        .frame(minHeight: 220, alignment: .top)
+        .padding(.horizontal, 4)
     }
 
     // MARK: - History Card
@@ -359,10 +369,10 @@ struct HistoryView: View {
         .padding(16)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(.ultraThinMaterial)
+            .fill(PromptTheme.glassFill)
                 .overlay(
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(Color.white.opacity(0.14), lineWidth: 0.7)
+                .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
                 )
         )
     }
@@ -382,10 +392,10 @@ struct HistoryView: View {
             .frame(height: 40)
             .background(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
+                    .fill(PromptTheme.glassFill)
                     .overlay(
                         RoundedRectangle(cornerRadius: 20, style: .continuous)
-                            .stroke(color.opacity(0.25), lineWidth: 1)
+                            .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
                     )
             )
         }
@@ -401,7 +411,7 @@ struct HistoryView: View {
             .background(
                 Capsule().stroke(
                     mode == .ai ? Color(red: 0.18, green: 0.63, blue: 0.90).opacity(0.9) : Color.white.opacity(0.35),
-                    lineWidth: 1.2
+                    lineWidth: 1
                 )
             )
     }

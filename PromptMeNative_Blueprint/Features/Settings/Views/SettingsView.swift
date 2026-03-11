@@ -15,7 +15,7 @@ struct SettingsView: View {
                     .ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
+                    VStack(spacing: 18) {
                         headerRow
 
                         accountCard
@@ -49,7 +49,11 @@ struct SettingsView: View {
                             .fill(.ultraThinMaterial)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 30, style: .continuous)
-                                    .stroke(Color.white.opacity(0.12), lineWidth: 0.8)
+                                    .fill(PromptTheme.glassFill)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                                    .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
                             )
                     )
                     .padding(.horizontal, 12)
@@ -102,11 +106,11 @@ struct SettingsView: View {
                     .font(.system(size: 16, weight: .medium, design: .rounded))
                     .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.86))
                     .padding(.horizontal, 20)
-                    .frame(height: 42)
+                        .frame(height: 44)
                     .background(
                         Capsule()
-                            .fill(Color.white.opacity(0.11))
-                            .overlay(Capsule().stroke(Color.white.opacity(0.18), lineWidth: 0.8))
+                            .fill(PromptTheme.glassFill)
+                            .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.5))
                     )
             }
             .buttonStyle(.plain)
@@ -122,8 +126,8 @@ struct SettingsView: View {
                 ZStack {
                     Circle()
                         .fill(PromptTheme.mutedViolet.opacity(0.38))
-                        .overlay(Circle().stroke(PromptTheme.softLilac.opacity(0.22), lineWidth: 1))
-                        .frame(width: 50, height: 50)
+                        .overlay(Circle().stroke(Color.white.opacity(0.12), lineWidth: 0.5))
+                        .frame(width: 58, height: 58)
                     Text(avatarInitials)
                         .font(.system(size: 19, weight: .semibold, design: .rounded))
                         .foregroundStyle(PromptTheme.paleLilacWhite)
@@ -132,11 +136,11 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 3) {
                     if let name = env.authManager.currentUser?.name, !name.isEmpty {
                         Text(name)
-                            .font(PromptTheme.Typography.rounded(15, .semibold))
+                            .font(PromptTheme.Typography.rounded(18, .semibold))
                             .foregroundStyle(PromptTheme.paleLilacWhite)
                     }
                     Text(env.authManager.currentUser?.email ?? "—")
-                        .font(PromptTheme.Typography.rounded(13, .regular))
+                        .font(PromptTheme.Typography.rounded(14, .regular))
                         .foregroundStyle(PromptTheme.softLilac.opacity(0.70))
                 }
 
@@ -149,12 +153,12 @@ struct SettingsView: View {
                         .font(.system(size: 11, weight: .semibold, design: .rounded))
                 }
                 .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.55))
-                .padding(.horizontal, 9)
-                .padding(.vertical, 5)
+                .padding(.horizontal, 14)
+                .frame(height: 34)
                 .background(
                     Capsule()
                         .fill(Color.white.opacity(0.10))
-                        .overlay(Capsule().stroke(Color.white.opacity(0.16), lineWidth: 1))
+                        .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.5))
                 )
             }
             .padding(.horizontal, 18)
@@ -178,12 +182,12 @@ struct SettingsView: View {
                     Text((env.authManager.currentUser?.plan.rawValue ?? "starter").uppercased())
                         .font(.system(size: 10, weight: .bold, design: .rounded))
                         .foregroundStyle(PromptTheme.softLilac)
-                        .padding(.horizontal, 9)
-                        .padding(.vertical, 4)
+                        .padding(.horizontal, 12)
+                        .frame(height: 32)
                         .background(
                             Capsule()
                                 .fill(PromptTheme.mutedViolet.opacity(0.38))
-                                .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.30), lineWidth: 1))
+                                .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.30), lineWidth: 0.5))
                         )
                 }
 
@@ -229,19 +233,19 @@ struct SettingsView: View {
                         .font(PromptTheme.Typography.rounded(15, .semibold))
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
-                        .frame(height: 56)
+                        .frame(height: 58)
                         .background {
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            RoundedRectangle(cornerRadius: 22, style: .continuous)
                                 .fill(
                                     LinearGradient(
-                                        colors: [PromptTheme.mutedViolet, Color(red: 0.29, green: 0.21, blue: 0.50)],
-                                        startPoint: .topLeading,
-                                        endPoint: .bottomTrailing
+                                        colors: [Color(hex: "#7F7FD5"), Color(hex: "#6E55D8")],
+                                        startPoint: .leading,
+                                        endPoint: .trailing
                                     )
                                 )
                                 .overlay(
-                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .stroke(PromptTheme.softLilac.opacity(0.28), lineWidth: 1)
+                                    RoundedRectangle(cornerRadius: 22, style: .continuous)
+                                        .stroke(PromptTheme.softLilac.opacity(0.28), lineWidth: 0.5)
                                 )
                         }
                 }
@@ -323,10 +327,10 @@ struct SettingsView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 64)
                 .background {
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .fill(Color(red: 0.72, green: 0.15, blue: 0.20).opacity(0.30))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
                                 .stroke(Color.red.opacity(0.30), lineWidth: 1)
                         )
                 }
@@ -344,10 +348,10 @@ struct SettingsView: View {
                 .frame(maxWidth: .infinity)
                 .frame(height: 64)
                 .background {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
                         .fill(Color.white.opacity(0.05))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            RoundedRectangle(cornerRadius: 24, style: .continuous)
                                 .stroke(Color.red.opacity(0.18), lineWidth: 1)
                         )
                 }
@@ -360,7 +364,7 @@ struct SettingsView: View {
     private func sectionHeader(_ title: String) -> some View {
         Text(title.uppercased())
             .font(.system(size: 12, weight: .bold, design: .rounded))
-            .foregroundStyle(PromptTheme.softLilac.opacity(0.48))
+            .foregroundStyle(.white.opacity(0.40))
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, 18)
             .padding(.top, 14)
@@ -372,11 +376,11 @@ struct SettingsView: View {
             HStack(spacing: 12) {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(label)
-                        .font(PromptTheme.Typography.rounded(15, .semibold))
+                        .font(PromptTheme.Typography.rounded(16, .semibold))
                         .foregroundStyle(PromptTheme.paleLilacWhite)
                     Text(subtitle)
-                        .font(PromptTheme.Typography.rounded(12, .regular))
-                        .foregroundStyle(PromptTheme.softLilac.opacity(0.62))
+                        .font(PromptTheme.Typography.rounded(14, .regular))
+                        .foregroundStyle(.white.opacity(0.58))
                 }
                 Spacer()
                 Toggle("", isOn: isOn)
@@ -388,7 +392,7 @@ struct SettingsView: View {
 
             if !isLast {
                 Rectangle()
-                    .fill(Color.white.opacity(0.07))
+                    .fill(Color.white.opacity(0.08))
                     .frame(height: 1)
                     .padding(.horizontal, 18)
             }
@@ -400,12 +404,12 @@ struct SettingsView: View {
             Button(action: action) {
                 HStack {
                     Text(label)
-                        .font(PromptTheme.Typography.rounded(15, .medium))
+                        .font(PromptTheme.Typography.rounded(16, .medium))
                         .foregroundStyle(PromptTheme.paleLilacWhite)
                     Spacer()
                     Image(systemName: "chevron.right")
                         .font(.system(size: 12, weight: .semibold))
-                        .foregroundStyle(PromptTheme.softLilac.opacity(0.42))
+                        .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
                 }
                 .padding(.horizontal, 18)
                 .frame(height: 64)
@@ -414,7 +418,7 @@ struct SettingsView: View {
 
             if !isLast {
                 Rectangle()
-                    .fill(Color.white.opacity(0.07))
+                    .fill(Color.white.opacity(0.08))
                     .frame(height: 1)
                     .padding(.horizontal, 18)
             }

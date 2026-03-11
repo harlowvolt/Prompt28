@@ -17,14 +17,14 @@ struct FavoritesView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 0) {
                             headerRow
-                                .padding(.top, proxy.safeAreaInsets.top + 18)
+                                .padding(.top, proxy.safeAreaInsets.top + 8)
 
                             controlsRow
-                                .padding(.top, 18)
+                                .padding(.top, 14)
 
                             if viewModel.favoriteItems.isEmpty {
                                 emptyState
-                                    .padding(.top, 22)
+                                    .padding(.top, 42)
                             } else {
                                 LazyVStack(spacing: 14) {
                                     ForEach(viewModel.favoriteItems) { item in
@@ -101,8 +101,8 @@ struct FavoritesView: View {
             .frame(height: 54)
             .background(
                 RoundedRectangle(cornerRadius: 23, style: .continuous)
-                    .fill(.ultraThinMaterial)
-                    .overlay(RoundedRectangle(cornerRadius: 23, style: .continuous).stroke(Color.white.opacity(0.14), lineWidth: 0.6))
+                    .fill(PromptTheme.glassFill)
+                    .overlay(RoundedRectangle(cornerRadius: 23, style: .continuous).stroke(Color.white.opacity(0.12), lineWidth: 0.5))
             )
 
             ShareLink(item: viewModel.favoriteItems.map { "[\($0.mode == .ai ? "AI" : "Human")] \($0.customName ?? $0.input)\n\($0.professional)" }.joined(separator: "\n\n---\n\n")) {
@@ -113,8 +113,8 @@ struct FavoritesView: View {
                     .frame(height: 46)
                     .background(
                         Capsule()
-                            .fill(.ultraThinMaterial)
-                            .overlay(Capsule().stroke(Color.white.opacity(0.16), lineWidth: 0.7))
+                            .fill(PromptTheme.glassFill)
+                            .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.5))
                     )
             }
             .buttonStyle(.plain)
@@ -129,8 +129,8 @@ struct FavoritesView: View {
                     .frame(height: 46)
                     .background(
                         Capsule()
-                            .fill(.ultraThinMaterial)
-                            .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 0.7))
+                            .fill(PromptTheme.glassFill)
+                            .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.5))
                     )
             }
             .buttonStyle(.plain)
@@ -142,22 +142,32 @@ struct FavoritesView: View {
     private var emptyState: some View {
         VStack(spacing: PromptTheme.Spacing.xs) {
             Image(systemName: "star")
-                .font(.system(size: 28, weight: .semibold))
-                .foregroundStyle(PromptTheme.softLilac.opacity(0.6))
+                .font(.system(size: 40, weight: .semibold))
+                .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
 
             Text("No Favorites Yet")
-                .font(PromptTheme.Typography.rounded(18, .semibold))
+                .font(.system(size: 22, weight: .semibold, design: .rounded))
                 .foregroundStyle(PromptTheme.paleLilacWhite)
 
             Text("Favorite generated prompts to find them quickly.")
-                .font(PromptTheme.Typography.rounded(14, .medium))
-                .foregroundStyle(PromptTheme.softLilac.opacity(0.60))
+                .font(.system(size: 16, weight: .regular, design: .rounded))
+                .foregroundStyle(.white.opacity(0.54))
                 .multilineTextAlignment(.center)
         }
-        .padding(AppSpacing.cardInset)
-        .appGlassCard()
+        .padding(.vertical, 24)
+        .padding(.horizontal, 22)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(PromptTheme.glassFill)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
+                )
+        )
+        .shadow(color: .black.opacity(0.28), radius: 16, y: 10)
         .frame(maxWidth: .infinity)
-        .frame(minHeight: 260, alignment: .center)
+        .frame(minHeight: 220, alignment: .top)
+        .padding(.horizontal, 4)
     }
 
     // MARK: - Favorite Card

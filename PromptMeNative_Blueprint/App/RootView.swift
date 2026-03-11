@@ -13,10 +13,10 @@ struct RootView: View {
         let appearance = UITabBarAppearance()
         appearance.configureWithTransparentBackground()
         appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
-        appearance.backgroundColor = UIColor.clear
+        appearance.backgroundColor = PromptTheme.tabBackground
         appearance.shadowColor = UIColor.clear
         appearance.selectionIndicatorImage = UIImage.tabSelectionIndicator(
-            color: UIColor(PromptTheme.softLilac).withAlphaComponent(0.20)
+            color: UIColor(red: 0.30, green: 0.34, blue: 0.43, alpha: 0.62)
         )
 
         appearance.stackedLayoutAppearance.selected.iconColor = PromptTheme.tabSelected
@@ -168,52 +168,39 @@ struct PromptPremiumBackground: View {
             let size = geo.size
 
             ZStack {
-                Color(hex: "#090B16")
+                Color(hex: "#02040F")
 
                 LinearGradient(
                     colors: [
-                        Color(hex: "#19152B"),
-                        Color(hex: "#101430"),
-                        Color(hex: "#0A0D1D"),
-                        Color(hex: "#090B16")
+                        Color(hex: "#0D1A40"),
+                        Color(hex: "#0A1431"),
+                        Color(hex: "#061022"),
+                        Color(hex: "#02040F")
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
 
-                LinearGradient(
-                    colors: [
-                        Color(hex: "#8B5CFF").opacity(0.08),
-                        .clear,
-                        Color(hex: "#6D28D9").opacity(0.08),
-                        .clear,
-                        Color(hex: "#7C3AED").opacity(0.06)
-                    ],
-                    startPoint: .top,
-                    endPoint: .bottom
-                )
-                .blendMode(.softLight)
-
                 RadialGradient(
                     colors: [
-                        Color(hex: "#8B5CFF").opacity(0.20),
-                        Color(hex: "#5B3DF5").opacity(0.10),
+                        Color(hex: "#1A2E59").opacity(0.30),
+                        Color(hex: "#0D1A40").opacity(0.16),
                         .clear
                     ],
-                    center: .init(x: 0.52, y: 0.30),
-                    startRadius: 20,
-                    endRadius: size.width * 0.78
+                    center: .init(x: 0.50, y: 0.40),
+                    startRadius: 14,
+                    endRadius: size.width * 0.72
                 )
 
                 RadialGradient(
                     colors: [
-                        Color(hex: "#A855F7").opacity(0.14),
-                        Color(hex: "#6D28D9").opacity(0.08),
+                        Color(hex: "#1A2E59").opacity(0.08),
+                        Color(hex: "#0D1A40").opacity(0.04),
                         .clear
                     ],
-                    center: .init(x: 0.68, y: 0.58),
-                    startRadius: 10,
-                    endRadius: size.width * 0.62
+                    center: .init(x: 0.64, y: 0.60),
+                    startRadius: 8,
+                    endRadius: size.width * 0.50
                 )
 
                 LinearGradient(
@@ -234,15 +221,15 @@ struct PromptPremiumBackground: View {
 }
 
 enum PromptTheme {
-    static let backgroundBase = Color(hex: "#070C17")
-    static let deepShadow = Color(hex: "#0C1428")
-    static let plum = Color(hex: "#131A2A")
+    static let backgroundBase = Color(hex: "#02060D")
+    static let deepShadow = Color(hex: "#050A16")
+    static let plum = Color(hex: "#07101E")
     static let mutedViolet = Color(hex: "#5D628A")
     static let softLilac = Color(hex: "#CFD7FF")
     static let paleLilacWhite = Color(hex: "#F2F5FF")
 
-    static let glassFill = Color(red: 0.10, green: 0.12, blue: 0.21).opacity(0.56)
-    static let glassStroke = Color(red: 0.76, green: 0.80, blue: 0.93).opacity(0.24)
+    static let glassFill = Color(red: 0.15, green: 0.17, blue: 0.22).opacity(0.72)
+    static let glassStroke = Color.white.opacity(0.14)
 
     static let backgroundGradient = LinearGradient(
         colors: [backgroundBase, deepShadow, plum, backgroundBase],
@@ -254,10 +241,10 @@ enum PromptTheme {
     static let orbActiveGlow = Color(hex: "#A9BAFF")
     static let orbProcessingGlow = Color(hex: "#B9C6FF")
 
-    static let tabBackground = UIColor(red: 0.08, green: 0.09, blue: 0.15, alpha: 0.62)
+    static let tabBackground = UIColor(red: 0.02, green: 0.04, blue: 0.08, alpha: 0.9)
     static let tabShadow = UIColor(red: 0.83, green: 0.87, blue: 0.98, alpha: 0.10)
-    static let tabSelected = UIColor.white
-    static let tabUnselected = UIColor.white.withAlphaComponent(0.55)
+    static let tabSelected = UIColor.white.withAlphaComponent(0.96)
+    static let tabUnselected = UIColor.white.withAlphaComponent(0.56)
 
     enum Typography {
         static func rounded(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
@@ -347,9 +334,9 @@ private extension UIView {
 
 private extension UIImage {
     static func tabSelectionIndicator(color: UIColor) -> UIImage {
-        let size = CGSize(width: 108, height: 72)
-        let rect = CGRect(origin: .zero, size: size).insetBy(dx: 8, dy: 8)
-        let radius: CGFloat = 22
+        let size = CGSize(width: 96, height: 72)
+        let rect = CGRect(origin: .zero, size: size).insetBy(dx: 8, dy: 6)
+        let radius: CGFloat = 24
 
         let image = UIGraphicsImageRenderer(size: size).image { ctx in
             let path = UIBezierPath(roundedRect: rect, cornerRadius: radius)
