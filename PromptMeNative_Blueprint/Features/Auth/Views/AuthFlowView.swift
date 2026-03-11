@@ -65,8 +65,6 @@ struct AuthFlowView: View {
                         proxy.scrollTo("authSubmitButton", anchor: .center)
                     }
                 }
-                // iPad: cap form to 420pt, centred in the wider canvas
-                .frame(maxWidth: 420)
                 .frame(maxWidth: .infinity)
             }
         }
