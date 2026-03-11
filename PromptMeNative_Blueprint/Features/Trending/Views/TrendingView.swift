@@ -9,11 +9,35 @@ struct TrendingView: View {
 
     var body: some View {
         NavigationStack {
-            PremiumTabScreen(title: "Trending") {
-                searchBar
+            GeometryReader { proxy in
+                ZStack(alignment: .top) {
+                    PromptPremiumBackground()
+                        .ignoresSafeArea()
 
-                content
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            Text("Trending")
+                                .font(.system(size: 34, weight: .bold, design: .rounded))
+                                .foregroundStyle(PromptTheme.paleLilacWhite)
+                                .padding(.top, proxy.safeAreaInsets.top + 18)
+
+                            Text("Copy-paste prompts people actually use")
+                                .font(.system(size: 16, weight: .regular, design: .rounded))
+                                .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.68))
+                                .padding(.top, 8)
+
+                            searchBar
+                                .padding(.top, 20)
+
+                            content
+
+                            Color.clear.frame(height: AppHeights.tabBarClearance)
+                        }
+                        .padding(.horizontal, 24)
+                    }
+                }
             }
+            .toolbar(.hidden, for: .navigationBar)
             .task {
                 await viewModel.loadIfNeeded(apiClient: env.apiClient)
             }
@@ -33,29 +57,47 @@ struct TrendingView: View {
     // MARK: - Search Bar
 
     private var searchBar: some View {
-        AppSearchField(placeholder: "Search prompts", text: $searchQuery)
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .font(.system(size: 15, weight: .semibold))
+                .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
+
+            TextField("Search trending prompts...", text: $searchQuery)
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundStyle(PromptTheme.paleLilacWhite)
+                .textInputAutocapitalization(.never)
+                .autocorrectionDisabled()
+        }
+        .padding(.horizontal, 16)
+        .frame(height: 56)
+        .background(
+            RoundedRectangle(cornerRadius: 23, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(RoundedRectangle(cornerRadius: 23, style: .continuous).stroke(Color.white.opacity(0.14), lineWidth: 0.6))
+        )
     }
 
     // MARK: - Category Picker
 
     private var categoryPicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: PromptTheme.Spacing.xs) {
+            HStack(spacing: 12) {
                 ForEach(viewModel.categories) { category in
                     let isSelected = viewModel.selectedCategory?.key == category.key
                     Button {
                         viewModel.selectCategory(category.key)
                     } label: {
                         Text(category.name)
-                            .font(PromptTheme.Typography.rounded(13, .semibold))
+                            .font(.system(size: 16, weight: .medium, design: .rounded))
                             .foregroundStyle(isSelected ? .white : PromptTheme.softLilac.opacity(0.65))
-                            .padding(.horizontal, 14)
-                            .padding(.vertical, 7)
+                            .padding(.horizontal, 20)
+                            .frame(height: 46)
                             .background {
                                 if isSelected {
                                     Capsule()
-                                        .fill(PromptTheme.mutedViolet.opacity(0.55))
+                                        .fill(LinearGradient(colors: [Color(red: 0.39, green: 0.31, blue: 0.65), Color(red: 0.24, green: 0.20, blue: 0.42)], startPoint: .topLeading, endPoint: .bottomTrailing))
                                         .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.30), lineWidth: 1))
+                                        .shadow(color: Color(red: 0.63, green: 0.40, blue: 1.0).opacity(0.34), radius: 10)
                                 } else {
                                     Capsule()
                                         .fill(Color.white.opacity(0.07))
@@ -66,7 +108,7 @@ struct TrendingView: View {
                     .buttonStyle(.plain)
                 }
             }
-            .padding(.vertical, PromptTheme.Spacing.xxs)
+            .padding(.vertical, 12)
         }
     }
 
@@ -89,7 +131,7 @@ struct TrendingView: View {
                 // Section header
                 HStack(spacing: 6) {
                     Text(category.name.uppercased())
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
 
                     Text("·")
@@ -97,7 +139,7 @@ struct TrendingView: View {
                         .foregroundStyle(PromptTheme.softLilac.opacity(0.35))
 
                     Text("\(items.count)")
-                        .font(.system(size: 11, weight: .bold, design: .rounded))
+                        .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
 
                     Spacer()
@@ -130,16 +172,16 @@ struct TrendingView: View {
     private func trendingCard(_ item: PromptItem) -> some View {
         let isExpanded = expandedItemIDs.contains(item.id)
 
-        return VStack(alignment: .leading, spacing: AppSpacing.element) {
+        return VStack(alignment: .leading, spacing: 16) {
             // Title
             Text(item.title)
-                .font(PromptTheme.Typography.rounded(16, .semibold))
+                .font(.system(size: 19, weight: .bold, design: .rounded))
                 .foregroundStyle(PromptTheme.paleLilacWhite)
 
             // Prompt text (expandable)
             VStack(alignment: .leading, spacing: 6) {
                 Text(item.prompt)
-                    .font(PromptTheme.Typography.rounded(13, .regular))
+                    .font(.system(size: 16, weight: .regular, design: .rounded))
                     .foregroundStyle(PromptTheme.softLilac.opacity(0.78))
                     .lineLimit(isExpanded ? nil : 3)
                     .animation(.easeInOut(duration: 0.2), value: isExpanded)
@@ -155,7 +197,7 @@ struct TrendingView: View {
                     }
                 } label: {
                     Text(isExpanded ? "Collapse" : "Expand")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
                         .foregroundStyle(PromptTheme.mutedViolet.opacity(0.9))
                 }
                 .buttonStyle(.plain)
@@ -168,8 +210,26 @@ struct TrendingView: View {
                 .padding(.vertical, 2)
 
             // Action row
-            HStack(spacing: 8) {
-                // Copy — solid purple (primary action)
+            HStack(spacing: 10) {
+                NavigationLink(destination: PromptDetailView(item: item)) {
+                    HStack(spacing: 6) {
+                        Image(systemName: "star")
+                            .font(.system(size: 17, weight: .medium))
+                        Text("Save")
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.76))
+                    .frame(width: 110, height: 44)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.10))
+                            .overlay(Capsule().stroke(Color.white.opacity(0.18), lineWidth: 1))
+                    )
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
                 Button {
                     UIPasteboard.general.string = item.prompt
                     showCopiedToast = true
@@ -177,75 +237,38 @@ struct TrendingView: View {
                         showCopiedToast = false
                     }
                 } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: "doc.on.doc.fill")
-                            .font(.system(size: 11, weight: .semibold))
+                    HStack(spacing: 6) {
+                        Image(systemName: "doc.on.doc")
+                            .font(.system(size: 15, weight: .semibold))
                         Text("Copy")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                            .font(.system(size: 17, weight: .semibold, design: .rounded))
                     }
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 7)
+                    .frame(width: 100, height: 44)
                     .background(
                         Capsule()
                             .fill(
                                 LinearGradient(
-                                    colors: [PromptTheme.mutedViolet, Color(red: 0.29, green: 0.21, blue: 0.50)],
+                                    colors: [Color(red: 0.56, green: 0.26, blue: 0.95), Color(red: 0.48, green: 0.20, blue: 0.89)],
                                     startPoint: .topLeading, endPoint: .bottomTrailing
                                 )
                             )
-                            .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.28), lineWidth: 1))
-                    )
-                }
-                .buttonStyle(.plain)
-
-                Spacer()
-
-                // View detail — glass style (secondary action)
-                NavigationLink(destination: PromptDetailView(item: item)) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "arrow.up.right.square")
-                            .font(.system(size: 11, weight: .semibold))
-                        Text("View")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    }
-                    .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(
-                        Capsule()
-                            .fill(Color.white.opacity(0.08))
-                            .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.20), lineWidth: 1))
+                            .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.22), lineWidth: 1))
+                            .shadow(color: Color(red: 0.56, green: 0.26, blue: 0.95).opacity(0.38), radius: 12)
                     )
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(AppSpacing.cardInset)
-        .appGlassCard()
-    }
-
-    // MARK: - Action Button
-
-    private func trendingActionButton(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
-                Text(label)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-            }
-            .foregroundStyle(color)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
-                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(color.opacity(0.25), lineWidth: 1))
-            )
-        }
-        .buttonStyle(.plain)
+        .padding(20)
+        .background(
+            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 28, style: .continuous)
+                        .stroke(Color.white.opacity(0.14), lineWidth: 0.7)
+                )
+        )
     }
 
     // MARK: - Filter Helper

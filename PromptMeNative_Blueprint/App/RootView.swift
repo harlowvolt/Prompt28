@@ -16,7 +16,7 @@ struct RootView: View {
         appearance.backgroundColor = UIColor.clear
         appearance.shadowColor = UIColor.clear
         appearance.selectionIndicatorImage = UIImage.tabSelectionIndicator(
-            color: UIColor(PromptTheme.softLilac).withAlphaComponent(0.30)
+            color: UIColor(PromptTheme.softLilac).withAlphaComponent(0.20)
         )
 
         appearance.stackedLayoutAppearance.selected.iconColor = PromptTheme.tabSelected
@@ -148,7 +148,7 @@ struct RootView: View {
         .scrollContentBackground(.hidden)
         .toolbarBackground(.hidden, for: .tabBar)
         .toolbarBackground(.hidden, for: .navigationBar)
-        .background(TabBarRaiser(extraInset: 8))
+        .background(TabBarRaiser(extraInset: 10))
     }
 
     private var launchView: some View {
@@ -172,19 +172,32 @@ struct PromptPremiumBackground: View {
 
                 LinearGradient(
                     colors: [
-                        Color(hex: "#17122A"),
-                        Color(hex: "#0F1430"),
-                        Color(hex: "#0A0D1C"),
+                        Color(hex: "#19152B"),
+                        Color(hex: "#101430"),
+                        Color(hex: "#0A0D1D"),
                         Color(hex: "#090B16")
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
 
+                LinearGradient(
+                    colors: [
+                        Color(hex: "#8B5CFF").opacity(0.08),
+                        .clear,
+                        Color(hex: "#6D28D9").opacity(0.08),
+                        .clear,
+                        Color(hex: "#7C3AED").opacity(0.06)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .blendMode(.softLight)
+
                 RadialGradient(
                     colors: [
-                        Color(hex: "#8B5CFF").opacity(0.28),
-                        Color(hex: "#5B3DF5").opacity(0.14),
+                        Color(hex: "#8B5CFF").opacity(0.20),
+                        Color(hex: "#5B3DF5").opacity(0.10),
                         .clear
                     ],
                     center: .init(x: 0.52, y: 0.30),
@@ -194,8 +207,8 @@ struct PromptPremiumBackground: View {
 
                 RadialGradient(
                     colors: [
-                        Color(hex: "#A855F7").opacity(0.20),
-                        Color(hex: "#6D28D9").opacity(0.10),
+                        Color(hex: "#A855F7").opacity(0.14),
+                        Color(hex: "#6D28D9").opacity(0.08),
                         .clear
                     ],
                     center: .init(x: 0.68, y: 0.58),
@@ -297,15 +310,15 @@ private struct TabBarRaiser: UIViewRepresentable {
             guard let tabBar = vc.tabBarController?.tabBar else { return }
 
             // Container polish: rounded floating material with subtle edge and deep shadow.
-            tabBar.layer.cornerRadius = 26
+            tabBar.layer.cornerRadius = 28
             tabBar.layer.cornerCurve = .continuous
             tabBar.layer.masksToBounds = false
             tabBar.layer.borderWidth = 0.5
             tabBar.layer.borderColor = UIColor.white.withAlphaComponent(0.10).cgColor
             tabBar.layer.shadowColor = UIColor.black.withAlphaComponent(0.40).cgColor
             tabBar.layer.shadowOpacity = 1
-            tabBar.layer.shadowRadius = 20
-            tabBar.layer.shadowOffset = CGSize(width: 0, height: 12)
+            tabBar.layer.shadowRadius = 16
+            tabBar.layer.shadowOffset = CGSize(width: 0, height: 10)
 
             // Keep symbols visually consistent and closer to the requested 20pt sizing.
             let symbolConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
@@ -336,7 +349,7 @@ private extension UIImage {
     static func tabSelectionIndicator(color: UIColor) -> UIImage {
         let size = CGSize(width: 108, height: 72)
         let rect = CGRect(origin: .zero, size: size).insetBy(dx: 8, dy: 8)
-        let radius: CGFloat = 24
+        let radius: CGFloat = 22
 
         let image = UIGraphicsImageRenderer(size: size).image { ctx in
             let path = UIBezierPath(roundedRect: rect, cornerRadius: radius)

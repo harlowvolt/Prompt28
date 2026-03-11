@@ -3,24 +3,45 @@ import UIKit
 
 struct FavoritesView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = HistoryViewModel()
     @State private var showCopiedToast = false
 
     var body: some View {
         NavigationStack {
-            PremiumTabScreen(title: "Favorites") {
-                searchField
+            GeometryReader { proxy in
+                ZStack(alignment: .top) {
+                    PromptPremiumBackground()
+                        .ignoresSafeArea()
 
-                if viewModel.favoriteItems.isEmpty {
-                    emptyState
-                } else {
-                    LazyVStack(spacing: PromptTheme.Spacing.s) {
-                        ForEach(viewModel.favoriteItems) { item in
-                            favoriteCard(item)
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            headerRow
+                                .padding(.top, proxy.safeAreaInsets.top + 18)
+
+                            controlsRow
+                                .padding(.top, 18)
+
+                            if viewModel.favoriteItems.isEmpty {
+                                emptyState
+                                    .padding(.top, 22)
+                            } else {
+                                LazyVStack(spacing: 14) {
+                                    ForEach(viewModel.favoriteItems) { item in
+                                        favoriteCard(item)
+                                    }
+                                }
+                                .padding(.top, 14)
+                            }
+
+                            Color.clear
+                                .frame(height: AppHeights.tabBarClearance)
                         }
+                        .padding(.horizontal, 24)
                     }
                 }
             }
+            .toolbar(.hidden, for: .navigationBar)
             .overlay(alignment: .bottom) {
                 if showCopiedToast {
                     copiedToast
@@ -34,35 +55,85 @@ struct FavoritesView: View {
         }
     }
 
-    // MARK: - Search Field
+    // MARK: - Header
 
-    private var searchField: some View {
-        VStack(spacing: 8) {
-            AppSearchField(placeholder: "Search favorites", text: $viewModel.query)
-
-            if !viewModel.favoriteItems.isEmpty {
-                HStack(spacing: 8) {
-                    ShareLink(item: viewModel.favoriteItems.map { "[\($0.mode == .ai ? "AI" : "Human")] \($0.customName ?? $0.input)\n\($0.professional)" }.joined(separator: "\n\n---\n\n")) {
-                        HStack(spacing: 5) {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 11, weight: .semibold))
-                            Text("Export All")
-                                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        }
-                        .foregroundStyle(PromptTheme.softLilac.opacity(0.80))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(
-                            Capsule()
-                                .fill(Color.white.opacity(0.08))
-                                .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.22), lineWidth: 1))
-                        )
-                    }
-                    .buttonStyle(.plain)
-
-                    Spacer()
-                }
+    private var headerRow: some View {
+        HStack(spacing: 16) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "arrow.left")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .frame(width: 44, height: 44)
+                    .background(
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .overlay(Circle().stroke(Color.white.opacity(0.18), lineWidth: 0.7))
+                    )
             }
+            .buttonStyle(.plain)
+
+            Text("Favorites")
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .foregroundStyle(PromptTheme.paleLilacWhite)
+
+            Spacer()
+        }
+    }
+
+    // MARK: - Controls
+
+    private var controlsRow: some View {
+        HStack(spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
+
+                TextField("Search favorites...", text: $viewModel.query)
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundStyle(PromptTheme.paleLilacWhite)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            }
+            .padding(.horizontal, 16)
+            .frame(height: 54)
+            .background(
+                RoundedRectangle(cornerRadius: 23, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay(RoundedRectangle(cornerRadius: 23, style: .continuous).stroke(Color.white.opacity(0.14), lineWidth: 0.6))
+            )
+
+            ShareLink(item: viewModel.favoriteItems.map { "[\($0.mode == .ai ? "AI" : "Human")] \($0.customName ?? $0.input)\n\($0.professional)" }.joined(separator: "\n\n---\n\n")) {
+                Text("Export")
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.84))
+                    .padding(.horizontal, 18)
+                    .frame(height: 46)
+                    .background(
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                            .overlay(Capsule().stroke(Color.white.opacity(0.16), lineWidth: 0.7))
+                    )
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                viewModel.query = ""
+            } label: {
+                Text("Clear")
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.78))
+                    .padding(.horizontal, 18)
+                    .frame(height: 46)
+                    .background(
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                            .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 0.7))
+                    )
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -92,99 +163,66 @@ struct FavoritesView: View {
     // MARK: - Favorite Card
 
     private func favoriteCard(_ item: PromptHistoryItem) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Title + mode badge on same row
-            HStack(alignment: .top, spacing: 8) {
-                Text(item.customName ?? item.input)
-                    .font(PromptTheme.Typography.rounded(16, .semibold))
-                    .foregroundStyle(PromptTheme.paleLilacWhite)
-                    .lineLimit(2)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                modeBadge(item.mode)
-            }
-            .padding(.bottom, 6)
-
-            Text(item.professional)
-                .font(PromptTheme.Typography.rounded(13, .regular))
-                .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
-                .lineLimit(3)
+        HStack(alignment: .center, spacing: 12) {
+            Text(item.customName ?? item.input)
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.92))
+                .lineLimit(1)
+                .truncationMode(.tail)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
-            // Divider
-            Rectangle()
-                .fill(Color.white.opacity(0.07))
-                .frame(height: 1)
-                .padding(.vertical, 10)
+            modeBadge(item.mode)
 
-            // Action row
-            HStack(spacing: 8) {
-                favoriteActionButton(icon: "doc.on.doc.fill", label: "Copy", color: PromptTheme.softLilac) {
-                    UIPasteboard.general.string = item.professional
-                    showCopiedToast = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                        showCopiedToast = false
-                    }
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    viewModel.toggleFavorite(item)
                 }
-
-                Spacer()
-
-                Text(item.createdAt, style: .date)
-                    .font(PromptTheme.Typography.rounded(11, .regular))
-                    .foregroundStyle(PromptTheme.softLilac.opacity(0.42))
-
-                favoriteActionButton(icon: "star.slash.fill", label: "Remove", color: Color(red: 1.0, green: 0.38, blue: 0.44)) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.toggleFavorite(item)
-                    }
-                }
+            } label: {
+                Text("Remove")
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.80))
+                    .padding(.horizontal, 20)
+                    .frame(height: 44)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.10))
+                            .overlay(Capsule().stroke(Color.white.opacity(0.18), lineWidth: 0.8))
+                    )
             }
+            .buttonStyle(.plain)
         }
-        .padding(AppSpacing.cardInset)
-        .appGlassCard()
+        .padding(18)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.white.opacity(0.14), lineWidth: 0.7)
+                )
+                .overlay(
+                    RadialGradient(
+                        colors: [Color.white.opacity(0.10), .clear],
+                        center: .topLeading,
+                        startRadius: 0,
+                        endRadius: 220
+                    )
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                )
+        )
     }
 
     // MARK: - Shared Helpers
 
-    private func favoriteActionButton(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
-                Text(label)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-            }
-            .foregroundStyle(color)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
-            .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
-                    .fill(Color.white.opacity(0.08))
-                    .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                        .stroke(color.opacity(0.25), lineWidth: 1))
-            )
-        }
-        .buttonStyle(.plain)
-    }
-
     private func modeBadge(_ mode: PromptMode) -> some View {
         Text(mode == .ai ? "AI" : "HUMAN")
-            .font(.system(size: 10, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
+            .font(.system(size: 16, weight: .bold, design: .rounded))
+            .foregroundStyle(mode == .ai ? Color(red: 0.70, green: 0.53, blue: 1.0) : .white.opacity(0.85))
+            .padding(.horizontal, 14)
+            .frame(height: 34)
             .background(
-                Capsule().fill(
-                    mode == .ai
-                        ? LinearGradient(
-                            colors: [PromptTheme.mutedViolet, Color(red: 0.29, green: 0.21, blue: 0.50)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                          )
-                        : LinearGradient(
-                            colors: [Color(red: 0.18, green: 0.55, blue: 0.88), Color(red: 0.00, green: 0.38, blue: 0.72)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                          )
+                Capsule().stroke(
+                    mode == .ai ? Color(red: 0.18, green: 0.63, blue: 0.90).opacity(0.9) : Color.white.opacity(0.35),
+                    lineWidth: 1.2
                 )
             )
     }
@@ -202,4 +240,5 @@ struct FavoritesView: View {
             )
             .padding(.bottom, 18)
     }
+
 }

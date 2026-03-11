@@ -15,6 +15,7 @@ struct HistoryView: View {
     }
 
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.dismiss) private var dismiss
     @StateObject private var viewModel = HistoryViewModel()
     @State private var activeSheet: ActiveSheet?
     @State private var renameText = ""
@@ -28,19 +29,38 @@ struct HistoryView: View {
 
     var body: some View {
         NavigationStack {
-            PremiumTabScreen(title: "History") {
-                searchField
+            GeometryReader { proxy in
+                ZStack(alignment: .top) {
+                    PromptPremiumBackground()
+                        .ignoresSafeArea()
 
-                if viewModel.items.isEmpty {
-                    emptyState
-                } else {
-                    LazyVStack(spacing: PromptTheme.Spacing.s) {
-                        ForEach(viewModel.filteredItems) { item in
-                            historyCard(item)
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 0) {
+                            headerRow
+                                .padding(.top, proxy.safeAreaInsets.top + 18)
+
+                            searchField
+                                .padding(.top, 18)
+
+                            if viewModel.items.isEmpty {
+                                emptyState
+                                    .padding(.top, 22)
+                            } else {
+                                LazyVStack(spacing: 14) {
+                                    ForEach(viewModel.filteredItems) { item in
+                                        historyCard(item)
+                                    }
+                                }
+                                .padding(.top, 14)
+                            }
+
+                            Color.clear.frame(height: AppHeights.tabBarClearance)
                         }
+                        .padding(.horizontal, 24)
                     }
                 }
             }
+            .toolbar(.hidden, for: .navigationBar)
             .confirmationDialog("Clear all history?", isPresented: $showClearAllConfirm) {
                 Button("Clear All", role: .destructive) {
                     viewModel.clearAll()
@@ -163,56 +183,85 @@ struct HistoryView: View {
         }
     }
 
+    // MARK: - Header
+
+    private var headerRow: some View {
+        HStack(spacing: 16) {
+            Button {
+                dismiss()
+            } label: {
+                Image(systemName: "arrow.left")
+                    .font(.system(size: 20, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .frame(width: 44, height: 44)
+                    .background(
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .overlay(Circle().stroke(Color.white.opacity(0.18), lineWidth: 0.7))
+                    )
+            }
+            .buttonStyle(.plain)
+
+            Text("History")
+                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .foregroundStyle(PromptTheme.paleLilacWhite)
+
+            Spacer()
+        }
+    }
+
     // MARK: - Search Field
 
     private var searchField: some View {
-        VStack(spacing: 8) {
-            AppSearchField(placeholder: "Search history", text: $viewModel.query)
+        HStack(spacing: 12) {
+            HStack(spacing: 10) {
+                Image(systemName: "magnifyingglass")
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
 
-            if !viewModel.items.isEmpty {
-                HStack(spacing: 8) {
-                    // Export all as plain text
-                    ShareLink(item: viewModel.items.map { "[\($0.mode == .ai ? "AI" : "Human")] \($0.customName ?? $0.input)\n\($0.professional)" }.joined(separator: "\n\n---\n\n")) {
-                        HStack(spacing: 5) {
-                            Image(systemName: "square.and.arrow.up")
-                                .font(.system(size: 11, weight: .semibold))
-                            Text("Export All")
-                                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        }
-                        .foregroundStyle(PromptTheme.softLilac.opacity(0.80))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(
-                            Capsule()
-                                .fill(Color.white.opacity(0.08))
-                                .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.22), lineWidth: 1))
-                        )
-                    }
-                    .buttonStyle(.plain)
-
-                    Button {
-                        showClearAllConfirm = true
-                    } label: {
-                        HStack(spacing: 5) {
-                            Image(systemName: "trash")
-                                .font(.system(size: 11, weight: .semibold))
-                            Text("Clear All")
-                                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        }
-                        .foregroundStyle(Color(red: 1.0, green: 0.38, blue: 0.44).opacity(0.82))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 7)
-                        .background(
-                            Capsule()
-                                .fill(Color.white.opacity(0.08))
-                                .overlay(Capsule().stroke(Color.red.opacity(0.20), lineWidth: 1))
-                        )
-                    }
-                    .buttonStyle(.plain)
-
-                    Spacer()
-                }
+                TextField("Search your history...", text: $viewModel.query)
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundStyle(PromptTheme.paleLilacWhite)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
             }
+            .padding(.horizontal, 16)
+            .frame(height: 54)
+            .background(
+                RoundedRectangle(cornerRadius: 23, style: .continuous)
+                    .fill(.ultraThinMaterial)
+                    .overlay(RoundedRectangle(cornerRadius: 23, style: .continuous).stroke(Color.white.opacity(0.14), lineWidth: 0.6))
+            )
+
+            ShareLink(item: viewModel.items.map { "[\($0.mode == .ai ? "AI" : "Human")] \($0.customName ?? $0.input)\n\($0.professional)" }.joined(separator: "\n\n---\n\n")) {
+                Text("Export")
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.84))
+                    .padding(.horizontal, 18)
+                    .frame(height: 46)
+                    .background(
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                            .overlay(Capsule().stroke(Color.white.opacity(0.16), lineWidth: 0.7))
+                    )
+            }
+            .buttonStyle(.plain)
+
+            Button {
+                showClearAllConfirm = true
+            } label: {
+                Text("Clear")
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.78))
+                    .padding(.horizontal, 18)
+                    .frame(height: 46)
+                    .background(
+                        Capsule()
+                            .fill(.ultraThinMaterial)
+                            .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 0.7))
+                    )
+            }
+            .buttonStyle(.plain)
         }
     }
 
@@ -253,16 +302,17 @@ struct HistoryView: View {
             } label: {
                 HStack(alignment: .top, spacing: 8) {
                     Text(item.customName ?? item.input)
-                        .font(PromptTheme.Typography.rounded(16, .semibold))
+                        .font(.system(size: 18, weight: .semibold, design: .rounded))
                         .foregroundStyle(PromptTheme.paleLilacWhite)
-                        .lineLimit(2)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     modeBadge(item.mode)
                 }
                 .padding(.bottom, 6)
 
                 Text(item.professional)
-                    .font(PromptTheme.Typography.rounded(13, .regular))
+                    .font(.system(size: 15, weight: .regular, design: .rounded))
                     .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
                     .lineLimit(3)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -276,7 +326,7 @@ struct HistoryView: View {
                 .padding(.vertical, 10)
 
             // Action row
-            HStack(spacing: 6) {
+            HStack(spacing: 8) {
                 cardActionButton(icon: "doc.on.doc.fill", label: "Copy", color: PromptTheme.softLilac) {
                     UIPasteboard.general.string = item.professional
                     showCopiedToast = true
@@ -285,7 +335,7 @@ struct HistoryView: View {
                     }
                 }
 
-                cardActionButton(icon: "arrow.up.right.circle.fill", label: "Use", color: PromptTheme.mutedViolet) {
+                cardActionButton(icon: "arrow.up.right.circle.fill", label: "Use", color: PromptTheme.softLilac.opacity(0.88)) {
                     if let onSelect {
                         onSelect(item)
                     } else {
@@ -296,26 +346,8 @@ struct HistoryView: View {
                 Spacer()
 
                 Text(item.createdAt, style: .date)
-                    .font(PromptTheme.Typography.rounded(11, .regular))
-                    .foregroundStyle(PromptTheme.softLilac.opacity(0.42))
-
-                // Rename
-                Button {
-                    activeSheet = .rename(item)
-                    renameText = item.customName ?? ""
-                } label: {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 13, weight: .semibold))
-                        .foregroundStyle(PromptTheme.softLilac.opacity(0.50))
-                        .frame(width: 32, height: 28)
-                        .background(
-                            RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                .fill(Color.white.opacity(0.08))
-                                .overlay(RoundedRectangle(cornerRadius: 8, style: .continuous)
-                                    .stroke(Color.white.opacity(0.14), lineWidth: 1))
-                        )
-                }
-                .buttonStyle(.plain)
+                    .font(.system(size: 12, weight: .regular, design: .rounded))
+                    .foregroundStyle(PromptTheme.softLilac.opacity(0.44))
 
                 cardActionButton(icon: "trash.fill", label: "Delete", color: Color(red: 1.0, green: 0.38, blue: 0.44)) {
                     withAnimation(.easeInOut(duration: 0.2)) {
@@ -324,8 +356,15 @@ struct HistoryView: View {
                 }
             }
         }
-        .padding(AppSpacing.cardInset)
-        .appGlassCard()
+        .padding(16)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 24, style: .continuous)
+                        .stroke(Color.white.opacity(0.14), lineWidth: 0.7)
+                )
+        )
     }
 
     // MARK: - Shared Helpers
@@ -334,18 +373,18 @@ struct HistoryView: View {
         Button(action: action) {
             HStack(spacing: 4) {
                 Image(systemName: icon)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                 Text(label)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
             }
             .foregroundStyle(color)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 6)
+            .padding(.horizontal, 16)
+            .frame(height: 40)
             .background(
-                RoundedRectangle(cornerRadius: 8, style: .continuous)
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .fill(Color.white.opacity(0.08))
                     .overlay(
-                        RoundedRectangle(cornerRadius: 8, style: .continuous)
+                        RoundedRectangle(cornerRadius: 20, style: .continuous)
                             .stroke(color.opacity(0.25), lineWidth: 1)
                     )
             )
@@ -355,23 +394,14 @@ struct HistoryView: View {
 
     private func modeBadge(_ mode: PromptMode) -> some View {
         Text(mode == .ai ? "AI" : "HUMAN")
-            .font(.system(size: 10, weight: .bold, design: .rounded))
-            .foregroundStyle(.white)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
+            .font(.system(size: 16, weight: .bold, design: .rounded))
+            .foregroundStyle(mode == .ai ? Color(red: 0.70, green: 0.53, blue: 1.0) : .white.opacity(0.82))
+            .padding(.horizontal, 14)
+            .frame(height: 34)
             .background(
-                Capsule().fill(
-                    mode == .ai
-                        ? LinearGradient(
-                            colors: [PromptTheme.mutedViolet, Color(red: 0.29, green: 0.21, blue: 0.50)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                          )
-                        : LinearGradient(
-                            colors: [Color(red: 0.18, green: 0.55, blue: 0.88), Color(red: 0.00, green: 0.38, blue: 0.72)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                          )
+                Capsule().stroke(
+                    mode == .ai ? Color(red: 0.18, green: 0.63, blue: 0.90).opacity(0.9) : Color.white.opacity(0.35),
+                    lineWidth: 1.2
                 )
             )
     }
