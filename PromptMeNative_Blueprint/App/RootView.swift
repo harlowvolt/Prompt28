@@ -33,28 +33,35 @@ struct RootView: View {
     }
 
     var body: some View {
-        Group {
-            if !didBootstrap || env.authManager.isBootstrapping {
-                launchView
-            } else if env.authManager.isAuthenticated {
-                if !hasSeenOnboarding {
-                    OnboardingView {
-                        withAnimation(.easeInOut(duration: 0.35)) {
-                            hasSeenOnboarding = true
+        // PromptPremiumBackground lives here — outside TabView and NavigationStack —
+        // so it fills the FULL screen including under the status bar and home indicator.
+        ZStack {
+            PromptPremiumBackground()
+
+            Group {
+                if !didBootstrap || env.authManager.isBootstrapping {
+                    launchView
+                } else if env.authManager.isAuthenticated {
+                    if !hasSeenOnboarding {
+                        OnboardingView {
+                            withAnimation(.easeInOut(duration: 0.35)) {
+                                hasSeenOnboarding = true
+                            }
+                        }
+                    } else {
+                        // iPad (.regular) gets a sidebar; iPhone (.compact) keeps the tab bar
+                        if horizontalSizeClass == .regular {
+                            iPadSidebar
+                        } else {
+                            mainTabs
                         }
                     }
                 } else {
-                    // iPad (.regular) gets a sidebar; iPhone (.compact) keeps the tab bar
-                    if horizontalSizeClass == .regular {
-                        iPadSidebar
-                    } else {
-                        mainTabs
-                    }
+                    AuthFlowView()
                 }
-            } else {
-                AuthFlowView()
             }
         }
+        .ignoresSafeArea()
         .task {
             guard !didBootstrap else { return }
             await env.authManager.bootstrap()
@@ -137,16 +144,12 @@ struct RootView: View {
     }
 
     private var launchView: some View {
-        ZStack {
-            PromptPremiumBackground()
-
-            VStack(spacing: 14) {
-                ProgressView()
-                    .tint(PromptTheme.softLilac)
-                Text("Loading Prompt28")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.9))
-            }
+        VStack(spacing: 14) {
+            ProgressView()
+                .tint(PromptTheme.softLilac)
+            Text("Loading Prompt28")
+                .font(.footnote.weight(.semibold))
+                .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.9))
         }
     }
 }

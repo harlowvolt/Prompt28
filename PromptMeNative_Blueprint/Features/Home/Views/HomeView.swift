@@ -41,13 +41,37 @@ struct HomeView: View {
                     .ignoresSafeArea()
 
                 VStack(spacing: AppSpacing.sectionTight) {
+                    // Inline header row — lives INSIDE the ZStack content so it never
+                    // overlaps toolbar items in a different z-layer.
+                    HStack {
+                        Button { activeSheet = .settings } label: {
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.8))
+                                .padding(10)
+                                .background(Color.white.opacity(0.06), in: Circle())
+                                .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
+                        }
+                        Spacer()
+                        Button { activeSheet = .typePrompt } label: {
+                            Image(systemName: "keyboard")
+                                .font(.system(size: 17, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.8))
+                                .padding(10)
+                                .background(Color.white.opacity(0.06), in: Circle())
+                                .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
+                        }
+                    }
+                    .padding(.horizontal, AppSpacing.screenHorizontal)
+                    .padding(.top, AppSpacing.element)
+
                     Spacer()
 
-                    // FIXED: Header and Mode Picker only show on Home and when NO result is active
+                    // Header and Mode Picker only show when NO result is active
                     if !hasResult {
                         greetingHeader
                             .padding(.bottom, AppSpacing.elementTight)
-                        
+
                         modePicker(hPad: AppSpacing.screenHorizontal)
                             .padding(.bottom, AppSpacing.element)
                     }
@@ -79,29 +103,7 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.bottom, AppSpacing.bottomContentClearance)
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button { activeSheet = .settings } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.8))
-                            .padding(10)
-                            .background(Color.white.opacity(0.06), in: Circle())
-                            .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
-                    }
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { activeSheet = .typePrompt } label: {
-                        Image(systemName: "keyboard")
-                            .font(.system(size: 17, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.8))
-                            .padding(10)
-                            .background(Color.white.opacity(0.06), in: Circle())
-                            .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
-                    }
-                }
-            }
-            .toolbarBackground(.hidden, for: .navigationBar)
+            .toolbar(.hidden, for: .navigationBar)
         }
         .overlay(alignment: .bottom) { copiedToast }
         .sheet(item: $activeSheet) { sheet in
