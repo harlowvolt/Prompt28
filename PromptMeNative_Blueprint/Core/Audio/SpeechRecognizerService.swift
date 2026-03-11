@@ -211,13 +211,16 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
         let format = inputNode.inputFormat(forBus: 0)
         inputNode.removeTap(onBus: 0)
 
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { [weak self] buffer, _ in
-            guard let self else { return }
-            self.recognitionRequest?.append(buffer)
+        // Capture the request reference before entering the background audio thread closure.
+        // installTap runs on a private audio queue, so we must not access any
+        // @MainActor-isolated property (e.g. recognitionRequest) directly inside it.
+        let capturedRequest = recognitionRequest
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
+            capturedRequest?.append(buffer)
             // Compute RMS entirely on the audio thread — only dispatch the scalar to main
             let level = SpeechRecognizerService.computeAudioLevel(from: buffer)
-            Task { @MainActor in
-                self.audioLevel = level
+            Task { @MainActor [weak self] in
+                self?.audioLevel = level
             }
         }
 

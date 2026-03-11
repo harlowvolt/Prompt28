@@ -43,9 +43,13 @@ struct HomeView: View {
                 VStack(spacing: AppSpacing.sectionTight) {
                     Spacer()
 
+                    // FIXED: Header and Mode Picker only show on Home and when NO result is active
                     if !hasResult {
                         greetingHeader
                             .padding(.bottom, AppSpacing.elementTight)
+                        
+                        modePicker(hPad: AppSpacing.screenHorizontal)
+                            .padding(.bottom, AppSpacing.element)
                     }
 
                     // Show permission denied banner if mic/speech access is blocked
@@ -54,9 +58,6 @@ struct HomeView: View {
                     } else if case .speechDenied = orbEngine.permissionStatus {
                         permissionDeniedBanner(message: "Speech recognition access is required to use the Orb.")
                     }
-
-                    modePicker(hPad: AppSpacing.screenHorizontal)
-                        .padding(.bottom, AppSpacing.element)
 
                     OrbView(engine: orbEngine, onTranscript: generateFromText)
                         .frame(
@@ -200,7 +201,6 @@ struct HomeView: View {
                 }
         }
         .buttonStyle(.plain)
-        // Removed the hardcoded maxWidth that was breaking alignment
     }
 
     // MARK: - Orb + Transcript + Result

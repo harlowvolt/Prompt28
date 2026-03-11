@@ -161,6 +161,7 @@ final class OrbEngine: ObservableObject {
             .store(in: &cancellables)
 
         speech.audioLevelPublisher
+            .receive(on: RunLoop.main)
             .sink { [weak self] value in
                 self?.audioLevel = value
             }
