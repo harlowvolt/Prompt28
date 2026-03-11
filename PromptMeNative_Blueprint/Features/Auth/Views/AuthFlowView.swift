@@ -16,6 +16,7 @@ struct AuthFlowView: View {
             PromptPremiumBackground()
                 .ignoresSafeArea()
 
+            // Constrain form to 420pt so it doesn't stretch full-width on iPad
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
@@ -64,6 +65,9 @@ struct AuthFlowView: View {
                         proxy.scrollTo("authSubmitButton", anchor: .center)
                     }
                 }
+                // iPad: cap form to 420pt, centred in the wider canvas
+                .frame(maxWidth: 420)
+                .frame(maxWidth: .infinity)
             }
         }
         .toolbar {

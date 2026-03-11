@@ -6,6 +6,9 @@ struct RootView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var didBootstrap = false
     @State private var selectedTab: MainTab = .home
+    /// List(selection:) requires an optional binding — synced with selectedTab via onChange
+    @State private var sidebarSelection: MainTab? = .home
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     private let tabBarProtectedInset: CGFloat = 84
 
     init() {
@@ -43,7 +46,12 @@ struct RootView: View {
                         }
                     }
                 } else {
-                    mainTabs
+                    // iPad (.regular) gets a sidebar; iPhone (.compact) keeps the tab bar
+                    if horizontalSizeClass == .regular {
+                        iPadSidebar
+                    } else {
+                        mainTabs
+                    }
                 }
             } else {
                 AuthFlowView()
@@ -60,6 +68,46 @@ struct RootView: View {
             }
         }
     }
+
+    // MARK: - iPad Sidebar (NavigationSplitView)
+
+    private var iPadSidebar: some View {
+        NavigationSplitView {
+            // List requires Binding<SelectionValue?> — use sidebarSelection and sync below
+            List(selection: $sidebarSelection) {
+                Label("Home", systemImage: "house.fill")
+                    .tag(MainTab.home as MainTab?)
+                Label("Favorites", systemImage: "star.fill")
+                    .tag(MainTab.favorites as MainTab?)
+                Label("History", systemImage: "clock.arrow.circlepath")
+                    .tag(MainTab.history as MainTab?)
+                Label("Trending", systemImage: "flame.fill")
+                    .tag(MainTab.trending as MainTab?)
+            }
+            .navigationTitle("PROMPT28")
+            .listStyle(.sidebar)
+            // Sync optional sidebar selection → non-optional selectedTab
+            .onChange(of: sidebarSelection) { _, tab in
+                if let tab { selectedTab = tab }
+            }
+        } detail: {
+            switch selectedTab {
+            case .home:
+                HomeView(appEnvironment: env)
+            case .favorites:
+                FavoritesView()
+            case .history:
+                HistoryView()
+            case .trending:
+                TrendingView()
+            case .admin:
+                // Admin is phone-only; redirect to Home on iPad
+                HomeView(appEnvironment: env)
+            }
+        }
+    }
+
+    // MARK: - iPhone Tab Bar
 
     private var mainTabs: some View {
         TabView(selection: $selectedTab) {
