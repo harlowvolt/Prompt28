@@ -271,6 +271,7 @@ struct HomeView: View {
                 .foregroundStyle(.white.opacity(0.74))
                 .padding(.horizontal, 32)
                 .frame(height: AppHeights.segmentedControl)
+                .fixedSize(horizontal: true, vertical: false)
                 .background(
                     Capsule()
                         .fill(.ultraThinMaterial)
