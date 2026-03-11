@@ -6,7 +6,6 @@ struct RootView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var didBootstrap = false
     @State private var selectedTab: MainTab = .home
-    private let tabBarProtectedInset: CGFloat = 84
 
     init() {
         let appearance = UITabBarAppearance()
@@ -63,48 +62,31 @@ struct RootView: View {
 
     private var mainTabs: some View {
         TabView(selection: $selectedTab) {
-            tabContent {
-                HomeView(appEnvironment: env)
-            }
+            HomeView(appEnvironment: env)
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
                 }
                 .tag(MainTab.home)
 
-            tabContent {
-                FavoritesView()
-            }
+            FavoritesView()
                 .tabItem {
                     Label("Favorites", systemImage: "star.fill")
                 }
                 .tag(MainTab.favorites)
 
-            tabContent {
-                HistoryView()
-            }
+            HistoryView()
                 .tabItem {
                     Label("History", systemImage: "clock.arrow.circlepath")
                 }
                 .tag(MainTab.history)
 
-            tabContent {
-                TrendingView()
-            }
+            TrendingView()
                 .tabItem {
                     Label("Trending", systemImage: "flame.fill")
                 }
                 .tag(MainTab.trending)
         }
         .background(TabBarRaiser(extraInset: 20))
-    }
-
-    private func tabContent<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
-        content()
-            .safeAreaInset(edge: .bottom) {
-                Color.clear
-                    .frame(height: tabBarProtectedInset)
-                    .allowsHitTesting(false)
-            }
     }
 
     private var launchView: some View {

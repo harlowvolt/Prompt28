@@ -1,7 +1,7 @@
 import SwiftUI
 
 enum AppSpacing {
-    static let screenHorizontal: CGFloat = 24
+    static let screenHorizontal: CGFloat = 0
     static let section: CGFloat = 24
     static let largeSection: CGFloat = 34
     static let element: CGFloat = 12
@@ -89,7 +89,6 @@ struct AppScreenContainer<Content: View>: View {
             Color.clear
                 .frame(height: AppHeights.tabBarClearance)
         }
-        .frame(maxWidth: 760)
         .frame(maxWidth: .infinity, alignment: .top)
         .padding(.horizontal, horizontalPadding)
     }

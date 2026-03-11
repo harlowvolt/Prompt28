@@ -60,16 +60,17 @@ struct HomeView: View {
                         )
                         .animation(.spring(response: 0.4, dampingFraction: 0.8), value: hasResult)
 
-                    transcriptSection(hPad: AppSpacing.screenHorizontal)
+                    transcriptSection(hPad: 0)
 
                     if hasResult {
-                        resultSection(hPad: AppSpacing.screenHorizontal)
+                        resultSection(hPad: 0)
                             .frame(maxHeight: .infinity)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     } else {
                         Spacer()
                     }
                 }
+                .frame(maxWidth: .infinity)
                 .padding(.bottom, AppSpacing.bottomContentClearance)
             }
             .toolbar {
