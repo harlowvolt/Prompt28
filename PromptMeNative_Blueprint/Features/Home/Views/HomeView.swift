@@ -18,8 +18,6 @@ struct HomeView: View {
     @StateObject private var generateViewModel: GenerateViewModel
     @StateObject private var settingsViewModel = SettingsViewModel()
 
-    @Environment(\.horizontalSizeClass) private var hSizeClass
-
     @State private var activeSheet: ActiveSheet?
     @State private var showCopiedToast = false
 
@@ -37,65 +35,59 @@ struct HomeView: View {
     // MARK: - Body
 
     var body: some View {
-        GeometryReader { proxy in
-            let topSafe    = proxy.safeAreaInsets.top
-            let isIPad     = hSizeClass == .regular
-            // Content column is capped at 540pt on iPad so it doesn't stretch wall-to-wall
-            let contentW   = isIPad ? min(proxy.size.width, 540) : proxy.size.width
-            let hPad: CGFloat = isIPad ? 40 : AppSpacing.screenHorizontal
-            // Orb: fraction of the content column, capped sensibly
-            let orbSize    = min(contentW * 0.60, isIPad ? 300 : 250)
-            let orbSmall   = min(contentW * 0.44, isIPad ? 220 : 180)
-            // Top clearance: leave room for gear button above header
-            let topPad: CGFloat = topSafe + (isIPad ? 72 : 56)
-
-            ZStack(alignment: .top) {
+        NavigationStack {
+            ZStack {
                 PromptPremiumBackground()
                     .ignoresSafeArea()
 
-                // ── Main content column ────────────────────────────
                 VStack(spacing: AppSpacing.sectionTight) {
-                    headerSection(hPad: hPad)
+                    Spacer()
 
-                    modePicker(hPad: hPad)
+                    modePicker(hPad: AppSpacing.screenHorizontal)
+                        .padding(.bottom, AppSpacing.element)
 
                     OrbView(engine: orbEngine, onTranscript: generateFromText)
                         .frame(
-                            width:  hasResult ? orbSmall : orbSize,
-                            height: hasResult ? orbSmall : orbSize
+                            width:  hasResult ? 180 : 250,
+                            height: hasResult ? 180 : 250
                         )
+                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: hasResult)
 
-                    transcriptSection(hPad: hPad)
+                    transcriptSection(hPad: AppSpacing.screenHorizontal)
 
                     if hasResult {
-                        resultSection(hPad: hPad)
+                        resultSection(hPad: AppSpacing.screenHorizontal)
                             .frame(maxHeight: .infinity)
+                            .transition(.move(edge: .bottom).combined(with: .opacity))
+                    } else {
+                        Spacer()
                     }
-
-                    typeInsteadButton
                 }
-                .padding(.top, topPad)
                 .padding(.bottom, AppSpacing.bottomContentClearance)
-                .frame(width: contentW, alignment: .top)
-                .frame(width: proxy.size.width) // center column on iPad
-
-                // ── Floating gear ─ top-right of content column ────
-                HStack {
-                    Spacer()
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
                     Button { activeSheet = .settings } label: {
                         Image(systemName: "gearshape.fill")
-                            .font(.system(size: 18, weight: .medium))
+                            .font(.system(size: 17, weight: .medium))
                             .foregroundStyle(.white.opacity(0.8))
-                            .padding(12)
+                            .padding(10)
                             .background(Color.white.opacity(0.06), in: Circle())
                             .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
                     }
-                    .padding(.trailing, hPad)
                 }
-                .frame(width: contentW)
-                .frame(width: proxy.size.width)
-                .padding(.top, topSafe + 8)
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button { activeSheet = .typePrompt } label: {
+                        Image(systemName: "keyboard")
+                            .font(.system(size: 17, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.8))
+                            .padding(10)
+                            .background(Color.white.opacity(0.06), in: Circle())
+                            .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
+                    }
+                }
             }
+            .toolbarBackground(.hidden, for: .navigationBar)
         }
         .overlay(alignment: .bottom) { copiedToast }
         .sheet(item: $activeSheet) { sheet in
@@ -152,56 +144,6 @@ struct HomeView: View {
                 historyStore: env.historyStore
             )
         }
-    }
-
-    // MARK: - Header
-
-    private func headerSection(hPad: CGFloat) -> some View {
-        VStack(alignment: .center, spacing: AppSpacing.elementTight) {
-            Text("\(firstName),")
-                .font(.system(size: 40, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .multilineTextAlignment(.center)
-
-            Text("What do you want to make today?")
-                .font(.system(size: 16, weight: .regular, design: .rounded))
-                .foregroundStyle(.white.opacity(0.55))
-                .multilineTextAlignment(.center)
-
-            if let remaining = promptsRemaining {
-                Button { activeSheet = .upgrade } label: {
-                    HStack(spacing: 5) {
-                        Image(systemName: remaining > 0 ? "bolt.fill" : "lock.fill")
-                            .font(.system(size: 10, weight: .semibold))
-                        Text(remaining > 0
-                             ? "\(remaining) prompt\(remaining == 1 ? "" : "s") left"
-                             : "Upgrade for more")
-                            .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    }
-                    .foregroundStyle(remaining > 0
-                                     ? PromptTheme.softLilac.opacity(0.88)
-                                     : Color.yellow.opacity(0.92))
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 5)
-                    .background(
-                        Capsule()
-                            .fill(remaining > 0
-                                  ? PromptTheme.mutedViolet.opacity(0.22)
-                                  : Color.yellow.opacity(0.12))
-                            .overlay(Capsule().stroke(
-                                remaining > 0
-                                ? PromptTheme.softLilac.opacity(0.28)
-                                : Color.yellow.opacity(0.30),
-                                lineWidth: 1))
-                    )
-                }
-                .buttonStyle(.plain)
-                .transition(.opacity.combined(with: .scale(scale: 0.92)))
-                .animation(.easeInOut(duration: 0.25), value: remaining)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, hPad)
     }
 
     // MARK: - Mode Picker
@@ -275,28 +217,6 @@ struct HomeView: View {
         }
     }
     
-    // MARK: - Type Instead
-
-    private var typeInsteadButton: some View {
-        Button { activeSheet = .typePrompt } label: {
-            Text("Type instead")
-                .font(.system(size: 14, weight: .medium, design: .rounded))
-                .foregroundStyle(.white.opacity(0.74))
-                .padding(.horizontal, 32)
-                .frame(height: AppHeights.segmentedControl)
-                .fixedSize(horizontal: true, vertical: false)
-                .background(
-                    Capsule()
-                        .fill(.ultraThinMaterial)
-                        .overlay(
-                            Capsule()
-                                .stroke(.white.opacity(0.16), lineWidth: 1)
-                        )
-                )
-        }
-        .buttonStyle(.plain)
-    }
-
     // MARK: - Toast
 
     private var copiedToast: some View {
@@ -321,18 +241,6 @@ struct HomeView: View {
     // MARK: - Helpers
 
     private var hasResult: Bool { !generateViewModel.latestPromptText.isEmpty }
-
-    /// Returns remaining prompt count from the most recent API response, or nil before first generation.
-    private var promptsRemaining: Int? {
-        guard let remaining = generateViewModel.latestResult?.prompts_remaining else { return nil }
-        return remaining
-    }
-
-    private var firstName: String {
-        let full = env.authManager.currentUser?.name ?? ""
-        let first = full.components(separatedBy: " ").first ?? ""
-        return first.isEmpty ? "there" : first
-    }
 
     private func generateFromText(_ finalText: String) {
         Task {

@@ -106,8 +106,8 @@ final class StoreManager: ObservableObject {
             for await result in Transaction.updates {
                 do {
                     let transaction = try await self.checkVerified(result)
-                    await MainActor.run {
-                        self.purchasedProductIDs.insert(transaction.productID)
+                    await MainActor.run { [self] in
+                        _ = self.purchasedProductIDs.insert(transaction.productID)
                     }
                     await transaction.finish()
                 } catch {}
