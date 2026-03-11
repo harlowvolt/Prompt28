@@ -12,18 +12,23 @@ struct RootView: View {
     init() {
         let appearance = UITabBarAppearance()
         appearance.configureWithTransparentBackground()
-        appearance.backgroundEffect = UIBlurEffect(style: .systemThinMaterialDark)
-        appearance.backgroundColor = PromptTheme.tabBackground
-        appearance.shadowColor = PromptTheme.tabShadow
+        appearance.backgroundEffect = UIBlurEffect(style: .systemUltraThinMaterialDark)
+        appearance.backgroundColor = UIColor.clear
+        appearance.shadowColor = UIColor.clear
         appearance.selectionIndicatorImage = UIImage.tabSelectionIndicator(
-            color: UIColor(red: 0.80, green: 0.82, blue: 0.90, alpha: 0.18),
-            stroke: UIColor(red: 0.92, green: 0.94, blue: 1.0, alpha: 0.18)
+            color: UIColor(PromptTheme.softLilac).withAlphaComponent(0.30)
         )
 
         appearance.stackedLayoutAppearance.selected.iconColor = PromptTheme.tabSelected
-        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [.foregroundColor: PromptTheme.tabSelected]
+        appearance.stackedLayoutAppearance.selected.titleTextAttributes = [
+            .foregroundColor: PromptTheme.tabSelected,
+            .font: UIFont.systemFont(ofSize: 11, weight: .semibold)
+        ]
         appearance.stackedLayoutAppearance.normal.iconColor = PromptTheme.tabUnselected
-        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [.foregroundColor: PromptTheme.tabUnselected]
+        appearance.stackedLayoutAppearance.normal.titleTextAttributes = [
+            .foregroundColor: PromptTheme.tabUnselected,
+            .font: UIFont.systemFont(ofSize: 11, weight: .medium)
+        ]
 
         UITabBar.appearance().standardAppearance = appearance
         UITabBar.appearance().scrollEdgeAppearance = appearance
@@ -143,7 +148,7 @@ struct RootView: View {
         .scrollContentBackground(.hidden)
         .toolbarBackground(.hidden, for: .tabBar)
         .toolbarBackground(.hidden, for: .navigationBar)
-        .background(TabBarRaiser(extraInset: 20))
+        .background(TabBarRaiser(extraInset: 8))
     }
 
     private var launchView: some View {
@@ -163,54 +168,51 @@ struct PromptPremiumBackground: View {
             let size = geo.size
 
             ZStack {
-                // Deep navy base
-                Color(hex: "#070C17")
+                Color(hex: "#090B16")
 
-                // Top-to-bottom navy gradient
                 LinearGradient(
                     colors: [
-                        Color(hex: "#0A1020"),
-                        Color(hex: "#0C1428"),
-                        Color(hex: "#091220"),
-                        Color(hex: "#070C17")
+                        Color(hex: "#17122A"),
+                        Color(hex: "#0F1430"),
+                        Color(hex: "#0A0D1C"),
+                        Color(hex: "#090B16")
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
 
-                // Teal/cyan glow — sits behind where the orb lives (center, ~55% down)
                 RadialGradient(
                     colors: [
-                        Color(hex: "#0E3348").opacity(0.72),
-                        Color(hex: "#0A2030").opacity(0.38),
+                        Color(hex: "#8B5CFF").opacity(0.28),
+                        Color(hex: "#5B3DF5").opacity(0.14),
                         .clear
                     ],
-                    center: .init(x: 0.5, y: 0.58),
-                    startRadius: 0,
-                    endRadius: size.width * 0.72
+                    center: .init(x: 0.52, y: 0.30),
+                    startRadius: 20,
+                    endRadius: size.width * 0.78
                 )
 
-                // Subtle left-side blue accent
                 RadialGradient(
                     colors: [
-                        Color(hex: "#112840").opacity(0.45),
+                        Color(hex: "#A855F7").opacity(0.20),
+                        Color(hex: "#6D28D9").opacity(0.10),
                         .clear
                     ],
-                    center: .init(x: 0.15, y: 0.42),
-                    startRadius: 0,
-                    endRadius: size.width * 0.45
+                    center: .init(x: 0.68, y: 0.58),
+                    startRadius: 10,
+                    endRadius: size.width * 0.62
                 )
 
-                // Edge vignette — darkens corners slightly
                 LinearGradient(
                     colors: [
-                        Color.black.opacity(0.22),
+                        Color.white.opacity(0.015),
                         .clear,
-                        Color.black.opacity(0.28)
+                        Color.white.opacity(0.01)
                     ],
-                    startPoint: .top,
-                    endPoint: .bottom
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
                 )
+                .blendMode(.softLight)
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -239,10 +241,10 @@ enum PromptTheme {
     static let orbActiveGlow = Color(hex: "#A9BAFF")
     static let orbProcessingGlow = Color(hex: "#B9C6FF")
 
-    static let tabBackground = UIColor(red: 0.08, green: 0.09, blue: 0.15, alpha: 0.72)
+    static let tabBackground = UIColor(red: 0.08, green: 0.09, blue: 0.15, alpha: 0.62)
     static let tabShadow = UIColor(red: 0.83, green: 0.87, blue: 0.98, alpha: 0.10)
-    static let tabSelected = UIColor(red: 0.92, green: 0.94, blue: 1.0, alpha: 1.0)
-    static let tabUnselected = UIColor(red: 0.61, green: 0.63, blue: 0.72, alpha: 1.0)
+    static let tabSelected = UIColor.white
+    static let tabUnselected = UIColor.white.withAlphaComponent(0.55)
 
     enum Typography {
         static func rounded(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {
@@ -291,6 +293,30 @@ private struct TabBarRaiser: UIViewRepresentable {
             if vc.additionalSafeAreaInsets.bottom != extraInset {
                 vc.additionalSafeAreaInsets.bottom = extraInset
             }
+
+            guard let tabBar = vc.tabBarController?.tabBar else { return }
+
+            // Container polish: rounded floating material with subtle edge and deep shadow.
+            tabBar.layer.cornerRadius = 26
+            tabBar.layer.cornerCurve = .continuous
+            tabBar.layer.masksToBounds = false
+            tabBar.layer.borderWidth = 0.5
+            tabBar.layer.borderColor = UIColor.white.withAlphaComponent(0.10).cgColor
+            tabBar.layer.shadowColor = UIColor.black.withAlphaComponent(0.40).cgColor
+            tabBar.layer.shadowOpacity = 1
+            tabBar.layer.shadowRadius = 20
+            tabBar.layer.shadowOffset = CGSize(width: 0, height: 12)
+
+            // Keep symbols visually consistent and closer to the requested 20pt sizing.
+            let symbolConfig = UIImage.SymbolConfiguration(pointSize: 20, weight: .medium)
+            tabBar.items?.forEach { item in
+                if let image = item.image?.withRenderingMode(.alwaysTemplate) {
+                    item.image = image.applyingSymbolConfiguration(symbolConfig)
+                }
+                if let selectedImage = item.selectedImage?.withRenderingMode(.alwaysTemplate) {
+                    item.selectedImage = selectedImage.applyingSymbolConfiguration(symbolConfig)
+                }
+            }
         }
     }
 }
@@ -307,18 +333,15 @@ private extension UIView {
 }
 
 private extension UIImage {
-    static func tabSelectionIndicator(color: UIColor, stroke: UIColor) -> UIImage {
+    static func tabSelectionIndicator(color: UIColor) -> UIImage {
         let size = CGSize(width: 108, height: 72)
-        let rect = CGRect(origin: .zero, size: size).insetBy(dx: 6, dy: 7)
-        let radius: CGFloat = 26
+        let rect = CGRect(origin: .zero, size: size).insetBy(dx: 8, dy: 8)
+        let radius: CGFloat = 24
 
         let image = UIGraphicsImageRenderer(size: size).image { ctx in
             let path = UIBezierPath(roundedRect: rect, cornerRadius: radius)
             color.setFill()
             path.fill()
-            stroke.setStroke()
-            path.lineWidth = 1.0
-            path.stroke()
         }
 
         return image.resizableImage(

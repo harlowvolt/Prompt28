@@ -15,7 +15,7 @@ enum AppRadii {
 enum AppHeights {
     static let searchBar: CGFloat = 56
     static let segmentedControl: CGFloat = 42
-    static let floatingTabBar: CGFloat = 76
+    static let floatingTabBar: CGFloat = 72
     static let typeButton: CGFloat = 58
 }
 
@@ -126,10 +126,10 @@ struct AppSearchField: View {
         .frame(height: AppHeights.searchField)
         .background {
             RoundedRectangle(cornerRadius: AppRadii.field, style: .continuous)
-                .fill(Color.white.opacity(0.07))
+                .fill(.ultraThinMaterial)
                 .overlay(
                     RoundedRectangle(cornerRadius: AppRadii.field, style: .continuous)
-                        .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                        .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
                 )
         }
     }
@@ -145,12 +145,12 @@ struct AppGlassField<Content: View>: View {
             .frame(height: AppHeights.searchField)
             .background {
                 RoundedRectangle(cornerRadius: AppRadii.field, style: .continuous)
-                    .fill(Color.white.opacity(0.07))
+                    .fill(.ultraThinMaterial)
                     .overlay(
                         RoundedRectangle(cornerRadius: AppRadii.field, style: .continuous)
                             .stroke(
-                                isFocused ? PromptTheme.softLilac.opacity(0.50) : Color.white.opacity(0.14),
-                                lineWidth: 1
+                                isFocused ? PromptTheme.softLilac.opacity(0.34) : Color.white.opacity(0.12),
+                                lineWidth: isFocused ? 0.75 : 0.5
                             )
                     )
             }
@@ -205,31 +205,35 @@ extension View {
     func appGlassCard(radius: CGFloat = AppRadii.card) -> some View {
         self
             .background { PromptTheme.glassCard(cornerRadius: radius) }
-            .shadow(color: .black.opacity(0.52), radius: AppShadows.cardRadius, y: AppShadows.cardYOffset)
+            .shadow(color: .black.opacity(0.34), radius: 16, y: 10)
     }
 }
 
 extension PromptTheme {
     static func glassCard(cornerRadius: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(Color.white.opacity(0.09))
+            .fill(.ultraThinMaterial)
             .overlay(
                 GeometryReader { geo in
                     RadialGradient(
                         stops: [
-                            .init(color: Color.white.opacity(0.13), location: 0.0),
-                            .init(color: Color.clear, location: 0.55)
+                            .init(color: Color.white.opacity(0.18), location: 0.0),
+                            .init(color: Color.clear, location: 0.60)
                         ],
                         center: UnitPoint(x: 0.15, y: 0.0),
                         startRadius: 0,
-                        endRadius: geo.size.width * 0.6
+                        endRadius: geo.size.width * 0.72
                     )
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                 }
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
+                    .fill(Color.white.opacity(0.03))
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
             )
     }
 }

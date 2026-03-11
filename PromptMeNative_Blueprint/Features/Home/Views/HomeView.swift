@@ -45,14 +45,14 @@ struct HomeView: View {
                             .padding(.top, 34)
 
                         modePicker(hPad: 24)
-                            .padding(.top, 26)
+                            .padding(.top, 28)
 
                         Text(generateViewModel.selectedMode == .ai
                              ? "Standard AI prompt style"
                              : "Writes like a real person, not an AI")
                             .font(.system(size: 14, weight: .regular, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.46))
-                            .padding(.top, 14)
+                            .foregroundStyle(.white.opacity(0.65))
+                            .padding(.top, 8)
                     }
 
                     if case .microphoneDenied = orbEngine.permissionStatus {
@@ -63,16 +63,25 @@ struct HomeView: View {
                             .padding(.top, 18)
                     }
 
+                    if !hasResult {
+                        Spacer()
+                    }
+
                     OrbView(engine: orbEngine, onTranscript: generateFromText)
                         .frame(
-                            width: hasResult ? 190 : 312,
-                            height: hasResult ? 190 : 312
+                            width: hasResult ? 190 : 320,
+                            height: hasResult ? 190 : 320
                         )
-                        .padding(.top, hasResult ? 18 : 28)
+                        .overlay(
+                            Circle()
+                                .stroke(Color.white.opacity(0.45), lineWidth: 1)
+                        )
+                        .shadow(color: PromptTheme.softLilac.opacity(0.40), radius: 32)
+                        .padding(.top, hasResult ? 18 : 48)
                         .animation(.spring(response: 0.4, dampingFraction: 0.82), value: hasResult)
 
                     transcriptSection(hPad: 24)
-                        .padding(.top, 18)
+                        .padding(.top, 24)
 
                     if hasResult {
                         resultSection(hPad: 0)
@@ -86,19 +95,19 @@ struct HomeView: View {
                                 .frame(maxWidth: .infinity)
                                 .frame(height: 58)
                                 .background(
-                                    Capsule()
+                                    RoundedRectangle(cornerRadius: 28, style: .continuous)
                                         .fill(.ultraThinMaterial)
                                         .overlay(
-                                            Capsule()
-                                                .stroke(Color.white.opacity(0.16), lineWidth: 1)
+                                            RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                                .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
                                         )
                                 )
                         }
                         .buttonStyle(.plain)
                         .padding(.horizontal, 24)
-                        .padding(.top, 28)
+                        .padding(.top, 24)
 
-                        Spacer(minLength: 24)
+                        Spacer()
                     }
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
@@ -173,16 +182,16 @@ struct HomeView: View {
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 18, weight: .medium))
                     .foregroundStyle(.white.opacity(0.82))
-                    .padding(12)
+                    .frame(width: 44, height: 44)
                     .background(
                         Circle()
                             .fill(.ultraThinMaterial)
                             .overlay(
                                 Circle()
-                                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                                    .stroke(Color.white.opacity(0.15), lineWidth: 0.5)
                             )
                     )
-                    .shadow(color: .white.opacity(0.06), radius: 10, y: 4)
+                    .shadow(color: .black.opacity(0.18), radius: 10)
             }
             .buttonStyle(.plain)
         }
@@ -191,7 +200,7 @@ struct HomeView: View {
     // MARK: - Mode Picker
 
     private func modePicker(hPad: CGFloat) -> some View {
-        HStack(spacing: 14) {
+        HStack(spacing: 16) {
             modePill(label: "AI Mode", mode: .ai)
             modePill(label: "Human Mode", mode: .human)
         }
@@ -218,19 +227,25 @@ struct HomeView: View {
                 .frame(height: 56)
                 .background {
                     if isSelected {
-                        Capsule()
-                            .fill(PromptTheme.mutedViolet.opacity(0.42))
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
+                            .fill(
+                                LinearGradient(
+                                    colors: [PromptTheme.mutedViolet, Color(red: 0.29, green: 0.21, blue: 0.50)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
                             .overlay(
-                                Capsule()
-                                    .stroke(PromptTheme.softLilac.opacity(0.48), lineWidth: 1.1)
+                                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                    .stroke(Color.white.opacity(0.20), lineWidth: 0.8)
                             )
                             .shadow(color: PromptTheme.softLilac.opacity(0.2), radius: 14, y: 4)
                     } else {
-                        Capsule()
+                        RoundedRectangle(cornerRadius: 28, style: .continuous)
                             .fill(.ultraThinMaterial)
                             .overlay(
-                                Capsule()
-                                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                                RoundedRectangle(cornerRadius: 28, style: .continuous)
+                                    .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
                             )
                     }
                 }
@@ -242,8 +257,8 @@ struct HomeView: View {
 
     private func transcriptSection(hPad: CGFloat) -> some View {
         Text(primaryTranscriptText)
-            .font(.system(size: 15, weight: .regular, design: .rounded))
-            .foregroundStyle(PromptTheme.paleLilacWhite.opacity(hasResult ? 0.82 : 0.72))
+            .font(.system(size: 16, weight: .medium, design: .rounded))
+            .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.65))
             .multilineTextAlignment(.center)
             .padding(.horizontal, hPad)
     }
@@ -294,14 +309,14 @@ struct HomeView: View {
     }
 
     private var greetingHeader: some View {
-        VStack(spacing: 10) {
+        VStack(spacing: 8) {
             Text("\(firstName),")
-                .font(.system(size: 42, weight: .bold, design: .rounded))
+                .font(.system(size: 34, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
 
             Text("What do you want to make today?")
                 .font(.system(size: 17, weight: .regular, design: .rounded))
-                .foregroundStyle(.white.opacity(0.58))
+                .foregroundStyle(.white.opacity(0.65))
         }
         .multilineTextAlignment(.center)
         .frame(maxWidth: .infinity)
