@@ -1,11 +1,11 @@
-import Combine
 import Foundation
 
+@Observable
 @MainActor
-final class HomeViewModel: ObservableObject {
-    @Published private(set) var settings: AppSettings = .default
-    @Published private(set) var user: User?
-    @Published var errorMessage: String?
+final class HomeViewModel {
+    private(set) var settings: AppSettings = .default
+    private(set) var user: User?
+    var errorMessage: String?
 
     private let apiClient: APIClient
     private let authManager: AuthManager

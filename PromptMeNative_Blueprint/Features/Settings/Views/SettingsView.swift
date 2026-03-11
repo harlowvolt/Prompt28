@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct SettingsView: View {
-	@EnvironmentObject private var env: AppEnvironment
+	@Environment(AppEnvironment.self) private var env
 	@StateObject private var viewModel = SettingsViewModel()
 	@State private var showUpgrade = false
 	@State private var showDeleteConfirm = false

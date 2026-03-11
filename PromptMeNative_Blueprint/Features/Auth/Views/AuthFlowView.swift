@@ -2,7 +2,7 @@ import AuthenticationServices
 import SwiftUI
 
 struct AuthFlowView: View {
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     // appleHelper removed — SignInWithAppleButton handles the flow natively (Guideline 4.8)
 
     @State private var isSignup = false

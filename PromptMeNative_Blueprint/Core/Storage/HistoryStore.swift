@@ -8,7 +8,7 @@ final class HistoryStore: ObservableObject {
     private let maxItems = 200
     private static let storageDirectoryURL: URL = {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = base.appendingPathComponent("PromptMeNative", isDirectory: true)
+        let dir = base.appendingPathComponent("Prompt28", isDirectory: true)
         var isDirectory: ObjCBool = false
         let exists = FileManager.default.fileExists(atPath: dir.path, isDirectory: &isDirectory)
         if !exists || !isDirectory.boolValue {

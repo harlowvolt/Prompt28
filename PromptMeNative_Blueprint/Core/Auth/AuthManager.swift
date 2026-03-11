@@ -1,13 +1,13 @@
-import Combine
 import Foundation
 
+@Observable
 @MainActor
-final class AuthManager: ObservableObject {
-    @Published private(set) var currentUser: User?
-    @Published private(set) var token: String?
-    @Published var isBootstrapping = false
-    @Published var isAuthenticating = false
-    @Published var lastError: String?
+final class AuthManager {
+    private(set) var currentUser: User?
+    private(set) var token: String?
+    var isBootstrapping = false
+    var isAuthenticating = false
+    var lastError: String?
 
     private let apiClient: APIClient
     private let keychain: KeychainService

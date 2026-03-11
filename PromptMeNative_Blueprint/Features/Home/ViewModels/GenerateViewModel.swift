@@ -85,10 +85,19 @@ final class GenerateViewModel: ObservableObject {
         defer { isGenerating = false }
 
         do {
+            let systemPrompt: String
+            switch selectedMode {
+            case .ai:
+                systemPrompt = "You are an expert AI prompt engineer. Transform the user's raw spoken idea into a precise, structured prompt optimised for AI language models. Maximise clarity, specificity, and instructional detail."
+            case .human:
+                systemPrompt = "You are an expert communicator and copywriter. Transform the user's raw spoken idea into clear, compelling, human-centred communication. Use natural language, conversational tone, and emotional clarity."
+            }
+
             let request = GenerateRequest(
                 input: cleanedInput,
                 refinement: refinement?.isEmpty == true ? nil : refinement,
-                mode: selectedMode
+                mode: selectedMode,
+                systemPrompt: systemPrompt
             )
 
             let response = try await apiClient.generate(request, token: token)

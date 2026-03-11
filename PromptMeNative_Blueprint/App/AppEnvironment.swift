@@ -1,8 +1,8 @@
-import Combine
 import Foundation
 
+@Observable
 @MainActor
-final class AppEnvironment: ObservableObject {
+final class AppEnvironment {
     let apiClient: APIClient
     let keychain: KeychainService
     let authManager: AuthManager
@@ -10,8 +10,6 @@ final class AppEnvironment: ObservableObject {
     let preferencesStore: PreferencesStore
     let router: AppRouter
     let storeManager: StoreManager
-
-    private var cancellables = Set<AnyCancellable>()
 
     init() {
         let baseURL = URL(string: "https://promptme-app-production.up.railway.app")!
@@ -25,10 +23,6 @@ final class AppEnvironment: ObservableObject {
         self.preferencesStore = PreferencesStore()
         self.router = AppRouter()
         self.storeManager = StoreManager()
-
-        // Forward authManager changes to AppEnvironment so RootView re-renders on login/logout
-        self.authManager.objectWillChange
-            .sink { [weak self] _ in self?.objectWillChange.send() }
-            .store(in: &cancellables)
+        // Combine forwarding removed — @Observable on AuthManager propagates changes automatically
     }
 }

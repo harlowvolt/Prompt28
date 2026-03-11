@@ -14,7 +14,7 @@ struct HistoryView: View {
         }
     }
 
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @StateObject private var viewModel = HistoryViewModel()
     @State private var activeSheet: ActiveSheet?
     @State private var renameText = ""

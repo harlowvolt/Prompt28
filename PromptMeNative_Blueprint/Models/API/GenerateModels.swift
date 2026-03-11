@@ -9,6 +9,7 @@ struct GenerateRequest: Codable {
 	let input: String
 	let refinement: String?
 	let mode: PromptMode
+	let systemPrompt: String?
 }
 
 struct GenerateResponse: Codable, Equatable {

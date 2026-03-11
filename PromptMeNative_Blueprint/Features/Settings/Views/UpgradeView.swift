@@ -3,7 +3,7 @@ import StoreKit
 
 struct UpgradeView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @ObservedObject var viewModel: SettingsViewModel
 
     // MARK: - Body
@@ -151,7 +151,7 @@ private struct ProductCard: View {
     @ObservedObject var viewModel: SettingsViewModel
 
     @State private var isPurchasing = false
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
 
     private var planLabel: String {
         switch product.id {

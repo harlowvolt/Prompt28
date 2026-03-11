@@ -13,7 +13,7 @@ struct HomeView: View {
         }
     }
 
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @StateObject private var orbEngine = OrbEngine.makeDefault()
     @StateObject private var generateViewModel: GenerateViewModel
     @StateObject private var settingsViewModel = SettingsViewModel()
@@ -42,6 +42,11 @@ struct HomeView: View {
 
                 VStack(spacing: AppSpacing.sectionTight) {
                     Spacer()
+
+                    if !hasResult {
+                        greetingHeader
+                            .padding(.bottom, AppSpacing.elementTight)
+                    }
 
                     // Show permission denied banner if mic/speech access is blocked
                     if case .microphoneDenied = orbEngine.permissionStatus {
@@ -243,6 +248,21 @@ struct HomeView: View {
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+    }
+
+    // MARK: - Greeting
+
+    private var firstName: String {
+        let raw = env.authManager.currentUser?.name ?? ""
+        let first = raw.split(separator: " ").first.map(String.init) ?? ""
+        return first.isEmpty ? "there" : first
+    }
+
+    private var greetingHeader: some View {
+        Text("Hey, \(firstName)!")
+            .font(.system(size: 22, weight: .semibold, design: .rounded))
+            .foregroundStyle(.white.opacity(0.84))
+            .frame(maxWidth: .infinity, alignment: .center)
     }
 
     // MARK: - Helpers

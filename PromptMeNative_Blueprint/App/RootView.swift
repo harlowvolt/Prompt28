@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 struct RootView: View {
-    @EnvironmentObject private var env: AppEnvironment
+    @Environment(AppEnvironment.self) private var env
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var didBootstrap = false
     @State private var selectedTab: MainTab = .home
