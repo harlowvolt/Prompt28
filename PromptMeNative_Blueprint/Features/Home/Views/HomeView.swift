@@ -38,11 +38,11 @@ struct HomeView: View {
         GeometryReader { proxy in
             let topSafe = proxy.safeAreaInsets.top
 
-            ZStack {
+            ZStack(alignment: .topTrailing) {
                 PromptPremiumBackground()
                     .ignoresSafeArea()
 
-                VStack(spacing: AppSpacing.section) {
+                VStack(spacing: AppSpacing.sectionTight) {
                     headerSection
 
                     modePicker
@@ -54,15 +54,25 @@ struct HomeView: View {
                     if hasResult {
                         resultSection
                             .frame(maxHeight: .infinity)
-                    } else {
-                        Spacer(minLength: 40)
                     }
 
                     typeInsteadButton
                 }
                 .padding(.top, topSafe + AppSpacing.top)
                 .padding(.bottom, AppSpacing.bottomContentClearance)
-                .frame(width: proxy.size.width, height: proxy.size.height, alignment: .top)
+                .frame(width: proxy.size.width, alignment: .top)
+
+                // Floating gear — sits at top-right independently
+                Button { activeSheet = .settings } label: {
+                    Image(systemName: "gearshape.fill")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(.white.opacity(0.8))
+                        .padding(12)
+                        .background(Color.white.opacity(0.06), in: Circle())
+                        .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
+                }
+                .padding(.top, topSafe - 32)
+                .padding(.trailing, AppSpacing.screenHorizontal)
             }
         }
         .overlay(alignment: .bottom) { copiedToast }
@@ -125,63 +135,50 @@ struct HomeView: View {
     // MARK: - Header
 
     private var headerSection: some View {
-        ZStack(alignment: .topTrailing) {
-            VStack(spacing: AppSpacing.element) {
-                Text("\(firstName),")
-                    .font(.system(size: 40, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                    .multilineTextAlignment(.center)
+        VStack(alignment: .center, spacing: AppSpacing.elementTight) {
+            Text("\(firstName),")
+                .font(.system(size: 40, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+                .multilineTextAlignment(.center)
 
-                Text("What do you want to make today?")
-                    .font(.system(size: 16, weight: .regular, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .multilineTextAlignment(.center)
+            Text("What do you want to make today?")
+                .font(.system(size: 16, weight: .regular, design: .rounded))
+                .foregroundStyle(.white.opacity(0.55))
+                .multilineTextAlignment(.center)
 
-                if let remaining = promptsRemaining {
-                    Button { activeSheet = .upgrade } label: {
-                        HStack(spacing: 5) {
-                            Image(systemName: remaining > 0 ? "bolt.fill" : "lock.fill")
-                                .font(.system(size: 10, weight: .semibold))
-                            Text(remaining > 0
-                                 ? "\(remaining) prompt\(remaining == 1 ? "" : "s") left"
-                                 : "Upgrade for more")
-                                .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        }
-                        .foregroundStyle(remaining > 0
-                                         ? PromptTheme.softLilac.opacity(0.88)
-                                         : Color.yellow.opacity(0.92))
-                        .padding(.horizontal, 12)
-                        .padding(.vertical, 5)
-                        .background(
-                            Capsule()
-                                .fill(remaining > 0
-                                      ? PromptTheme.mutedViolet.opacity(0.22)
-                                      : Color.yellow.opacity(0.12))
-                                .overlay(Capsule().stroke(
-                                    remaining > 0
-                                    ? PromptTheme.softLilac.opacity(0.28)
-                                    : Color.yellow.opacity(0.30),
-                                    lineWidth: 1))
-                        )
+            if let remaining = promptsRemaining {
+                Button { activeSheet = .upgrade } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: remaining > 0 ? "bolt.fill" : "lock.fill")
+                            .font(.system(size: 10, weight: .semibold))
+                        Text(remaining > 0
+                             ? "\(remaining) prompt\(remaining == 1 ? "" : "s") left"
+                             : "Upgrade for more")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
                     }
-                    .buttonStyle(.plain)
-                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
-                    .animation(.easeInOut(duration: 0.25), value: remaining)
+                    .foregroundStyle(remaining > 0
+                                     ? PromptTheme.softLilac.opacity(0.88)
+                                     : Color.yellow.opacity(0.92))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 5)
+                    .background(
+                        Capsule()
+                            .fill(remaining > 0
+                                  ? PromptTheme.mutedViolet.opacity(0.22)
+                                  : Color.yellow.opacity(0.12))
+                            .overlay(Capsule().stroke(
+                                remaining > 0
+                                ? PromptTheme.softLilac.opacity(0.28)
+                                : Color.yellow.opacity(0.30),
+                                lineWidth: 1))
+                    )
                 }
+                .buttonStyle(.plain)
+                .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                .animation(.easeInOut(duration: 0.25), value: remaining)
             }
-            .frame(maxWidth: .infinity)
-
-            Button { activeSheet = .settings } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.8))
-                    .padding(12)
-                    .background(Color.white.opacity(0.06), in: Circle())
-                    .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
-            }
-            .shadow(color: .white.opacity(0.08), radius: 10, y: 3)
-            .padding(.top, 2)
         }
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, AppSpacing.screenHorizontal)
     }
 
@@ -233,8 +230,8 @@ struct HomeView: View {
     // MARK: - Orb + Transcript + Result
 
     private func orbSection(screenWidth: CGFloat) -> some View {
-        let restingOrb = min(screenWidth * 0.72, 280)
-        let resultOrb = min(screenWidth * 0.55, 220)
+        let restingOrb = min(screenWidth * 0.84, 330)
+        let resultOrb = min(screenWidth * 0.60, 240)
 
         return OrbView(engine: orbEngine, onTranscript: generateFromText)
             .frame(width: hasResult ? resultOrb : restingOrb, height: hasResult ? resultOrb : restingOrb)
@@ -270,10 +267,10 @@ struct HomeView: View {
     private var typeInsteadButton: some View {
         Button { activeSheet = .typePrompt } label: {
             Text("Type instead")
-                .font(.system(size: 18, weight: .medium, design: .rounded))
+                .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundStyle(.white.opacity(0.74))
-                .frame(maxWidth: .infinity)
-                .frame(height: AppHeights.floatingTabBar)
+                .padding(.horizontal, 32)
+                .frame(height: AppHeights.segmentedControl)
                 .background(
                     Capsule()
                         .fill(.ultraThinMaterial)
@@ -284,7 +281,6 @@ struct HomeView: View {
                 )
         }
         .buttonStyle(.plain)
-        .padding(.horizontal, AppSpacing.screenHorizontal)
     }
 
     // MARK: - Toast

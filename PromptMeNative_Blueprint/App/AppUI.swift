@@ -14,7 +14,7 @@ enum AppRadii {
 
 enum AppHeights {
     static let searchBar: CGFloat = 56
-    static let segmentedControl: CGFloat = 56
+    static let segmentedControl: CGFloat = 42
     static let floatingTabBar: CGFloat = 76
     static let typeButton: CGFloat = 58
 }
@@ -22,8 +22,8 @@ enum AppHeights {
 // MARK: - Shared Layout Compatibility
 
 extension AppSpacing {
-    static let top: CGFloat = 8
-    static let screenTopLarge: CGFloat = 8
+    static let top: CGFloat = 0
+    static let screenTopLarge: CGFloat = 0
     static let sectionTight: CGFloat = 16
     static let cardInset: CGFloat = 22
     static let elementTight: CGFloat = 8

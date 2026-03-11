@@ -37,32 +37,30 @@ struct HomeView: View {
                             viewModel.toggleRecording()
                         }
 
-                    Text("Tap to speak")
-                        .font(.system(size: 18, weight: .medium, design: .rounded))
-                        .foregroundStyle(.white.opacity(0.56))
+                    VStack(spacing: 10) {
+                        Text("Tap to speak")
+                            .font(.system(size: 18, weight: .medium, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.56))
 
                     Button {
                         // Presentation-only control on this screen for now.
                     } label: {
                         Text("Type instead")
-                            .font(.system(size: 20, weight: .medium, design: .rounded))
+                            .font(.system(size: 14, weight: .medium, design: .rounded))
                             .foregroundStyle(.white.opacity(0.72))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: AppHeights.floatingTabBar)
+                            .padding(.horizontal, 32)
+                            .padding(.vertical, 11)
                             .background {
-                                RoundedRectangle(cornerRadius: AppRadii.pill, style: .continuous)
-                                    .fill(.regularMaterial)
+                                Capsule()
+                                    .fill(.ultraThinMaterial)
                                     .overlay(
-                                        RoundedRectangle(cornerRadius: AppRadii.pill, style: .continuous)
-                                            .stroke(Color.white.opacity(0.20), lineWidth: 1.2)
+                                        Capsule()
+                                            .stroke(Color.white.opacity(0.16), lineWidth: 1)
                                     )
-                                    .overlay {
-                                        RoundedRectangle(cornerRadius: AppRadii.pill, style: .continuous)
-                                            .fill(.ultraThinMaterial)
-                                    }
                             }
                     }
                     .buttonStyle(.plain)
+                    } // end tight VStack
 
                     Spacer(minLength: max(geo.size.height * 0.07, AppSpacing.section))
                 }
@@ -74,7 +72,7 @@ struct HomeView: View {
                 SettingsButton {
                     viewModel.openSettings()
                 }
-                .padding(.top, geo.safeAreaInsets.top + AppSpacing.section)
+                .padding(.top, geo.safeAreaInsets.top - 10)
                 .padding(.trailing, AppSpacing.screenHorizontal)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topTrailing)
             }

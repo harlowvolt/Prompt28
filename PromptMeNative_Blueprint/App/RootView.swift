@@ -95,6 +95,7 @@ struct RootView: View {
                 }
                 .tag(MainTab.trending)
         }
+        .background(TabBarRaiser(extraInset: 20))
     }
 
     private func tabContent<Content: View>(@ViewBuilder _ content: () -> Content) -> some View {
@@ -267,11 +268,36 @@ extension Color {
     }
 }
 
+// Raises the native tab bar off the bottom edge by adding extra bottom safe area
+private struct TabBarRaiser: UIViewRepresentable {
+    let extraInset: CGFloat
+    func makeUIView(context: Context) -> UIView { UIView() }
+    func updateUIView(_ uiView: UIView, context: Context) {
+        DispatchQueue.main.async {
+            guard let vc = uiView.parentViewController else { return }
+            if vc.additionalSafeAreaInsets.bottom != extraInset {
+                vc.additionalSafeAreaInsets.bottom = extraInset
+            }
+        }
+    }
+}
+
+private extension UIView {
+    var parentViewController: UIViewController? {
+        var responder: UIResponder? = self
+        while let r = responder {
+            if let vc = r as? UIViewController { return vc }
+            responder = r.next
+        }
+        return nil
+    }
+}
+
 private extension UIImage {
     static func tabSelectionIndicator(color: UIColor, stroke: UIColor) -> UIImage {
-        let size = CGSize(width: 86, height: 62)
+        let size = CGSize(width: 108, height: 72)
         let rect = CGRect(origin: .zero, size: size).insetBy(dx: 6, dy: 7)
-        let radius: CGFloat = 21
+        let radius: CGFloat = 26
 
         let image = UIGraphicsImageRenderer(size: size).image { ctx in
             let path = UIBezierPath(roundedRect: rect, cornerRadius: radius)
