@@ -3,7 +3,7 @@ import SwiftUI
 
 struct AuthFlowView: View {
     @EnvironmentObject private var env: AppEnvironment
-    @State private var appleHelper = AppleSignInHelper()
+    // appleHelper removed — SignInWithAppleButton handles the flow natively (Guideline 4.8)
 
     @State private var isSignup = false
     @State private var name = ""
@@ -130,35 +130,22 @@ struct AuthFlowView: View {
             .buttonStyle(.plain)
             .disabled(env.authManager.isAuthenticating)
 
-            // Apple
-            Button {
+            // Apple — must use SignInWithAppleButton to comply with App Store Guideline 4.8
+            SignInWithAppleButton(.signIn) { request in
+                request.requestedScopes = [.fullName, .email]
+            } onCompletion: { result in
                 focusedField = nil
-                Task {
-                    do {
-                        let authorization = try await appleHelper.signIn()
-                        await handleAppleAuth(authorization)
-                    } catch {
-                        env.authManager.lastError = appleSignInMessage(for: error)
-                    }
+                switch result {
+                case .success(let authorization):
+                    Task { await handleAppleAuth(authorization) }
+                case .failure(let error):
+                    env.authManager.lastError = appleSignInMessage(for: error)
                 }
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "applelogo")
-                        .font(.system(size: 17, weight: .semibold))
-                        .foregroundStyle(.white)
-                    Text("Continue with Apple")
-                        .font(.system(size: 16, weight: .semibold, design: .rounded))
-                        .foregroundStyle(.white)
-                }
-                .frame(maxWidth: .infinity)
-                .frame(height: AppHeights.primaryButton)
-                .background(Color.black, in: RoundedRectangle(cornerRadius: AppRadii.control, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: AppRadii.control, style: .continuous)
-                        .stroke(Color.white.opacity(0.14), lineWidth: 1)
-                )
             }
-            .buttonStyle(.plain)
+            .signInWithAppleButtonStyle(.black)
+            .frame(maxWidth: .infinity)
+            .frame(height: AppHeights.primaryButton)
+            .clipShape(RoundedRectangle(cornerRadius: AppRadii.control, style: .continuous))
             .disabled(env.authManager.isAuthenticating)
         }
     }
