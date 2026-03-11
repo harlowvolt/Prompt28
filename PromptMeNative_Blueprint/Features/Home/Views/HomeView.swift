@@ -32,59 +32,47 @@ struct HomeView: View {
         )
     }
 
-    // MARK: - Body
-
     var body: some View {
         NavigationStack {
             ZStack {
-                VStack(spacing: AppSpacing.sectionTight) {
-                    // Gear icon — top right only
-                    HStack {
-                        Spacer()
-                        Button { activeSheet = .settings } label: {
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 17, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.8))
-                                .padding(10)
-                                .background(Color.white.opacity(0.06), in: Circle())
-                                .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
-                        }
-                    }
-                    .padding(.horizontal, AppSpacing.screenHorizontal)
-                    .padding(.top, AppSpacing.element)
+                VStack(spacing: 0) {
+                    topBar
+                        .padding(.horizontal, 24)
+                        .padding(.top, 10)
 
-                    Spacer()
-
-                    // Header and Mode Picker only show when NO result is active
                     if !hasResult {
                         greetingHeader
-                            .padding(.bottom, AppSpacing.elementTight)
+                            .padding(.top, 34)
 
-                        modePicker(hPad: AppSpacing.screenHorizontal)
+                        modePicker(hPad: 24)
+                            .padding(.top, 26)
 
                         Text(generateViewModel.selectedMode == .ai
                              ? "Standard AI prompt style"
-                             : "Optimized for human readers")
-                            .font(.system(size: 13, weight: .regular, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.45))
-                            .padding(.bottom, AppSpacing.element)
+                             : "Writes like a real person, not an AI")
+                            .font(.system(size: 14, weight: .regular, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.46))
+                            .padding(.top, 14)
                     }
 
-                    // Show permission denied banner if mic/speech access is blocked
                     if case .microphoneDenied = orbEngine.permissionStatus {
                         permissionDeniedBanner(message: "Microphone access is required to use the Orb.")
+                            .padding(.top, 18)
                     } else if case .speechDenied = orbEngine.permissionStatus {
                         permissionDeniedBanner(message: "Speech recognition access is required to use the Orb.")
+                            .padding(.top, 18)
                     }
 
                     OrbView(engine: orbEngine, onTranscript: generateFromText)
                         .frame(
-                            width:  hasResult ? 180 : 250,
-                            height: hasResult ? 180 : 250
+                            width: hasResult ? 190 : 312,
+                            height: hasResult ? 190 : 312
                         )
-                        .animation(.spring(response: 0.4, dampingFraction: 0.8), value: hasResult)
+                        .padding(.top, hasResult ? 18 : 28)
+                        .animation(.spring(response: 0.4, dampingFraction: 0.82), value: hasResult)
 
-                    transcriptSection(hPad: 0)
+                    transcriptSection(hPad: 24)
+                        .padding(.top, 18)
 
                     if hasResult {
                         resultSection(hPad: 0)
@@ -93,24 +81,27 @@ struct HomeView: View {
                     } else {
                         Button { activeSheet = .typePrompt } label: {
                             Text("Type instead")
-                                .font(.system(size: 16, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.75))
+                                .font(.system(size: 17, weight: .medium, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.78))
                                 .frame(maxWidth: .infinity)
-                                .frame(height: 52)
+                                .frame(height: 58)
                                 .background(
                                     Capsule()
-                                        .fill(Color.white.opacity(0.08))
-                                        .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                                        .fill(.ultraThinMaterial)
+                                        .overlay(
+                                            Capsule()
+                                                .stroke(Color.white.opacity(0.16), lineWidth: 1)
+                                        )
                                 )
                         }
                         .buttonStyle(.plain)
-                        .padding(.horizontal, AppSpacing.screenHorizontal)
-                        .padding(.top, AppSpacing.element)
+                        .padding(.horizontal, 24)
+                        .padding(.top, 28)
 
-                        Spacer()
+                        Spacer(minLength: 24)
                     }
                 }
-                .frame(maxWidth: .infinity)
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                 .padding(.bottom, AppSpacing.bottomContentClearance)
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -172,10 +163,35 @@ struct HomeView: View {
         }
     }
 
+    // MARK: - Top Bar
+
+    private var topBar: some View {
+        HStack {
+            Spacer()
+
+            Button { activeSheet = .settings } label: {
+                Image(systemName: "gearshape.fill")
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .padding(12)
+                    .background(
+                        Circle()
+                            .fill(.ultraThinMaterial)
+                            .overlay(
+                                Circle()
+                                    .stroke(Color.white.opacity(0.18), lineWidth: 1)
+                            )
+                    )
+                    .shadow(color: .white.opacity(0.06), radius: 10, y: 4)
+            }
+            .buttonStyle(.plain)
+        }
+    }
+
     // MARK: - Mode Picker
 
     private func modePicker(hPad: CGFloat) -> some View {
-        HStack(spacing: AppSpacing.element) {
+        HStack(spacing: 14) {
             modePill(label: "AI Mode", mode: .ai)
             modePill(label: "Human Mode", mode: .human)
         }
@@ -194,22 +210,28 @@ struct HomeView: View {
             AnalyticsService.shared.track(.modeSwitched(to: mode.rawValue))
         } label: {
             Text(label)
-                .font(.system(size: 14, weight: isSelected ? .semibold : .medium, design: .rounded))
+                .font(.system(size: 15, weight: isSelected ? .semibold : .medium, design: .rounded))
                 .minimumScaleFactor(0.7)
                 .lineLimit(1)
-                .foregroundStyle(isSelected ? .white : .white.opacity(0.62))
+                .foregroundStyle(isSelected ? .white : .white.opacity(0.66))
                 .frame(maxWidth: .infinity)
-                .frame(height: AppHeights.segmentedControl)
+                .frame(height: 56)
                 .background {
                     if isSelected {
                         Capsule()
-                            .fill(PromptTheme.mutedViolet.opacity(0.4))
-                            .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.45), lineWidth: 1.1))
-                            .shadow(color: PromptTheme.softLilac.opacity(0.18), radius: 12, y: 3)
+                            .fill(PromptTheme.mutedViolet.opacity(0.42))
+                            .overlay(
+                                Capsule()
+                                    .stroke(PromptTheme.softLilac.opacity(0.48), lineWidth: 1.1)
+                            )
+                            .shadow(color: PromptTheme.softLilac.opacity(0.2), radius: 14, y: 4)
                     } else {
                         Capsule()
                             .fill(.ultraThinMaterial)
-                            .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 1))
+                            .overlay(
+                                Capsule()
+                                    .stroke(Color.white.opacity(0.14), lineWidth: 1)
+                            )
                     }
                 }
         }
@@ -220,7 +242,7 @@ struct HomeView: View {
 
     private func transcriptSection(hPad: CGFloat) -> some View {
         Text(primaryTranscriptText)
-            .font(PromptTheme.Typography.rounded(16, .regular))
+            .font(.system(size: 15, weight: .regular, design: .rounded))
             .foregroundStyle(PromptTheme.paleLilacWhite.opacity(hasResult ? 0.82 : 0.72))
             .multilineTextAlignment(.center)
             .padding(.horizontal, hPad)
@@ -229,8 +251,6 @@ struct HomeView: View {
     private func resultSection(hPad: CGFloat) -> some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: AppSpacing.element) {
-                // ResultView is edge-to-edge — no horizontal padding here so the
-                // dual-pane glass cards can bleed to the device edges.
                 ResultView(viewModel: generateViewModel)
 
                 if let err = generateViewModel.errorMessage {
@@ -243,7 +263,7 @@ struct HomeView: View {
             .padding(.top, AppSpacing.element)
         }
     }
-    
+
     // MARK: - Toast
 
     private var copiedToast: some View {
@@ -274,16 +294,17 @@ struct HomeView: View {
     }
 
     private var greetingHeader: some View {
-        VStack(spacing: 6) {
+        VStack(spacing: 10) {
             Text("\(firstName),")
-                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .font(.system(size: 42, weight: .bold, design: .rounded))
                 .foregroundStyle(.white)
+
             Text("What do you want to make today?")
-                .font(.system(size: 16, weight: .regular, design: .rounded))
-                .foregroundStyle(.white.opacity(0.55))
+                .font(.system(size: 17, weight: .regular, design: .rounded))
+                .foregroundStyle(.white.opacity(0.58))
         }
         .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity, alignment: .center)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Helpers
@@ -346,25 +367,33 @@ struct HomeView: View {
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color.yellow.opacity(0.08))
-                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(Color.yellow.opacity(0.25), lineWidth: 1))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.yellow.opacity(0.25), lineWidth: 1)
+                )
         )
-        .padding(.horizontal, AppSpacing.screenHorizontal)
+        .padding(.horizontal, 24)
     }
 
     private func errorBanner(text: String) -> some View {
         HStack(spacing: 10) {
-            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.yellow)
+            Image(systemName: "exclamationmark.triangle.fill")
+                .foregroundStyle(.yellow)
+
             Text(text)
                 .font(PromptTheme.Typography.rounded(14, .medium))
                 .foregroundStyle(PromptTheme.paleLilacWhite)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(PromptTheme.Spacing.s)
-        .background(PromptTheme.premiumMaterial,
-                    in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
-            .stroke(Color.white.opacity(0.12), lineWidth: 1))
+        .background(
+            PromptTheme.premiumMaterial,
+            in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
+                .stroke(Color.white.opacity(0.12), lineWidth: 1)
+        )
     }
 }
 

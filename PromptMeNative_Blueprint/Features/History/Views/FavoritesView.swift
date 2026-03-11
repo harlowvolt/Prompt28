@@ -37,7 +37,33 @@ struct FavoritesView: View {
     // MARK: - Search Field
 
     private var searchField: some View {
-        AppSearchField(placeholder: "Search favorites", text: $viewModel.query)
+        VStack(spacing: 8) {
+            AppSearchField(placeholder: "Search favorites", text: $viewModel.query)
+
+            if !viewModel.favoriteItems.isEmpty {
+                HStack(spacing: 8) {
+                    ShareLink(item: viewModel.favoriteItems.map { "[\($0.mode == .ai ? "AI" : "Human")] \($0.customName ?? $0.input)\n\($0.professional)" }.joined(separator: "\n\n---\n\n")) {
+                        HStack(spacing: 5) {
+                            Image(systemName: "square.and.arrow.up")
+                                .font(.system(size: 11, weight: .semibold))
+                            Text("Export All")
+                                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        }
+                        .foregroundStyle(PromptTheme.softLilac.opacity(0.80))
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(
+                            Capsule()
+                                .fill(Color.white.opacity(0.08))
+                                .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.22), lineWidth: 1))
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    Spacer()
+                }
+            }
+        }
     }
 
     // MARK: - Empty State
@@ -67,30 +93,22 @@ struct FavoritesView: View {
 
     private func favoriteCard(_ item: PromptHistoryItem) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            // Header: mode badge + date
-            HStack(alignment: .center) {
-                modeBadge(item.mode)
-                Spacer()
-                Text(item.createdAt, style: .date)
-                    .font(PromptTheme.Typography.rounded(11, .medium))
-                    .foregroundStyle(PromptTheme.softLilac.opacity(0.45))
-            }
-            .padding(.bottom, 8)
-
-            // Title + preview
-            VStack(alignment: .leading, spacing: 5) {
+            // Title + mode badge on same row
+            HStack(alignment: .top, spacing: 8) {
                 Text(item.customName ?? item.input)
                     .font(PromptTheme.Typography.rounded(16, .semibold))
                     .foregroundStyle(PromptTheme.paleLilacWhite)
                     .lineLimit(2)
                     .frame(maxWidth: .infinity, alignment: .leading)
-
-                Text(item.professional)
-                    .font(PromptTheme.Typography.rounded(13, .regular))
-                    .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
-                    .lineLimit(3)
-                    .frame(maxWidth: .infinity, alignment: .leading)
+                modeBadge(item.mode)
             }
+            .padding(.bottom, 6)
+
+            Text(item.professional)
+                .font(PromptTheme.Typography.rounded(13, .regular))
+                .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
+                .lineLimit(3)
+                .frame(maxWidth: .infinity, alignment: .leading)
 
             // Divider
             Rectangle()
@@ -109,6 +127,10 @@ struct FavoritesView: View {
                 }
 
                 Spacer()
+
+                Text(item.createdAt, style: .date)
+                    .font(PromptTheme.Typography.rounded(11, .regular))
+                    .foregroundStyle(PromptTheme.softLilac.opacity(0.42))
 
                 favoriteActionButton(icon: "star.slash.fill", label: "Remove", color: Color(red: 1.0, green: 0.38, blue: 0.44)) {
                     withAnimation(.easeInOut(duration: 0.2)) {

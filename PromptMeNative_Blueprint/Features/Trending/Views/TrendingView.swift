@@ -169,26 +169,54 @@ struct TrendingView: View {
 
             // Action row
             HStack(spacing: 8) {
-                // Copy button
-                trendingActionButton(icon: "doc.on.doc.fill", label: "Copy", color: PromptTheme.softLilac) {
+                // Copy — solid purple (primary action)
+                Button {
                     UIPasteboard.general.string = item.prompt
                     showCopiedToast = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
                         showCopiedToast = false
                     }
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "doc.on.doc.fill")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text("Copy")
+                            .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    }
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 7)
+                    .background(
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [PromptTheme.mutedViolet, Color(red: 0.29, green: 0.21, blue: 0.50)],
+                                    startPoint: .topLeading, endPoint: .bottomTrailing
+                                )
+                            )
+                            .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.28), lineWidth: 1))
+                    )
                 }
+                .buttonStyle(.plain)
 
                 Spacer()
 
-                // Full detail link
+                // View detail — glass style (secondary action)
                 NavigationLink(destination: PromptDetailView(item: item)) {
                     HStack(spacing: 4) {
-                        Text("View Full")
+                        Image(systemName: "arrow.up.right.square")
+                            .font(.system(size: 11, weight: .semibold))
+                        Text("View")
                             .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        Image(systemName: "arrow.right")
-                            .font(.system(size: 10, weight: .bold))
                     }
-                    .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
+                    .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.08))
+                            .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.20), lineWidth: 1))
+                    )
                 }
                 .buttonStyle(.plain)
             }

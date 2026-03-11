@@ -61,8 +61,6 @@ struct AppScreenContainer<Content: View>: View {
     var body: some View {
         GeometryReader { proxy in
             ZStack {
-                PromptPremiumBackground()
-
                 Group {
                     if isScrollable {
                         ScrollView(showsIndicators: false) {
@@ -207,19 +205,19 @@ extension View {
     func appGlassCard(radius: CGFloat = AppRadii.card) -> some View {
         self
             .background { PromptTheme.glassCard(cornerRadius: radius) }
-            .shadow(color: .black.opacity(0.48), radius: AppShadows.cardRadius, y: AppShadows.cardYOffset)
+            .shadow(color: .black.opacity(0.52), radius: AppShadows.cardRadius, y: AppShadows.cardYOffset)
     }
 }
 
 extension PromptTheme {
     static func glassCard(cornerRadius: CGFloat) -> some View {
         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-            .fill(Color.white.opacity(0.07))
+            .fill(Color.white.opacity(0.09))
             .overlay(
                 GeometryReader { geo in
                     RadialGradient(
                         stops: [
-                            .init(color: Color.white.opacity(0.10), location: 0.0),
+                            .init(color: Color.white.opacity(0.13), location: 0.0),
                             .init(color: Color.clear, location: 0.55)
                         ],
                         center: UnitPoint(x: 0.15, y: 0.0),
@@ -231,7 +229,7 @@ extension PromptTheme {
             )
             .overlay(
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .stroke(Color.white.opacity(0.12), lineWidth: 1)
+                    .stroke(Color.white.opacity(0.15), lineWidth: 1)
             )
     }
 }
