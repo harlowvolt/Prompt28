@@ -35,6 +35,9 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
+                PromptPremiumBackground()
+                    .ignoresSafeArea()
+
                 VStack(spacing: 0) {
                     topBar
                         .padding(.horizontal, 24)
