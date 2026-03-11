@@ -45,11 +45,11 @@ struct AuthFlowView: View {
                                     .padding(.horizontal, 4)
                             }
                         }
-                        .padding(.horizontal, AppSpacing.screenHorizontal)
+                        .padding(.horizontal, 0)
 
                         termsFooter
                             .padding(.top, AppSpacing.section)
-                            .padding(.horizontal, AppSpacing.screenHorizontal)
+                            .padding(.horizontal, 0)
 
                         Spacer(minLength: 40)
                     }
