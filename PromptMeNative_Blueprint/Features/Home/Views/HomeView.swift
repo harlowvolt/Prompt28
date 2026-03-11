@@ -48,7 +48,7 @@ struct HomeView: View {
                         greetingHeader
                             .padding(.bottom, AppSpacing.elementTight)
                         
-                        modePicker(hPad: 0)
+                        modePicker(hPad: AppSpacing.screenHorizontal)
                             .padding(.bottom, AppSpacing.element)
                     }
 
