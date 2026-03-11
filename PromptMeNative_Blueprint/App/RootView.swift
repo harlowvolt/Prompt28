@@ -163,86 +163,64 @@ struct PromptPremiumBackground: View {
             let size = geo.size
 
             ZStack {
-                PromptTheme.backgroundBase
+                // Deep navy base
+                Color(hex: "#070C17")
 
+                // Top-to-bottom navy gradient
                 LinearGradient(
                     colors: [
-                        Color(hex: "#13111C"),
-                        Color(hex: "#110F1A"),
-                        Color(hex: "#0E0C16")
+                        Color(hex: "#0A1020"),
+                        Color(hex: "#0C1428"),
+                        Color(hex: "#091220"),
+                        Color(hex: "#070C17")
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
 
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                .clear,
-                                PromptTheme.softLilac.opacity(0.11),
-                                .clear
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(width: size.width * 0.34)
-                    .position(x: size.width * 0.5, y: size.height * 0.52)
-                    .blur(radius: 50)
+                // Teal/cyan glow — sits behind where the orb lives (center, ~55% down)
+                RadialGradient(
+                    colors: [
+                        Color(hex: "#0E3348").opacity(0.72),
+                        Color(hex: "#0A2030").opacity(0.38),
+                        .clear
+                    ],
+                    center: .init(x: 0.5, y: 0.58),
+                    startRadius: 0,
+                    endRadius: size.width * 0.72
+                )
 
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                .clear,
-                                PromptTheme.mutedViolet.opacity(0.08),
-                                .clear
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(width: size.width * 0.16)
-                    .position(x: size.width * 0.28, y: size.height * 0.46)
-                    .blur(radius: 44)
+                // Subtle left-side blue accent
+                RadialGradient(
+                    colors: [
+                        Color(hex: "#112840").opacity(0.45),
+                        .clear
+                    ],
+                    center: .init(x: 0.15, y: 0.42),
+                    startRadius: 0,
+                    endRadius: size.width * 0.45
+                )
 
-                Rectangle()
-                    .fill(
-                        LinearGradient(
-                            colors: [
-                                .clear,
-                                PromptTheme.mutedViolet.opacity(0.07),
-                                .clear
-                            ],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .frame(width: size.width * 0.14)
-                    .position(x: size.width * 0.74, y: size.height * 0.48)
-                    .blur(radius: 42)
-
+                // Edge vignette — darkens corners slightly
                 LinearGradient(
                     colors: [
-                        Color.black.opacity(0.18),
+                        Color.black.opacity(0.22),
                         .clear,
-                        Color.black.opacity(0.22)
+                        Color.black.opacity(0.28)
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(PromptTheme.backgroundBase)
         }
         .ignoresSafeArea()
     }
 }
 
 enum PromptTheme {
-    static let backgroundBase = Color(hex: "#04050C")
-    static let deepShadow = Color(hex: "#0A0D1A")
+    static let backgroundBase = Color(hex: "#070C17")
+    static let deepShadow = Color(hex: "#0C1428")
     static let plum = Color(hex: "#131A2A")
     static let mutedViolet = Color(hex: "#5D628A")
     static let softLilac = Color(hex: "#CFD7FF")

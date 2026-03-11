@@ -38,20 +38,11 @@ struct HomeView: View {
         NavigationStack {
             ZStack {
                 VStack(spacing: AppSpacing.sectionTight) {
-                    // Inline header row — lives INSIDE the ZStack content so it never
-                    // overlaps toolbar items in a different z-layer.
+                    // Gear icon — top right only
                     HStack {
+                        Spacer()
                         Button { activeSheet = .settings } label: {
                             Image(systemName: "gearshape.fill")
-                                .font(.system(size: 17, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.8))
-                                .padding(10)
-                                .background(Color.white.opacity(0.06), in: Circle())
-                                .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
-                        }
-                        Spacer()
-                        Button { activeSheet = .typePrompt } label: {
-                            Image(systemName: "keyboard")
                                 .font(.system(size: 17, weight: .medium))
                                 .foregroundStyle(.white.opacity(0.8))
                                 .padding(10)
@@ -70,6 +61,12 @@ struct HomeView: View {
                             .padding(.bottom, AppSpacing.elementTight)
 
                         modePicker(hPad: AppSpacing.screenHorizontal)
+
+                        Text(generateViewModel.selectedMode == .ai
+                             ? "Standard AI prompt style"
+                             : "Optimized for human readers")
+                            .font(.system(size: 13, weight: .regular, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.45))
                             .padding(.bottom, AppSpacing.element)
                     }
 
@@ -94,11 +91,26 @@ struct HomeView: View {
                             .frame(maxHeight: .infinity)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     } else {
+                        Button { activeSheet = .typePrompt } label: {
+                            Text("Type instead")
+                                .font(.system(size: 16, weight: .medium, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.75))
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 52)
+                                .background(
+                                    Capsule()
+                                        .fill(Color.white.opacity(0.08))
+                                        .overlay(Capsule().stroke(Color.white.opacity(0.15), lineWidth: 1))
+                                )
+                        }
+                        .buttonStyle(.plain)
+                        .padding(.horizontal, AppSpacing.screenHorizontal)
+                        .padding(.top, AppSpacing.element)
+
                         Spacer()
                     }
                 }
                 .frame(maxWidth: .infinity)
-                .padding(.horizontal, AppSpacing.screenHorizontal)
                 .padding(.bottom, AppSpacing.bottomContentClearance)
             }
             .toolbar(.hidden, for: .navigationBar)
@@ -262,10 +274,16 @@ struct HomeView: View {
     }
 
     private var greetingHeader: some View {
-        Text("Hey, \(firstName)!")
-            .font(.system(size: 22, weight: .semibold, design: .rounded))
-            .foregroundStyle(.white.opacity(0.84))
-            .frame(maxWidth: .infinity, alignment: .center)
+        VStack(spacing: 6) {
+            Text("\(firstName),")
+                .font(.system(size: 34, weight: .bold, design: .rounded))
+                .foregroundStyle(.white)
+            Text("What do you want to make today?")
+                .font(.system(size: 16, weight: .regular, design: .rounded))
+                .foregroundStyle(.white.opacity(0.55))
+        }
+        .multilineTextAlignment(.center)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     // MARK: - Helpers
