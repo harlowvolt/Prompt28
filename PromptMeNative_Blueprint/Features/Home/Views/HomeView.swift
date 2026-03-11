@@ -216,15 +216,17 @@ struct HomeView: View {
     private func resultSection(hPad: CGFloat) -> some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: AppSpacing.element) {
+                // ResultView is edge-to-edge — no horizontal padding here so the
+                // dual-pane glass cards can bleed to the device edges.
                 ResultView(viewModel: generateViewModel)
 
                 if let err = generateViewModel.errorMessage {
                     errorBanner(text: err)
+                        .padding(.horizontal, hPad)
                 }
 
                 Color.clear.frame(height: 20)
             }
-            .padding(.horizontal, hPad)
             .padding(.top, AppSpacing.element)
         }
     }

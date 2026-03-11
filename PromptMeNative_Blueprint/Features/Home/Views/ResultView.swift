@@ -17,6 +17,7 @@ struct ResultView: View {
                     yourInputCard
                     expertPromptCard(result: result)
                 }
+                .frame(maxWidth: .infinity)
             } else {
                 emptyCard
             }
@@ -54,6 +55,7 @@ struct ResultView: View {
             }
             Spacer()
         }
+        .frame(maxWidth: .infinity)
         .padding(PromptTheme.Spacing.s)
         .background { PromptTheme.glassCard(cornerRadius: PromptTheme.Radius.large) }
         .shadow(color: .black.opacity(0.45), radius: 16, y: 10)
@@ -96,6 +98,7 @@ struct ResultView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .textSelection(.enabled)
         }
+        .frame(maxWidth: .infinity)
         .padding(PromptTheme.Spacing.s)
         .background { PromptTheme.glassCard(cornerRadius: PromptTheme.Radius.large) }
         .shadow(color: .black.opacity(0.30), radius: 10, y: 6)
@@ -195,6 +198,7 @@ struct ResultView: View {
             }
             .buttonStyle(.bordered)
         }
+        .frame(maxWidth: .infinity)
         .padding(PromptTheme.Spacing.s)
         .background { PromptTheme.glassCard(cornerRadius: PromptTheme.Radius.large) }
         .shadow(color: .black.opacity(0.50), radius: 20, y: 14)
@@ -211,6 +215,7 @@ struct ResultView: View {
                 .foregroundStyle(PromptTheme.softLilac.opacity(0.82))
             Spacer()
         }
+        .frame(maxWidth: .infinity)
         .padding(PromptTheme.Spacing.s)
         .background { PromptTheme.glassCard(cornerRadius: PromptTheme.Radius.large) }
     }
