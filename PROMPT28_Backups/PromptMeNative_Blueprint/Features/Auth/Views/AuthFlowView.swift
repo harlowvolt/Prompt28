@@ -82,7 +82,7 @@ struct AuthFlowView: View {
                 Text("Prompt")
                     .font(.system(size: 44, weight: .bold, design: .rounded))
                     .foregroundStyle(.white)
-                Text("Me")
+                Text("28")
                     .font(.system(size: 44, weight: .bold, design: .rounded))
                     .foregroundStyle(
                         LinearGradient(
