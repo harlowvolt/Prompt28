@@ -18,6 +18,8 @@ struct HomeView: View {
     @StateObject private var generateViewModel: GenerateViewModel
     @StateObject private var settingsViewModel = SettingsViewModel()
 
+    @Environment(\.horizontalSizeClass) private var hSizeClass
+
     @State private var activeSheet: ActiveSheet?
     @State private var showCopiedToast = false
 
@@ -36,43 +38,63 @@ struct HomeView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let topSafe = proxy.safeAreaInsets.top
+            let topSafe    = proxy.safeAreaInsets.top
+            let isIPad     = hSizeClass == .regular
+            // Content column is capped at 540pt on iPad so it doesn't stretch wall-to-wall
+            let contentW   = isIPad ? min(proxy.size.width, 540) : proxy.size.width
+            let hPad: CGFloat = isIPad ? 40 : AppSpacing.screenHorizontal
+            // Orb: fraction of the content column, capped sensibly
+            let orbSize    = min(contentW * 0.60, isIPad ? 300 : 250)
+            let orbSmall   = min(contentW * 0.44, isIPad ? 220 : 180)
+            // Top clearance: leave room for gear button above header
+            let topPad: CGFloat = topSafe + (isIPad ? 72 : 56)
 
-            ZStack(alignment: .topTrailing) {
+            ZStack(alignment: .top) {
                 PromptPremiumBackground()
                     .ignoresSafeArea()
 
+                // ── Main content column ────────────────────────────
                 VStack(spacing: AppSpacing.sectionTight) {
-                    headerSection
+                    headerSection(hPad: hPad)
 
-                    modePicker
+                    modePicker(hPad: hPad)
 
-                    orbSection(screenWidth: proxy.size.width)
+                    OrbView(engine: orbEngine, onTranscript: generateFromText)
+                        .frame(
+                            width:  hasResult ? orbSmall : orbSize,
+                            height: hasResult ? orbSmall : orbSize
+                        )
 
-                    transcriptSection
+                    transcriptSection(hPad: hPad)
 
                     if hasResult {
-                        resultSection
+                        resultSection(hPad: hPad)
                             .frame(maxHeight: .infinity)
                     }
 
                     typeInsteadButton
                 }
-                .padding(.top, topSafe + AppSpacing.top)
+                .padding(.top, topPad)
                 .padding(.bottom, AppSpacing.bottomContentClearance)
-                .frame(width: proxy.size.width, alignment: .top)
+                .frame(width: contentW, alignment: .top)
+                .frame(width: proxy.size.width) // center column on iPad
 
-                // Floating gear — sits at top-right independently
-                Button { activeSheet = .settings } label: {
-                    Image(systemName: "gearshape.fill")
-                        .font(.system(size: 18, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.8))
-                        .padding(12)
-                        .background(Color.white.opacity(0.06), in: Circle())
-                        .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
+                // ── Floating gear ─ top-right of content column ────
+                HStack {
+                    Spacer()
+                    Button { activeSheet = .settings } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.8))
+                            .padding(12)
+                            .background(Color.white.opacity(0.06), in: Circle())
+                            .overlay(Circle().stroke(.white.opacity(0.16), lineWidth: 1))
+                    }
+                    .padding(.trailing, hPad)
                 }
-                .padding(.top, topSafe - 32)
-                .padding(.trailing, AppSpacing.screenHorizontal)
+                .frame(width: contentW)
+                .frame(width: proxy.size.width)
+                .padding(.top, topSafe + 8)
             }
         }
         .overlay(alignment: .bottom) { copiedToast }
@@ -134,7 +156,7 @@ struct HomeView: View {
 
     // MARK: - Header
 
-    private var headerSection: some View {
+    private func headerSection(hPad: CGFloat) -> some View {
         VStack(alignment: .center, spacing: AppSpacing.elementTight) {
             Text("\(firstName),")
                 .font(.system(size: 40, weight: .bold, design: .rounded))
@@ -179,18 +201,18 @@ struct HomeView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, AppSpacing.screenHorizontal)
+        .padding(.horizontal, hPad)
     }
 
     // MARK: - Mode Picker
 
-    private var modePicker: some View {
+    private func modePicker(hPad: CGFloat) -> some View {
         HStack(spacing: AppSpacing.element) {
             modePill(label: "AI Mode", mode: .ai)
             modePill(label: "Human Mode", mode: .human)
         }
         .frame(maxWidth: .infinity)
-        .padding(.horizontal, AppSpacing.screenHorizontal)
+        .padding(.horizontal, hPad)
     }
 
     private func modePill(label: String, mode: PromptMode) -> some View {
@@ -229,24 +251,15 @@ struct HomeView: View {
 
     // MARK: - Orb + Transcript + Result
 
-    private func orbSection(screenWidth: CGFloat) -> some View {
-        let restingOrb = min(screenWidth * 0.84, 330)
-        let resultOrb = min(screenWidth * 0.60, 240)
-
-        return OrbView(engine: orbEngine, onTranscript: generateFromText)
-            .frame(width: hasResult ? resultOrb : restingOrb, height: hasResult ? resultOrb : restingOrb)
-            .frame(maxWidth: .infinity)
-    }
-
-    private var transcriptSection: some View {
+    private func transcriptSection(hPad: CGFloat) -> some View {
         Text(primaryTranscriptText)
             .font(PromptTheme.Typography.rounded(16, .regular))
             .foregroundStyle(PromptTheme.paleLilacWhite.opacity(hasResult ? 0.82 : 0.72))
             .multilineTextAlignment(.center)
-            .padding(.horizontal, AppSpacing.screenHorizontal)
+            .padding(.horizontal, hPad)
     }
 
-    private var resultSection: some View {
+    private func resultSection(hPad: CGFloat) -> some View {
         ScrollView(showsIndicators: false) {
             VStack(spacing: AppSpacing.element) {
                 ResultView(viewModel: generateViewModel)
@@ -257,7 +270,7 @@ struct HomeView: View {
 
                 Color.clear.frame(height: 20)
             }
-            .padding(.horizontal, AppSpacing.screenHorizontal)
+            .padding(.horizontal, hPad)
             .padding(.top, AppSpacing.element)
         }
     }
