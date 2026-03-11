@@ -13,9 +13,6 @@ struct AuthFlowView: View {
 
     var body: some View {
         ZStack {
-            PromptPremiumBackground()
-                .ignoresSafeArea()
-
             // Constrain form to 420pt so it doesn't stretch full-width on iPad
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {

@@ -37,6 +37,7 @@ struct RootView: View {
         // so it fills the FULL screen including under the status bar and home indicator.
         ZStack {
             PromptPremiumBackground()
+                .ignoresSafeArea()
 
             Group {
                 if !didBootstrap || env.authManager.isBootstrapping {
@@ -61,7 +62,6 @@ struct RootView: View {
                 }
             }
         }
-        .ignoresSafeArea()
         .task {
             guard !didBootstrap else { return }
             await env.authManager.bootstrap()
@@ -140,6 +140,9 @@ struct RootView: View {
                 }
                 .tag(MainTab.trending)
         }
+        .scrollContentBackground(.hidden)
+        .toolbarBackground(.hidden, for: .tabBar)
+        .toolbarBackground(.hidden, for: .navigationBar)
         .background(TabBarRaiser(extraInset: 20))
     }
 
@@ -232,6 +235,7 @@ struct PromptPremiumBackground: View {
                 )
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .background(PromptTheme.backgroundBase)
         }
         .ignoresSafeArea()
     }

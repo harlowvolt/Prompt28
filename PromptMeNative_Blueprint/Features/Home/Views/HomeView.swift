@@ -37,9 +37,6 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PromptPremiumBackground()
-                    .ignoresSafeArea()
-
                 VStack(spacing: AppSpacing.sectionTight) {
                     // Inline header row — lives INSIDE the ZStack content so it never
                     // overlaps toolbar items in a different z-layer.
