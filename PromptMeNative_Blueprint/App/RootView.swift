@@ -231,7 +231,7 @@ struct PromptPremiumBackground: View {
                     endPoint: .bottom
                 )
             }
-            .frame(width: size.width, height: size.height)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .ignoresSafeArea()
     }
