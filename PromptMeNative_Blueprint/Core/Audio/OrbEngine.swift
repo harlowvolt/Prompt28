@@ -188,8 +188,7 @@ final class OrbEngine {
         for _ in 0..<finalTranscriptPollingAttempts {
             let best = speech.finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
             if !best.isEmpty {
-                finalTranscript = best
-                transcript = best
+                (finalTranscript, transcript) = (best, best)
                 finalizeTranscript()
                 return
             }
@@ -202,8 +201,7 @@ final class OrbEngine {
             return
         }
 
-        finalTranscript = fallbackCandidate
-        transcript = fallbackCandidate
+        (finalTranscript, transcript) = (fallbackCandidate, fallbackCandidate)
         finalizeTranscript()
     }
 

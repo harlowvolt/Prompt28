@@ -959,6 +959,21 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 continuation — Simplified final transcript promotion assignments in OrbEngine
+
+Replaced duplicated two-line assignments with tuple assignment when promoting finalized transcript text, preserving the same values and control flow.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - In `awaitFinalTranscriptAndFinalize()`, changed:
+        - `finalTranscript = best` + `transcript = best`
+        - to `(finalTranscript, transcript) = (best, best)`
+    - In fallback promotion path, changed:
+        - `finalTranscript = fallbackCandidate` + `transcript = fallbackCandidate`
+        - to `(finalTranscript, transcript) = (fallbackCandidate, fallbackCandidate)`
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
+
 #### Phase 3 continuation — Centralized final transcript polling constants in OrbEngine
 
 Replaced duplicated final-transcript polling magic numbers with private constants to reduce drift risk while preserving behavior.
