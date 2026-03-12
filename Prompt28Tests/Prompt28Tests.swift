@@ -439,6 +439,23 @@ struct OrbTranscriptMeaningTests {
     }
 }
 
+@Suite("Orb Alphanumeric Content Detection")
+struct OrbAlphanumericContentDetectionTests {
+
+    @Test("Detects alphanumeric content")
+    func detectsAlphanumeric() {
+        #expect(OrbEngine.containsAlphanumericContent("abc"))
+        #expect(OrbEngine.containsAlphanumericContent("123"))
+        #expect(OrbEngine.containsAlphanumericContent("---x---"))
+    }
+
+    @Test("Rejects strings without alphanumeric content")
+    func rejectsNonAlphanumeric() {
+        #expect(!OrbEngine.containsAlphanumericContent("--- ..."))
+        #expect(!OrbEngine.containsAlphanumericContent(" \n\t "))
+    }
+}
+
 @Suite("Orb Speech Content Detection Flag")
 struct OrbSpeechContentDetectionFlagTests {
 

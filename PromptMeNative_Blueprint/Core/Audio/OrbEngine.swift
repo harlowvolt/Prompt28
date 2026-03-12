@@ -402,7 +402,12 @@ final class OrbEngine {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= minimumTranscriptCharacterCount else { return false }
         guard hasDetectedSpeechContent || !trimmed.isEmpty else { return false }
-        return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
+        return containsAlphanumericContent(trimmed)
+    }
+
+    /// Pure helper for alphanumeric content checks in transcript text.
+    nonisolated static func containsAlphanumericContent(_ text: String) -> Bool {
+        text.rangeOfCharacter(from: .alphanumerics) != nil
     }
 
     /// Pure helper for sticky speech-content detection updates.
