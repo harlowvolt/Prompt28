@@ -249,16 +249,6 @@ struct OrbPermissionFailureMappingTests {
     }
 }
 
-@Suite("Orb Final Transcript Polling Limit")
-struct OrbFinalTranscriptPollingLimitTests {
-
-    @Test("Polling limit is positive and stable")
-    func pollingLimit() {
-        #expect(OrbEngine.finalTranscriptPollingIterationLimit() > 0)
-        #expect(OrbEngine.finalTranscriptPollingIterationLimit() == 30)
-    }
-}
-
 @Suite("Orb Final Transcript Polling Range")
 struct OrbFinalTranscriptPollingRangeTests {
 
@@ -266,7 +256,7 @@ struct OrbFinalTranscriptPollingRangeTests {
     func pollingRangeShape() {
         let range = OrbEngine.finalTranscriptPollingAttemptRange()
         #expect(range.lowerBound == 0)
-        #expect(range.count == OrbEngine.finalTranscriptPollingIterationLimit())
+        #expect(range.count == 30)
     }
 }
 
@@ -344,41 +334,6 @@ struct OrbTranscriptMeaningTests {
             text: "  fallback value  ",
             hasDetectedSpeechContent: false,
             minimumTranscriptCharacterCount: 3
-        ))
-    }
-}
-
-@Suite("Orb Listening Duration")
-struct OrbListeningDurationTests {
-
-    @Test("Rejects stop when listening start timestamp is missing")
-    func rejectsMissingStartTime() {
-        #expect(!OrbEngine.hasMetMinimumListeningDuration(
-            listeningStartedAt: nil,
-            now: Date(),
-            minimumListeningDuration: 0.7
-        ))
-    }
-
-    @Test("Rejects stop when elapsed duration is below threshold")
-    func rejectsBelowThreshold() {
-        let start = Date(timeIntervalSinceReferenceDate: 1_000)
-        let now = Date(timeIntervalSinceReferenceDate: 1_000.6)
-        #expect(!OrbEngine.hasMetMinimumListeningDuration(
-            listeningStartedAt: start,
-            now: now,
-            minimumListeningDuration: 0.7
-        ))
-    }
-
-    @Test("Allows stop when elapsed duration meets threshold")
-    func allowsAtThreshold() {
-        let start = Date(timeIntervalSinceReferenceDate: 1_000)
-        let now = Date(timeIntervalSinceReferenceDate: 1_000.7)
-        #expect(OrbEngine.hasMetMinimumListeningDuration(
-            listeningStartedAt: start,
-            now: now,
-            minimumListeningDuration: 0.7
         ))
     }
 }

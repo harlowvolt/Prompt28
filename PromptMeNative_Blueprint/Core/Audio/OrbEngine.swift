@@ -194,11 +194,8 @@ final class OrbEngine {
     }
 
     private var canStopListeningNow: Bool {
-        Self.hasMetMinimumListeningDuration(
-            listeningStartedAt: listeningStartedAt,
-            now: Date(),
-            minimumListeningDuration: minimumListeningDuration
-        )
+        guard let listeningStartedAt else { return false }
+        return Date().timeIntervalSince(listeningStartedAt) >= minimumListeningDuration
     }
 
     private func isMeaningfulTranscript(_ text: String) -> Bool {
@@ -275,14 +272,9 @@ final class OrbEngine {
         }
     }
 
-    /// Pure helper for final transcript polling iteration bounds.
-    nonisolated static func finalTranscriptPollingIterationLimit() -> Int {
-        30
-    }
-
     /// Pure helper for final transcript polling attempt range.
     nonisolated static func finalTranscriptPollingAttemptRange() -> Range<Int> {
-        0..<finalTranscriptPollingIterationLimit()
+        0..<30
     }
 
     /// Pure helper for final transcript polling sleep duration.
@@ -340,16 +332,6 @@ final class OrbEngine {
         case .notDetermined, .granted, .unavailable, .error:
             return false
         }
-    }
-
-    /// Pure helper for minimum listen-duration gating before stop is allowed.
-    nonisolated static func hasMetMinimumListeningDuration(
-        listeningStartedAt: Date?,
-        now: Date,
-        minimumListeningDuration: TimeInterval
-    ) -> Bool {
-        guard let listeningStartedAt else { return false }
-        return now.timeIntervalSince(listeningStartedAt) >= minimumListeningDuration
     }
 
 }

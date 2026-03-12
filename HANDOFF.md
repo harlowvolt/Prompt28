@@ -959,6 +959,41 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline minimum-listening-duration gate
+
+Removed a single-use listening-duration helper and applied the gate directly in `canStopListeningNow`.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `canStopListeningNow`, replaced helper call:
+        - `hasMetMinimumListeningDuration(...)`
+      with direct logic:
+        - guard `listeningStartedAt` exists
+        - compare elapsed time against `minimumListeningDuration`
+    - Removed helper:
+        - `hasMetMinimumListeningDuration(listeningStartedAt:now:minimumListeningDuration:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Listening Duration`
+
+#### Phase 3 prep continuation — Inline polling-iteration limit into attempt range
+
+Removed a one-line polling-limit indirection and encoded the stable attempt range directly.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `finalTranscriptPollingAttemptRange()` now returns `0..<30` directly
+    - Removed helper:
+        - `finalTranscriptPollingIterationLimit()`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Final Transcript Polling Limit`
+    - Updated suite `Orb Final Transcript Polling Range` to assert count equals `30`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 317)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline alphanumeric transcript-content check
 
 Removed a single-use alphanumeric-content helper and kept the content check directly in transcript meaningfulness evaluation.
