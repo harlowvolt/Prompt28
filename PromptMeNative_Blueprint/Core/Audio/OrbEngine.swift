@@ -145,10 +145,7 @@ final class OrbEngine {
             )
             return
         }
-        guard Self.shouldDeliverTranscriptCandidate(
-            trimmedTranscript: trimmed,
-            lastDeliveredTranscript: lastDeliveredTranscript
-        ) else { return }
+        guard trimmed != lastDeliveredTranscript else { return }
 
         lastDeliveredTranscript = trimmed
         state = .ready(text: trimmed)
@@ -361,14 +358,6 @@ final class OrbEngine {
     /// Pure helper for checking content after transcript normalization.
     nonisolated static func hasNormalizedTranscriptContent(_ normalizedText: String) -> Bool {
         !normalizedText.isEmpty
-    }
-
-    /// Pure helper for transcript-delivery dedupe.
-    nonisolated static func shouldDeliverTranscriptCandidate(
-        trimmedTranscript: String,
-        lastDeliveredTranscript: String
-    ) -> Bool {
-        trimmedTranscript != lastDeliveredTranscript
     }
 
     /// Pure helper for assigning finalized transcript values to engine fields.
