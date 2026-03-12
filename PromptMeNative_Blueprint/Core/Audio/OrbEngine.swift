@@ -37,7 +37,7 @@ protocol OrbEngineFactoryProtocol {
 }
 
 struct LiveOrbEngineFactory: OrbEngineFactoryProtocol {
-    var speechFactory: (any SpeechRecognizerFactoryProtocol)? = nil
+    var speechFactory: any SpeechRecognizerFactoryProtocol
 
     func makeOrbEngine() -> OrbEngine {
         OrbEngine.makeDefault(speechFactory: speechFactory)
@@ -80,11 +80,10 @@ final class OrbEngine {
     }
 
     static func makeDefault(
-        speechFactory: (any SpeechRecognizerFactoryProtocol)? = nil,
+        speechFactory: any SpeechRecognizerFactoryProtocol,
         locale: Locale = .current
     ) -> OrbEngine {
-        let resolvedSpeechFactory = speechFactory ?? LiveSpeechRecognizerFactory()
-        return OrbEngine(speech: resolvedSpeechFactory.makeSpeechRecognizer(locale: locale))
+        OrbEngine(speech: speechFactory.makeSpeechRecognizer(locale: locale))
     }
 
     var needsPermissionSettingsAction: Bool {
@@ -260,19 +259,8 @@ final class OrbEngine {
             .sink { [weak self] status in
                 guard let self else { return }
                 self.permissionStatus = status
-                switch status {
-                case .granted, .notDetermined:
-                    break
-                case .speechDenied:
-                    self.state = .failure("Speech recognition permission denied.")
-                case .microphoneDenied:
-                    self.state = .failure("Microphone permission denied.")
-                case .restricted:
-                    self.state = .failure("Speech recognition is restricted on this device.")
-                case .unavailable:
-                    self.state = .failure("Speech recognition is unavailable.")
-                case .error(let message):
-                    self.state = .failure(message)
+                if let failureMessage = Self.failureMessage(for: status) {
+                    self.state = .failure(failureMessage)
                 }
             }
             .store(in: &cancellables)
@@ -283,6 +271,24 @@ final class OrbEngine {
                 self?.audioLevel = value
             }
             .store(in: &cancellables)
+    }
+
+    /// Pure mapping from permission status to user-facing failure text.
+    nonisolated static func failureMessage(for status: SpeechRecognizerService.PermissionStatus) -> String? {
+        switch status {
+        case .granted, .notDetermined:
+            return nil
+        case .speechDenied:
+            return "Speech recognition permission denied."
+        case .microphoneDenied:
+            return "Microphone permission denied."
+        case .restricted:
+            return "Speech recognition is restricted on this device."
+        case .unavailable:
+            return "Speech recognition is unavailable."
+        case .error(let message):
+            return message
+        }
     }
 }
 

@@ -22,7 +22,7 @@ struct HomeView: View {
         preferencesStore: any PreferenceStoring,
         historyStore: any HistoryStoring,
         usageTracker: UsageTracker,
-        orbEngineFactory: (any OrbEngineFactoryProtocol)? = nil
+        orbEngineFactory: any OrbEngineFactoryProtocol
     ) {
         self.authManager = authManager
         self.router = router
@@ -31,8 +31,7 @@ struct HomeView: View {
         self.historyStore = historyStore
         self.usageTracker = usageTracker
 
-        let resolvedOrbEngineFactory = orbEngineFactory ?? LiveOrbEngineFactory()
-        self._orbEngine = State(wrappedValue: resolvedOrbEngineFactory.makeOrbEngine())
+        self._orbEngine = State(wrappedValue: orbEngineFactory.makeOrbEngine())
 
         self._generateViewModel = State(
             wrappedValue: GenerateViewModel(

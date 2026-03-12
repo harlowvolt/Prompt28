@@ -374,13 +374,17 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
             return true
         }
 
-        // Assistant and speech framework transient cancellation codes commonly appear during teardown.
-        if nsError.domain == "kAFAssistantErrorDomain" {
-            return nsError.code == 1101 || nsError.code == 1107 || nsError.code == 1110
+        return Self.isExpectedTeardownRecognitionError(nsError)
+    }
+
+    /// Pure classification helper for transient speech-framework teardown errors.
+    nonisolated static func isExpectedTeardownRecognitionError(_ error: NSError) -> Bool {
+        if error.domain == "kAFAssistantErrorDomain" {
+            return error.code == 1101 || error.code == 1107 || error.code == 1110
         }
 
-        if nsError.domain == "SFSpeechErrorDomain" {
-            return nsError.code == 203 || nsError.code == 216
+        if error.domain == "SFSpeechErrorDomain" {
+            return error.code == 203 || error.code == 216
         }
 
         return false

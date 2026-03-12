@@ -1,4 +1,5 @@
 import Testing
+import Foundation
 @testable import Prompt28
 
 // MARK: - UsageTracker Tests
@@ -183,5 +184,67 @@ struct PlanTypeTests {
             let decoded = try JSONDecoder().decode(PlanType.self, from: data)
             #expect(decoded == expected)
         }
+    }
+}
+
+// MARK: - Audio Helper Mapping Tests
+
+@Suite("Speech Error Classification")
+struct SpeechErrorClassificationTests {
+
+    @Test("Expected teardown assistant errors are classified")
+    func assistantTeardownErrors() {
+        #expect(SpeechRecognizerService.isExpectedTeardownRecognitionError(
+            NSError(domain: "kAFAssistantErrorDomain", code: 1101)
+        ))
+        #expect(SpeechRecognizerService.isExpectedTeardownRecognitionError(
+            NSError(domain: "kAFAssistantErrorDomain", code: 1107)
+        ))
+        #expect(SpeechRecognizerService.isExpectedTeardownRecognitionError(
+            NSError(domain: "kAFAssistantErrorDomain", code: 1110)
+        ))
+    }
+
+    @Test("Expected teardown speech-framework errors are classified")
+    func speechFrameworkTeardownErrors() {
+        #expect(SpeechRecognizerService.isExpectedTeardownRecognitionError(
+            NSError(domain: "SFSpeechErrorDomain", code: 203)
+        ))
+        #expect(SpeechRecognizerService.isExpectedTeardownRecognitionError(
+            NSError(domain: "SFSpeechErrorDomain", code: 216)
+        ))
+    }
+
+    @Test("Non-teardown errors are not classified")
+    func nonTeardownErrors() {
+        #expect(!SpeechRecognizerService.isExpectedTeardownRecognitionError(
+            NSError(domain: "kAFAssistantErrorDomain", code: 999)
+        ))
+        #expect(!SpeechRecognizerService.isExpectedTeardownRecognitionError(
+            NSError(domain: "OtherDomain", code: 1101)
+        ))
+    }
+}
+
+@Suite("Orb Permission Failure Mapping")
+struct OrbPermissionFailureMappingTests {
+
+    @Test("Non-error statuses do not produce failure message")
+    func nonErrorStatuses() {
+        #expect(OrbEngine.failureMessage(for: .notDetermined) == nil)
+        #expect(OrbEngine.failureMessage(for: .granted) == nil)
+    }
+
+    @Test("Permission-related statuses map to expected failure text")
+    func permissionStatusMappings() {
+        #expect(OrbEngine.failureMessage(for: .speechDenied) == "Speech recognition permission denied.")
+        #expect(OrbEngine.failureMessage(for: .microphoneDenied) == "Microphone permission denied.")
+        #expect(OrbEngine.failureMessage(for: .restricted) == "Speech recognition is restricted on this device.")
+        #expect(OrbEngine.failureMessage(for: .unavailable) == "Speech recognition is unavailable.")
+    }
+
+    @Test("Error status returns passthrough message")
+    func passthroughErrorStatus() {
+        #expect(OrbEngine.failureMessage(for: .error("boom")) == "boom")
     }
 }

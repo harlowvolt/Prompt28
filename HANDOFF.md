@@ -811,6 +811,114 @@ Verification:
 - `get_errors` on touched files: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Removed remaining OrbEngine internal factory fallback
+
+Completed the same DI-tightening pattern inside OrbEngine construction so speech creation is fully explicit.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `LiveOrbEngineFactory.speechFactory` is now required (non-optional)
+    - `OrbEngine.makeDefault(...)` now requires `speechFactory` (no fallback to `LiveSpeechRecognizerFactory`)
+
+Behavior:
+1. No functional change under app startup path (AppEnvironment already provides both factories).
+2. Audio construction has no hidden live-default fallback in Home or OrbEngine paths.
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 prep continuation — Removed Home-level live factory fallback
+
+Tightened audio DI by eliminating `HomeView`'s internal fallback to `LiveOrbEngineFactory`.
+
+- File: `Features/Home/Views/HomeView.swift`
+    - `orbEngineFactory` init parameter is now required (non-optional)
+    - Removed local fallback construction path
+
+- File: `App/RootView.swift`
+    - `homeView` composition now requires scoped `orbEngineFactory` alongside other Home deps
+    - Falls back to `launchView` if missing (consistent with existing guarded composition pattern)
+
+Behavior:
+1. No functional change under normal app startup (factory is root-injected).
+2. Audio engine construction ownership is now fully composition-driven.
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 prep continuation — Audio factory composition centralized in AppEnvironment
+
+Shifted audio-factory composition ownership into `AppEnvironment` so future actor-backed swaps are made in one container location.
+
+- File: `App/AppEnvironment.swift`
+    - Added stored deps:
+        - `speechRecognizerFactory: any SpeechRecognizerFactoryProtocol`
+        - `orbEngineFactory: any OrbEngineFactoryProtocol`
+    - Initialized live defaults in container init:
+        - `LiveSpeechRecognizerFactory()`
+        - `LiveOrbEngineFactory(speechFactory: speechRecognizerFactory)`
+    - Added scoped key:
+        - `EnvironmentValues.speechRecognizerFactory`
+
+- File: `PromptMeNativeApp.swift`
+    - Root now injects factory dependencies from `env`:
+        - `\.speechRecognizerFactory`
+        - `\.orbEngineFactory`
+
+Behavior:
+1. No runtime behavior change.
+2. Audio construction seams are now owned by the app container (not ad hoc in views).
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 prep continuation — OrbEngine factory wired through scoped DI
+
+Moved the OrbEngine factory seam from local-only fallback to app-level scoped injection, so composition can swap engine construction without touching `HomeView` internals.
+
+- File: `App/AppEnvironment.swift`
+    - Added `EnvironmentValues.orbEngineFactory` key:
+        - type: `(any OrbEngineFactoryProtocol)?`
+
+- File: `PromptMeNativeApp.swift`
+    - Injected live factory at root:
+        - `.environment(\.orbEngineFactory, LiveOrbEngineFactory())`
+
+- File: `App/RootView.swift`
+    - Reads scoped `orbEngineFactory`
+    - Passes it into `HomeView(..., orbEngineFactory:)`
+
+Behavior:
+1. No functional change; live app still uses the same OrbEngine behavior.
+2. Factory replacement now supports scoped composition and test/migration seams.
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 prep continuation — Speech factory seam for OrbEngine default path
+
+Decoupled `OrbEngine.makeDefault()` from direct `SpeechRecognizerService` construction to allow actor-backed speech implementations later without touching Home wiring.
+
+- File: `Core/Audio/SpeechRecognizerService.swift`
+    - Added `SpeechRecognizerFactoryProtocol`
+    - Added `LiveSpeechRecognizerFactory` implementation
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `LiveOrbEngineFactory` now accepts optional `speechFactory`
+    - `OrbEngine.makeDefault(...)` now resolves speech via factory:
+        - `makeDefault(speechFactory:locale:)`
+
+Behavior:
+1. No runtime behavior change (live defaults still create `SpeechRecognizerService(locale: .current)`).
+2. Construction path is now swappable through factory seams.
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
 #### Phase 3 prep continuation — OrbView now uses protocol boundary for commands
 
 Extended protocol-boundary adoption from Home generation flow into `OrbView` interactions.

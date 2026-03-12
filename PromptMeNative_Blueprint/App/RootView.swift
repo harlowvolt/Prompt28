@@ -9,6 +9,7 @@ struct RootView: View {
     @Environment(\.preferencesStore) private var scopedPreferencesStore
     @Environment(\.historyStore) private var scopedHistoryStore
     @Environment(\.usageTracker) private var scopedUsageTracker
+    @Environment(\.orbEngineFactory) private var scopedOrbEngineFactory
     @AppStorage("hasAcceptedPrivacy") private var hasAcceptedPrivacy = false
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var didBootstrap = false
@@ -198,14 +199,16 @@ struct RootView: View {
            let apiClient = scopedAPIClient,
            let preferencesStore = scopedPreferencesStore,
            let historyStore = scopedHistoryStore,
-           let usageTracker = scopedUsageTracker {
+           let usageTracker = scopedUsageTracker,
+           let orbEngineFactory = scopedOrbEngineFactory {
             HomeView(
                 authManager: authManager,
                 router: router,
                 apiClient: apiClient,
                 preferencesStore: preferencesStore,
                 historyStore: historyStore,
-                usageTracker: usageTracker
+                usageTracker: usageTracker,
+                orbEngineFactory: orbEngineFactory
             )
         } else {
             launchView

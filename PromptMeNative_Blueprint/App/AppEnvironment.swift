@@ -14,6 +14,10 @@ final class AppEnvironment {
     let storeManager: StoreManager
     /// Keychain-backed client-side freemium usage counter.
     let usageTracker: UsageTracker
+    /// Factory seam for speech recognizer construction.
+    let speechRecognizerFactory: any SpeechRecognizerFactoryProtocol
+    /// Factory seam for orb engine construction.
+    let orbEngineFactory: any OrbEngineFactoryProtocol
 
     init() {
         let baseURL = URL(string: "https://promptme-app-production.up.railway.app")!
@@ -42,6 +46,8 @@ final class AppEnvironment {
         self.preferencesStore = PreferencesStore()
         self.router = AppRouter()
         self.storeManager = StoreManager()
+        self.speechRecognizerFactory = LiveSpeechRecognizerFactory()
+        self.orbEngineFactory = LiveOrbEngineFactory(speechFactory: speechRecognizerFactory)
         // Combine forwarding removed — @Observable on AuthManager propagates changes automatically
     }
 }
@@ -104,6 +110,14 @@ private struct KeychainServiceKey: EnvironmentKey {
     static var defaultValue: KeychainService? = nil
 }
 
+private struct OrbEngineFactoryKey: EnvironmentKey {
+    static var defaultValue: (any OrbEngineFactoryProtocol)? = nil
+}
+
+private struct SpeechRecognizerFactoryKey: EnvironmentKey {
+    static var defaultValue: (any SpeechRecognizerFactoryProtocol)? = nil
+}
+
 extension EnvironmentValues {
     var historyStore: (any HistoryStoring)? {
         get { self[HistoryStoreKey.self] }
@@ -148,5 +162,15 @@ extension EnvironmentValues {
     var keychainService: KeychainService? {
         get { self[KeychainServiceKey.self] }
         set { self[KeychainServiceKey.self] = newValue }
+    }
+
+    var orbEngineFactory: (any OrbEngineFactoryProtocol)? {
+        get { self[OrbEngineFactoryKey.self] }
+        set { self[OrbEngineFactoryKey.self] = newValue }
+    }
+
+    var speechRecognizerFactory: (any SpeechRecognizerFactoryProtocol)? {
+        get { self[SpeechRecognizerFactoryKey.self] }
+        set { self[SpeechRecognizerFactoryKey.self] = newValue }
     }
 }
