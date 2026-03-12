@@ -9,15 +9,15 @@ import SwiftData
 @Model
 final class PromptHistoryItem {
 
-    @Attribute(.unique) var id: UUID
-    var createdAt: Date
+    @Attribute(.unique) var id: UUID = UUID()
+    var createdAt: Date = Date()
     /// Stored as its `rawValue` string via SwiftData's Codable attribute support.
-    var mode: PromptMode
-    var input: String
-    var professional: String
-    var template: String
-    var favorite: Bool
-    var customName: String?
+    var mode: PromptMode = PromptMode.ai
+    var input: String = ""
+    var professional: String = ""
+    var template: String = ""
+    var favorite: Bool = false
+    var customName: String? = nil
 
     init(
         id: UUID = UUID(),

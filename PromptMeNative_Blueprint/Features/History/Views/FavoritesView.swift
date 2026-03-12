@@ -184,7 +184,7 @@ struct FavoritesView: View {
             modeBadge(item.mode)
 
             Button {
-                viewModel.toggleFavorite(item)
+                viewModel.toggleFavorite(id: item.id)
             } label: {
                 Text("Remove")
                     .font(.system(size: 16, weight: .medium, design: .rounded))

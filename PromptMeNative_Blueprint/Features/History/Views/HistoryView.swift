@@ -3,13 +3,13 @@ import UIKit
 
 struct HistoryView: View {
     private enum ActiveSheet: Identifiable {
-        case rename(PromptHistoryItem)
-        case detail(PromptHistoryItem)
+        case rename(UUID)
+        case detail(UUID)
 
         var id: String {
             switch self {
-            case .rename(let item): return "rename-\(item.id.uuidString)"
-            case .detail(let item): return "detail-\(item.id.uuidString)"
+            case .rename(let id): return "rename-\(id.uuidString)"
+            case .detail(let id): return "detail-\(id.uuidString)"
             }
         }
     }
@@ -68,7 +68,7 @@ struct HistoryView: View {
             }
             .sheet(item: $activeSheet) { sheet in
                 switch sheet {
-                case .rename(let item):
+                case .rename(let id):
                     NavigationStack {
                         Form {
                             TextField("Custom title", text: $renameText)
@@ -80,7 +80,7 @@ struct HistoryView: View {
                             }
                             ToolbarItem(placement: .confirmationAction) {
                                 Button("Save") {
-                                    viewModel.rename(item, to: renameText)
+                                    viewModel.rename(id: id, to: renameText)
                                     activeSheet = nil
                                 }
                             }
@@ -90,71 +90,74 @@ struct HistoryView: View {
                     .presentationCornerRadius(32)
                     .presentationBackground(.regularMaterial)
 
-                case .detail(let item):
+                case .detail(let id):
                     NavigationStack {
-                        ScrollView(showsIndicators: false) {
-                            VStack(alignment: .leading, spacing: 18) {
-                                // Mode badge + title
-                                HStack(alignment: .top) {
-                                    VStack(alignment: .leading, spacing: 6) {
-                                        Text(item.customName ?? item.input)
-                                            .font(.title3.weight(.semibold))
-                                            .foregroundStyle(PromptTheme.paleLilacWhite)
-                                    }
-                                    Spacer()
-                                    modeBadge(item.mode)
-                                }
-
-                                Text(item.professional)
-                                    .font(PromptTheme.Typography.rounded(15, .regular))
-                                    .foregroundStyle(PromptTheme.softLilac.opacity(0.9))
-                                    .textSelection(.enabled)
-                                    .lineSpacing(4)
-
-                                if !item.template.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                                    Divider()
-                                        .overlay(Color.white.opacity(0.1))
-                                    Text("Template")
-                                        .font(.caption.weight(.semibold))
-                                        .foregroundStyle(PromptTheme.softLilac.opacity(0.5))
-                                    Text(item.template)
-                                        .font(.footnote)
-                                        .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
-                                        .textSelection(.enabled)
-                                }
-
-                                HStack(spacing: 10) {
-                                    Button {
-                                        UIPasteboard.general.string = item.professional
-                                        showCopiedToast = true
-                                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                                            showCopiedToast = false
+                        Group {
+                            if let item = viewModel.item(id: id) {
+                                ScrollView(showsIndicators: false) {
+                                    VStack(alignment: .leading, spacing: 18) {
+                                        // Mode badge + title
+                                        HStack(alignment: .top) {
+                                            VStack(alignment: .leading, spacing: 6) {
+                                                Text(item.customName ?? item.input)
+                                                    .font(.title3.weight(.semibold))
+                                                    .foregroundStyle(PromptTheme.paleLilacWhite)
+                                            }
+                                            Spacer()
+                                            modeBadge(item.mode)
                                         }
-                                    } label: {
-                                        Label("Copy", systemImage: "doc.on.doc")
-                                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                    }
-                                    .buttonStyle(.borderedProminent)
-                                    .tint(PromptTheme.mutedViolet)
 
-                                    ShareLink(item: item.professional) {
-                                        Label("Share", systemImage: "square.and.arrow.up")
-                                            .font(.system(size: 14, weight: .semibold, design: .rounded))
-                                    }
-                                    .buttonStyle(.bordered)
-                                    .tint(PromptTheme.softLilac.opacity(0.8))
+                                        Text(item.professional)
+                                            .font(PromptTheme.Typography.rounded(15, .regular))
+                                            .foregroundStyle(PromptTheme.softLilac.opacity(0.9))
+                                            .textSelection(.enabled)
+                                            .lineSpacing(4)
 
-                                    Button(item.favorite ? "Unfavorite" : "Favorite") {
-                                        viewModel.toggleFavorite(item)
-                                        if let updated = viewModel.filteredItems.first(where: { $0.id == item.id }) {
-                                            activeSheet = .detail(updated)
+                                        if !item.template.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                                            Divider()
+                                                .overlay(Color.white.opacity(0.1))
+                                            Text("Template")
+                                                .font(.caption.weight(.semibold))
+                                                .foregroundStyle(PromptTheme.softLilac.opacity(0.5))
+                                            Text(item.template)
+                                                .font(.footnote)
+                                                .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
+                                                .textSelection(.enabled)
+                                        }
+
+                                        HStack(spacing: 10) {
+                                            Button {
+                                                UIPasteboard.general.string = item.professional
+                                                showCopiedToast = true
+                                                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
+                                                    showCopiedToast = false
+                                                }
+                                            } label: {
+                                                Label("Copy", systemImage: "doc.on.doc")
+                                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                            }
+                                            .buttonStyle(.borderedProminent)
+                                            .tint(PromptTheme.mutedViolet)
+
+                                            ShareLink(item: item.professional) {
+                                                Label("Share", systemImage: "square.and.arrow.up")
+                                                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+                                            }
+                                            .buttonStyle(.bordered)
+                                            .tint(PromptTheme.softLilac.opacity(0.8))
+
+                                            Button(item.favorite ? "Unfavorite" : "Favorite") {
+                                                viewModel.toggleFavorite(id: id)
+                                            }
+                                            .buttonStyle(.bordered)
+                                            .tint(PromptTheme.softLilac.opacity(0.8))
                                         }
                                     }
-                                    .buttonStyle(.bordered)
-                                    .tint(PromptTheme.softLilac.opacity(0.8))
+                                    .padding(PromptTheme.Spacing.l)
                                 }
+                            } else {
+                                ContentUnavailableView("Prompt not available", systemImage: "exclamationmark.triangle")
                             }
-                            .padding(PromptTheme.Spacing.l)
                         }
                         .navigationTitle("Prompt Detail")
                         .navigationBarTitleDisplayMode(.inline)
@@ -307,7 +310,7 @@ struct HistoryView: View {
                 if let onSelect {
                     onSelect(item)
                 } else {
-                    activeSheet = .detail(item)
+                    activeSheet = .detail(item.id)
                 }
             } label: {
                 HStack(alignment: .top, spacing: 8) {
@@ -349,7 +352,7 @@ struct HistoryView: View {
                     if let onSelect {
                         onSelect(item)
                     } else {
-                        activeSheet = .detail(item)
+                        activeSheet = .detail(item.id)
                     }
                 }
 
@@ -360,7 +363,7 @@ struct HistoryView: View {
                     .foregroundStyle(PromptTheme.softLilac.opacity(0.44))
 
                 cardActionButton(icon: "trash.fill", label: "Delete", color: Color(red: 1.0, green: 0.38, blue: 0.44)) {
-                    viewModel.delete(item)
+                    viewModel.delete(id: item.id)
                 }
             }
         }
