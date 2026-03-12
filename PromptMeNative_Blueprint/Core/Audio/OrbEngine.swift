@@ -68,7 +68,6 @@ final class OrbEngine {
     private let speech: SpeechRecognizing
     private var lastDeliveredTranscript = ""
     private var listeningStartedAt: Date?
-    private var hasDetectedSpeechContent = false
     private let minimumListeningDuration: TimeInterval = 0.7
     private let minimumTranscriptCharacterCount = 3
     // Combine is kept internally to bridge SpeechRecognizing's thread-safe publishers.
@@ -121,7 +120,6 @@ final class OrbEngine {
         transcript = ""
         finalTranscript = ""
         lastDeliveredTranscript = ""
-        hasDetectedSpeechContent = false
         listeningStartedAt = Date()
         state = .listening
         speech.startRecording()
@@ -228,8 +226,6 @@ final class OrbEngine {
             .sink { [weak self] value in
                 guard let self else { return }
                 self.transcript = value
-                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-                self.hasDetectedSpeechContent = self.hasDetectedSpeechContent || !trimmed.isEmpty
             }
             .store(in: &cancellables)
 

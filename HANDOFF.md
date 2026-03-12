@@ -959,6 +959,23 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Remove unused speech-content tracking state
+
+Removed dead internal state after meaningfulness logic no longer depended on transcript-content tracking.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Removed unused field:
+        - `hasDetectedSpeechContent`
+    - Removed now-dead assignments in:
+        - `startListening()` reset path
+        - transcript publisher sink
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 314)
+- No test command was run.
+
 #### Phase 3 prep continuation — Remove redundant meaningfulness guard
 
 Removed a redundant boolean guard in transcript meaningfulness evaluation.
