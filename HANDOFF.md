@@ -3043,3 +3043,14 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+
+#### Phase 3 continuation — Centralized minimum listening duration constant in OrbEngine
+
+Replaced the inline minimum-recording-duration literal with a private constant to keep stop-gating behavior explicit and easier to tune.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `minimumListeningDuration: TimeInterval = 0.7`
+    - Updated `stopListening()` guard to compare against `minimumListeningDuration`
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)

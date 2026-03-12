@@ -68,6 +68,7 @@ final class OrbEngine {
     private let speech: SpeechRecognizing
     private var lastDeliveredTranscript = ""
     private var listeningStartedAt: Date?
+    private let minimumListeningDuration: TimeInterval = 0.7
     private let finalTranscriptPollingAttempts = 30
     private let finalTranscriptPollingSleepNanoseconds: UInt64 = 50_000_000
     private let transcriptTrimCharacterSet = CharacterSet.whitespacesAndNewlines
@@ -130,7 +131,7 @@ final class OrbEngine {
     func stopListening() -> Bool {
         guard isRecording,
               let listeningStartedAt,
-              Date().timeIntervalSince(listeningStartedAt) >= 0.7 else { return false }
+              Date().timeIntervalSince(listeningStartedAt) >= minimumListeningDuration else { return false }
 
         state = .transcribing
         speech.stopRecording()
