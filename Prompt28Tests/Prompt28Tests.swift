@@ -431,15 +431,6 @@ struct OrbStopListeningEligibilityTests {
     }
 }
 
-@Suite("Orb Stop Listening State Mapping")
-struct OrbStopListeningStateMappingTests {
-
-    @Test("Beginning stop-listening maps to transcribing")
-    func mapsToTranscribing() {
-        #expect(OrbEngine.stateAfterBeginningStopListening() == .transcribing)
-    }
-}
-
 @Suite("Orb Fallback Transcript Acceptance")
 struct OrbFallbackTranscriptAcceptanceTests {
 

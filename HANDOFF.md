@@ -959,6 +959,27 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline stop-listening transcribing transition
+
+Removed a fixed-result stop-listening state helper and assigned `.transcribing` directly in `stopListening()` to reduce indirection while preserving behavior.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `stopListening()`, replaced:
+        - `state = Self.stateAfterBeginningStopListening()`
+      with:
+        - `state = .transcribing`
+    - Removed helper:
+        - `stateAfterBeginningStopListening()`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Stop Listening State Mapping`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 325)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline fallback-rejection idle transition
 
 Removed a fixed-result fallback-rejection state helper and assigned `.idle` directly at the reject branch to reduce indirection while preserving behavior.
