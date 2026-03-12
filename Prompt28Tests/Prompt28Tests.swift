@@ -327,6 +327,28 @@ struct OrbStopListeningEligibilityTests {
     }
 }
 
+@Suite("Orb Fallback Transcript Acceptance")
+struct OrbFallbackTranscriptAcceptanceTests {
+
+    @Test("Accepts meaningful fallback transcript")
+    func acceptsMeaningfulFallback() {
+        #expect(OrbEngine.shouldAcceptFallbackTranscriptCandidate(
+            text: "fallback text",
+            hasDetectedSpeechContent: true,
+            minimumTranscriptCharacterCount: 3
+        ))
+    }
+
+    @Test("Rejects non-meaningful fallback transcript")
+    func rejectsNonMeaningfulFallback() {
+        #expect(!OrbEngine.shouldAcceptFallbackTranscriptCandidate(
+            text: "--",
+            hasDetectedSpeechContent: false,
+            minimumTranscriptCharacterCount: 3
+        ))
+    }
+}
+
 @Suite("Orb Transcript Meaning")
 struct OrbTranscriptMeaningTests {
 

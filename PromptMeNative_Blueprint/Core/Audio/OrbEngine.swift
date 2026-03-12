@@ -184,7 +184,11 @@ final class OrbEngine {
         }
 
         let fallback = speech.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !isMeaningfulTranscript(fallback) {
+        if !Self.shouldAcceptFallbackTranscriptCandidate(
+            text: fallback,
+            hasDetectedSpeechContent: hasDetectedSpeechContent,
+            minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
+        ) {
             state = .idle
             return
         }
@@ -317,6 +321,19 @@ final class OrbEngine {
     /// Pure helper for deciding whether a discarded transcript should reset state to idle.
     nonisolated static func shouldResetToIdleAfterDiscardedTranscript(isRecording: Bool) -> Bool {
         !isRecording
+    }
+
+    /// Pure helper for fallback transcript acceptance during finalize polling.
+    nonisolated static func shouldAcceptFallbackTranscriptCandidate(
+        text: String,
+        hasDetectedSpeechContent: Bool,
+        minimumTranscriptCharacterCount: Int = 3
+    ) -> Bool {
+        isMeaningfulTranscriptCandidate(
+            text: text,
+            hasDetectedSpeechContent: hasDetectedSpeechContent,
+            minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
+        )
     }
 
     /// Pure helper for stop-listening eligibility.
