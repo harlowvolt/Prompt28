@@ -1700,6 +1700,29 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure normalized-transcript-content helper + tests
+
+Extracted normalized transcript content checks into a pure helper and reused it across transcript gates for consistent behavior.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Added helper:
+        - `nonisolated static func hasNormalizedTranscriptContent(_:) -> Bool`
+    - Updated callsites to use this helper in:
+        - `polledFinalTranscriptCandidate(_:)`
+        - `updatedSpeechContentDetectionFlag(...)`
+        - `shouldFinalizeOnFinalTranscriptUpdate(...)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Normalized Transcript Content` with coverage for:
+        - non-empty normalized text returns `true`
+        - empty normalized text returns `false`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.

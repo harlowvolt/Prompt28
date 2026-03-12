@@ -334,12 +334,17 @@ final class OrbEngine {
     /// Pure helper for polling-based final transcript extraction.
     nonisolated static func polledFinalTranscriptCandidate(_ finalTranscript: String) -> String? {
         let trimmed = normalizedTranscript(finalTranscript)
-        return trimmed.isEmpty ? nil : trimmed
+        return hasNormalizedTranscriptContent(trimmed) ? trimmed : nil
     }
 
     /// Pure helper for transcript whitespace normalization.
     nonisolated static func normalizedTranscript(_ text: String) -> String {
         text.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Pure helper for checking content after transcript normalization.
+    nonisolated static func hasNormalizedTranscriptContent(_ normalizedText: String) -> Bool {
+        !normalizedText.isEmpty
     }
 
     /// Pure helper for transcript-delivery dedupe.
@@ -415,7 +420,7 @@ final class OrbEngine {
         currentValue: Bool,
         trimmedTranscript: String
     ) -> Bool {
-        currentValue || !trimmedTranscript.isEmpty
+        currentValue || hasNormalizedTranscriptContent(trimmedTranscript)
     }
 
     /// Pure mapping from permission status to user-facing permission helper text.
@@ -463,7 +468,7 @@ final class OrbEngine {
         trimmedFinalTranscript: String,
         state: State
     ) -> Bool {
-        guard !trimmedFinalTranscript.isEmpty else { return false }
+        guard hasNormalizedTranscriptContent(trimmedFinalTranscript) else { return false }
         return isStateEligibleForFinalTranscriptFinalize(state)
     }
 
