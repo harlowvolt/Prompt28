@@ -959,6 +959,28 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Pure non-empty-normalized-transcript helper + tests
+
+Extracted a reusable pure helper for normalized transcript selection that only returns content when non-empty, and reused it across polling paths.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Added helper:
+        - `nonisolated static func nonEmptyNormalizedTranscript(_:) -> String?`
+    - Updated callsites:
+        - `awaitFinalTranscriptAndFinalize()` polling loop now uses this helper directly
+        - `polledFinalTranscriptCandidate(_:)` now delegates to this helper
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Non-Empty Normalized Transcript` with coverage for:
+        - returns trimmed text for non-empty input
+        - returns `nil` for whitespace-only input
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 325)
+- No test command was run.
+
 #### Phase 3 prep continuation — Simplify recording-state transition mapping
 
 Removed an intermediate recording-transition helper and kept the state mapping in a single pure function to reduce indirection without changing behavior.

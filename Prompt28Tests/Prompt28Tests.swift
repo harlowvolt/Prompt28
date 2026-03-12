@@ -294,6 +294,20 @@ struct OrbPolledFinalTranscriptCandidateTests {
     }
 }
 
+@Suite("Orb Non-Empty Normalized Transcript")
+struct OrbNonEmptyNormalizedTranscriptTests {
+
+    @Test("Returns trimmed text for non-empty transcript")
+    func returnsTrimmedText() {
+        #expect(OrbEngine.nonEmptyNormalizedTranscript("  result value  ") == "result value")
+    }
+
+    @Test("Returns nil for whitespace-only transcript")
+    func returnsNilForWhitespaceOnlyText() {
+        #expect(OrbEngine.nonEmptyNormalizedTranscript(" \n\t ") == nil)
+    }
+}
+
 @Suite("Orb Final Transcript Polling Limit")
 struct OrbFinalTranscriptPollingLimitTests {
 

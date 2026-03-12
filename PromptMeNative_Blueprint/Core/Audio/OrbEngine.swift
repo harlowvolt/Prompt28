@@ -173,8 +173,7 @@ final class OrbEngine {
 
     private func awaitFinalTranscriptAndFinalize() async {
         for _ in Self.finalTranscriptPollingAttemptRange() {
-            let best = Self.normalizedTranscript(speech.finalTranscript)
-            if !best.isEmpty {
+            if let best = Self.nonEmptyNormalizedTranscript(speech.finalTranscript) {
                 let assignment = Self.transcriptAssignment(for: best)
                 finalTranscript = assignment.finalTranscript
                 transcript = assignment.transcript
@@ -340,7 +339,12 @@ final class OrbEngine {
 
     /// Pure helper for polling-based final transcript extraction.
     nonisolated static func polledFinalTranscriptCandidate(_ finalTranscript: String) -> String? {
-        let trimmed = normalizedTranscript(finalTranscript)
+        nonEmptyNormalizedTranscript(finalTranscript)
+    }
+
+    /// Pure helper returning a normalized transcript only when it has content.
+    nonisolated static func nonEmptyNormalizedTranscript(_ text: String) -> String? {
+        let trimmed = normalizedTranscript(text)
         return hasNormalizedTranscriptContent(trimmed) ? trimmed : nil
     }
 
