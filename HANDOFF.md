@@ -3185,3 +3185,17 @@ Applied a larger cohesive cleanup to route common state writes through a single 
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation (bundled) — Extracted shared final-transcript polling helper in OrbEngine
+
+Consolidated duplicated polling loops into one async helper to keep final-transcript wait behavior consistent across finalize paths.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `pollForFinalTranscript(_:) async -> String?`
+    - Updated `stopListeningAndFinalize()` to use shared polling helper
+    - Updated `awaitFinalTranscriptAndFinalize()` to use shared polling helper for speech final transcript
+    - Preserved existing fallback behavior when no final transcript arrives
+    - Fixed `stopListening()` indentation drift from previous refactors
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)

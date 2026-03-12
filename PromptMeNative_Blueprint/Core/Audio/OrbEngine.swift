@@ -128,12 +128,12 @@ final class OrbEngine {
 
     @discardableResult
     func stopListening() -> Bool {
-          let listeningDuration = listeningStartedAt.map { Date().timeIntervalSince($0) }
+                let listeningDuration = listeningStartedAt.map { Date().timeIntervalSince($0) }
         guard isRecording,
               let listeningDuration,
               listeningDuration >= minimumListeningDuration else { return false }
 
-          setState(.transcribing)
+                setState(.transcribing)
         speech.stopRecording()
 
         Task { [weak self] in
@@ -144,14 +144,7 @@ final class OrbEngine {
 
     func stopListeningAndFinalize() async -> String? {
         guard stopListening() else { return nil }
-        for _ in 0..<finalTranscriptPollingAttempts {
-            let best = trimmedTranscriptText(finalTranscript)
-            if !best.isEmpty {
-                return best
-            }
-            try? await Task.sleep(nanoseconds: finalTranscriptPollingSleepNanoseconds)
-        }
-        return nil
+        return await pollForFinalTranscript { self.finalTranscript }
     }
 
     func finalizeTranscript() {
@@ -187,14 +180,10 @@ final class OrbEngine {
     }
 
     private func awaitFinalTranscriptAndFinalize() async {
-        for _ in 0..<finalTranscriptPollingAttempts {
-            let best = trimmedTranscriptText(speech.finalTranscript)
-            if !best.isEmpty {
-                updateCurrentTranscripts(with: best)
-                finalizeTranscript()
-                return
-            }
-            try? await Task.sleep(nanoseconds: finalTranscriptPollingSleepNanoseconds)
+        if let best = await pollForFinalTranscript({ self.speech.finalTranscript }) {
+            updateCurrentTranscripts(with: best)
+            finalizeTranscript()
+            return
         }
 
         let fallbackCandidate = trimmedTranscriptText(speech.transcript)
@@ -205,6 +194,17 @@ final class OrbEngine {
 
         updateCurrentTranscripts(with: fallbackCandidate)
         finalizeTranscript()
+    }
+
+    private func pollForFinalTranscript(_ provider: () -> String) async -> String? {
+        for _ in 0..<finalTranscriptPollingAttempts {
+            let candidate = trimmedTranscriptText(provider())
+            if !candidate.isEmpty {
+                return candidate
+            }
+            try? await Task.sleep(nanoseconds: finalTranscriptPollingSleepNanoseconds)
+        }
+        return nil
     }
 
     private func updateCurrentTranscripts(with text: String) {
