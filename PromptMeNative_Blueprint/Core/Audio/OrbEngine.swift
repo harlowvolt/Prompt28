@@ -232,7 +232,10 @@ final class OrbEngine {
                 guard let self else { return }
                 self.finalTranscript = value
                 let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !trimmed.isEmpty, self.state == .transcribing || self.state == .listening {
+                if Self.shouldFinalizeOnFinalTranscriptUpdate(
+                    trimmedFinalTranscript: trimmed,
+                    state: self.state
+                ) {
                     self.finalizeTranscript()
                 }
             }
@@ -337,6 +340,15 @@ final class OrbEngine {
     ) -> Bool {
         guard let listeningStartedAt else { return false }
         return now.timeIntervalSince(listeningStartedAt) >= minimumListeningDuration
+    }
+
+    /// Pure gate for whether a final-transcript publisher update should trigger finalize.
+    nonisolated static func shouldFinalizeOnFinalTranscriptUpdate(
+        trimmedFinalTranscript: String,
+        state: State
+    ) -> Bool {
+        guard !trimmedFinalTranscript.isEmpty else { return false }
+        return state == .transcribing || state == .listening
     }
 }
 
