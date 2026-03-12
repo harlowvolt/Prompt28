@@ -513,6 +513,20 @@ struct OrbFallbackTranscriptCandidateSelectionTests {
     }
 }
 
+@Suite("Orb Fallback Transcript Trimming")
+struct OrbFallbackTranscriptTrimmingTests {
+
+    @Test("Trims leading and trailing whitespace/newlines")
+    func trimsFallbackTranscript() {
+        #expect(OrbEngine.trimmedFallbackTranscript("  fallback text\n") == "fallback text")
+    }
+
+    @Test("Returns empty string when transcript is all whitespace")
+    func returnsEmptyForWhitespaceOnlyTranscript() {
+        #expect(OrbEngine.trimmedFallbackTranscript(" \n\t ").isEmpty)
+    }
+}
+
 @Suite("Orb Transcript Meaning")
 struct OrbTranscriptMeaningTests {
 

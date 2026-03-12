@@ -442,7 +442,7 @@ final class OrbEngine {
         hasDetectedSpeechContent: Bool,
         minimumTranscriptCharacterCount: Int = 3
     ) -> String? {
-        let trimmed = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = trimmedFallbackTranscript(transcript)
         guard shouldAcceptFallbackTranscriptCandidate(
             text: trimmed,
             hasDetectedSpeechContent: hasDetectedSpeechContent,
@@ -451,6 +451,11 @@ final class OrbEngine {
             return nil
         }
         return trimmed
+    }
+
+    /// Pure helper for fallback transcript trimming before acceptance checks.
+    nonisolated static func trimmedFallbackTranscript(_ transcript: String) -> String {
+        normalizedTranscript(transcript)
     }
 
     /// Pure helper for stop-listening eligibility.
