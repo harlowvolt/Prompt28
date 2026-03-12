@@ -116,13 +116,13 @@ final class OrbEngine {
 
     func reset() {
         speech.reset()
-        state = .idle
+        setState(.idle)
     }
 
     func startListening() {
         (transcript, finalTranscript, lastDeliveredTranscript) = ("", "", "")
         listeningStartedAt = Date()
-        state = .listening
+        setState(.listening)
         speech.startRecording()
     }
 
@@ -133,7 +133,7 @@ final class OrbEngine {
               let listeningDuration,
               listeningDuration >= minimumListeningDuration else { return false }
 
-        state = .transcribing
+          setState(.transcribing)
         speech.stopRecording()
 
         Task { [weak self] in
@@ -160,22 +160,22 @@ final class OrbEngine {
             ? trimmedTranscriptText(transcript)
             : trimmedFinal
         guard isMeaningfulTranscript(trimmed) else {
-            state = isRecording ? state : .idle
+            if !isRecording { setState(.idle) }
             return
         }
         guard trimmed != lastDeliveredTranscript else { return }
 
         lastDeliveredTranscript = trimmed
-        state = .ready(text: trimmed)
+        setState(.ready(text: trimmed))
         onFinalTranscript?(trimmed)
     }
 
     func markGenerating() {
-        state = .generating
+        setState(.generating)
     }
 
     func markSuccess() {
-        state = .success
+        setState(.success)
     }
 
     func markFailure(_ message: String) {
@@ -183,7 +183,7 @@ final class OrbEngine {
     }
 
     func markIdle() {
-        state = .idle
+        setState(.idle)
     }
 
     private func awaitFinalTranscriptAndFinalize() async {
@@ -199,7 +199,7 @@ final class OrbEngine {
 
         let fallbackCandidate = trimmedTranscriptText(speech.transcript)
         guard isMeaningfulTranscript(fallbackCandidate) else {
-            state = .idle
+            setState(.idle)
             return
         }
 
@@ -241,7 +241,11 @@ final class OrbEngine {
     }
 
     private func setFailureState(_ message: String) {
-        state = .failure(message)
+        setState(.failure(message))
+    }
+
+    private func setState(_ newState: State) {
+        state = newState
     }
 
     private var shouldFinalizeOnTranscriptUpdate: Bool {
@@ -253,7 +257,7 @@ final class OrbEngine {
             .sink { [weak self] value in
                 guard let self else { return }
                 self.isRecording = value
-                self.state = value ? .listening : self.state
+                if value { self.setState(.listening) }
             }
             .store(in: &cancellables)
 

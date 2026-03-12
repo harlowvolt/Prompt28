@@ -3166,3 +3166,22 @@ Extracted failure-state writes behind a helper so explicit failure transitions s
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation (bundled) — Centralized OrbEngine state transitions
+
+Applied a larger cohesive cleanup to route common state writes through a single helper and align transition callsites.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `setState(_:)` helper
+    - Updated common transitions to use helper:
+        - `reset()` -> idle
+        - `startListening()` -> listening
+        - `stopListening()` -> transcribing
+        - `markGenerating()` / `markSuccess()` / `markIdle()`
+        - fallback idle transitions in finalize/polling flow
+    - Updated `setFailureState(_:)` to call `setState(.failure(...))`
+    - Simplified `isRecordingPublisher` transition to only set listening when recording is true
+    - Fixed `stopListening()` local binding indentation/readability
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
