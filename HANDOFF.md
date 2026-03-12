@@ -3154,3 +3154,15 @@ Replaced repeated `(finalTranscript, transcript)` tuple writes with a helper to 
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation — Centralized failure-state assignment in OrbEngine
+
+Extracted failure-state writes behind a helper so explicit failure transitions share one implementation path.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `setFailureState(_:)`
+    - Updated `markFailure(_:)` to call `setFailureState(_:)`
+    - Updated permission-status sink to call `setFailureState(_:)`
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)

@@ -179,7 +179,7 @@ final class OrbEngine {
     }
 
     func markFailure(_ message: String) {
-        state = .failure(message)
+        setFailureState(message)
     }
 
     func markIdle() {
@@ -240,6 +240,10 @@ final class OrbEngine {
         }
     }
 
+    private func setFailureState(_ message: String) {
+        state = .failure(message)
+    }
+
     private var shouldFinalizeOnTranscriptUpdate: Bool {
         state == .transcribing || state == .listening
     }
@@ -276,7 +280,7 @@ final class OrbEngine {
                 guard let self else { return }
                 self.permissionStatus = status
                 if let message = self.permissionFailureMessage(for: status) {
-                    self.state = .failure(message)
+                    self.setFailureState(message)
                 }
             }
             .store(in: &cancellables)
