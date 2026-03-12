@@ -1598,6 +1598,25 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure fallback-transcript candidate selection helper + tests
+
+Extracted fallback transcript candidate selection into a pure helper so post-poll fallback behavior is directly testable.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `awaitFinalTranscriptAndFinalize()` fallback path now delegates to:
+        - `nonisolated static func fallbackTranscriptCandidateAfterPolling(transcript:hasDetectedSpeechContent:minimumTranscriptCharacterCount:) -> String?`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Fallback Transcript Candidate Selection` with coverage for:
+        - returns trimmed fallback when candidate is acceptable
+        - returns `nil` when fallback candidate is rejected
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.

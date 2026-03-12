@@ -363,6 +363,28 @@ struct OrbFallbackTranscriptAcceptanceTests {
     }
 }
 
+@Suite("Orb Fallback Transcript Candidate Selection")
+struct OrbFallbackTranscriptCandidateSelectionTests {
+
+    @Test("Returns trimmed fallback when candidate is acceptable")
+    func returnsTrimmedFallback() {
+        #expect(OrbEngine.fallbackTranscriptCandidateAfterPolling(
+            transcript: "  spoken words  ",
+            hasDetectedSpeechContent: true,
+            minimumTranscriptCharacterCount: 3
+        ) == "spoken words")
+    }
+
+    @Test("Returns nil when fallback candidate is not acceptable")
+    func returnsNilForRejectedFallback() {
+        #expect(OrbEngine.fallbackTranscriptCandidateAfterPolling(
+            transcript: "--",
+            hasDetectedSpeechContent: false,
+            minimumTranscriptCharacterCount: 3
+        ) == nil)
+    }
+}
+
 @Suite("Orb Transcript Meaning")
 struct OrbTranscriptMeaningTests {
 

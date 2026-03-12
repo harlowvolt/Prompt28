@@ -182,12 +182,11 @@ final class OrbEngine {
             try? await Task.sleep(nanoseconds: 50_000_000)
         }
 
-        let fallback = speech.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !Self.shouldAcceptFallbackTranscriptCandidate(
-            text: fallback,
+        guard let fallback = Self.fallbackTranscriptCandidateAfterPolling(
+            transcript: speech.transcript,
             hasDetectedSpeechContent: hasDetectedSpeechContent,
             minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
-        ) {
+        ) else {
             state = .idle
             return
         }
@@ -349,6 +348,23 @@ final class OrbEngine {
             hasDetectedSpeechContent: hasDetectedSpeechContent,
             minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
         )
+    }
+
+    /// Pure helper for selecting fallback transcript after final-transcript polling.
+    nonisolated static func fallbackTranscriptCandidateAfterPolling(
+        transcript: String,
+        hasDetectedSpeechContent: Bool,
+        minimumTranscriptCharacterCount: Int = 3
+    ) -> String? {
+        let trimmed = transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard shouldAcceptFallbackTranscriptCandidate(
+            text: trimmed,
+            hasDetectedSpeechContent: hasDetectedSpeechContent,
+            minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
+        ) else {
+            return nil
+        }
+        return trimmed
     }
 
     /// Pure helper for stop-listening eligibility.
