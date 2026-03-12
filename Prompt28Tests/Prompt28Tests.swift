@@ -382,6 +382,17 @@ struct OrbTranscriptDeliveryStateMappingTests {
     }
 }
 
+@Suite("Orb Transcript Assignment")
+struct OrbTranscriptAssignmentTests {
+
+    @Test("Assignment copies text into both transcript fields")
+    func assignmentCopiesBothFields() {
+        let assignment = OrbEngine.transcriptAssignment(for: "hello")
+        #expect(assignment.finalTranscript == "hello")
+        #expect(assignment.transcript == "hello")
+    }
+}
+
 @Suite("Orb Fallback Rejection State Mapping")
 struct OrbFallbackRejectionStateMappingTests {
 

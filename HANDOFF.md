@@ -1917,6 +1917,27 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure transcript-assignment helper + tests
+
+Extracted transcript field assignment into a pure helper so successful transcript assignment behavior is explicit and testable.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - added helper:
+        - `nonisolated static func transcriptAssignment(for:) -> (finalTranscript: String, transcript: String)`
+    - used in:
+        - successful final-transcript polling path in `awaitFinalTranscriptAndFinalize()`
+        - accepted fallback path in `awaitFinalTranscriptAndFinalize()`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Transcript Assignment` with coverage for:
+        - assignment copies the same value into both transcript fields
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.

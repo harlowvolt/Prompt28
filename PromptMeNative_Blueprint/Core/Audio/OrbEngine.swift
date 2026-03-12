@@ -175,8 +175,9 @@ final class OrbEngine {
         for _ in Self.finalTranscriptPollingAttemptRange() {
             let best = Self.normalizedTranscript(speech.finalTranscript)
             if !best.isEmpty {
-                finalTranscript = best
-                transcript = best
+                let assignment = Self.transcriptAssignment(for: best)
+                finalTranscript = assignment.finalTranscript
+                transcript = assignment.transcript
                 finalizeTranscript()
                 return
             }
@@ -193,8 +194,9 @@ final class OrbEngine {
         }
 
         state = Self.stateAfterAcceptingFallbackCandidate(currentState: state)
-        finalTranscript = fallback
-        transcript = fallback
+        let fallbackAssignment = Self.transcriptAssignment(for: fallback)
+        finalTranscript = fallbackAssignment.finalTranscript
+        transcript = fallbackAssignment.transcript
         finalizeTranscript()
     }
 
@@ -394,6 +396,13 @@ final class OrbEngine {
     /// Pure mapping for state transition when fallback transcript candidate is accepted.
     nonisolated static func stateAfterAcceptingFallbackCandidate(currentState: State) -> State {
         currentState
+    }
+
+    /// Pure helper for assigning finalized transcript values to engine fields.
+    nonisolated static func transcriptAssignment(
+        for text: String
+    ) -> (finalTranscript: String, transcript: String) {
+        (finalTranscript: text, transcript: text)
     }
 
     /// Pure mapping for state transition when stop-listening flow begins.
