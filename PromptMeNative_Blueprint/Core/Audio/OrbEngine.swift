@@ -187,7 +187,7 @@ final class OrbEngine {
             hasDetectedSpeechContent: hasDetectedSpeechContent,
             minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
         ) else {
-            state = .idle
+            state = Self.stateAfterRejectingFallbackCandidate(currentState: state)
             return
         }
 
@@ -367,6 +367,11 @@ final class OrbEngine {
     /// Pure mapping for state transition after successful transcript delivery.
     nonisolated static func stateAfterDeliveringTranscript(_ transcript: String) -> State {
         .ready(text: transcript)
+    }
+
+    /// Pure mapping for state transition when fallback transcript candidate is rejected.
+    nonisolated static func stateAfterRejectingFallbackCandidate(currentState: State) -> State {
+        .idle
     }
 
     /// Pure helper for deciding whether a discarded transcript should reset state to idle.

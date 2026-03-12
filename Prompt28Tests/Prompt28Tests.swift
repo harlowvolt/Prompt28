@@ -351,6 +351,15 @@ struct OrbTranscriptDeliveryStateMappingTests {
     }
 }
 
+@Suite("Orb Fallback Rejection State Mapping")
+struct OrbFallbackRejectionStateMappingTests {
+
+    @Test("Rejected fallback maps to idle state")
+    func mapsToIdleState() {
+        #expect(OrbEngine.stateAfterRejectingFallbackCandidate(currentState: .transcribing) == .idle)
+    }
+}
+
 @Suite("Orb Idle Reset Decision")
 struct OrbIdleResetDecisionTests {
 
