@@ -1556,6 +1556,26 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure speech-content detection helper + tests
+
+Extracted transcript-driven speech-content flag updates into a pure helper so sticky detection behavior is explicitly testable.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - transcript publisher sink now delegates to:
+        - `nonisolated static func updatedSpeechContentDetectionFlag(currentValue:trimmedTranscript:) -> Bool`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Speech Content Detection Flag` with coverage for:
+        - flag remains true once previously detected
+        - flag turns true when trimmed transcript has content
+        - flag stays false with no prior detection and empty transcript
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.

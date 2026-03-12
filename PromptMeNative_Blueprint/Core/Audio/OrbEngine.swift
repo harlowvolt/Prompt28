@@ -229,9 +229,10 @@ final class OrbEngine {
                 guard let self else { return }
                 self.transcript = value
                 let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
-                if !trimmed.isEmpty {
-                    self.hasDetectedSpeechContent = true
-                }
+                self.hasDetectedSpeechContent = Self.updatedSpeechContentDetectionFlag(
+                    currentValue: self.hasDetectedSpeechContent,
+                    trimmedTranscript: trimmed
+                )
             }
             .store(in: &cancellables)
 
@@ -359,6 +360,14 @@ final class OrbEngine {
         guard trimmed.count >= minimumTranscriptCharacterCount else { return false }
         guard hasDetectedSpeechContent || !trimmed.isEmpty else { return false }
         return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
+    }
+
+    /// Pure helper for sticky speech-content detection updates.
+    nonisolated static func updatedSpeechContentDetectionFlag(
+        currentValue: Bool,
+        trimmedTranscript: String
+    ) -> Bool {
+        currentValue || !trimmedTranscript.isEmpty
     }
 
     /// Pure mapping from permission status to user-facing permission helper text.

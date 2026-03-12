@@ -403,6 +403,34 @@ struct OrbTranscriptMeaningTests {
     }
 }
 
+@Suite("Orb Speech Content Detection Flag")
+struct OrbSpeechContentDetectionFlagTests {
+
+    @Test("Remains true once speech content has been detected")
+    func remainsTrueWhenAlreadyDetected() {
+        #expect(OrbEngine.updatedSpeechContentDetectionFlag(
+            currentValue: true,
+            trimmedTranscript: ""
+        ))
+    }
+
+    @Test("Turns true when transcript contains content")
+    func turnsTrueWithContent() {
+        #expect(OrbEngine.updatedSpeechContentDetectionFlag(
+            currentValue: false,
+            trimmedTranscript: "hello"
+        ))
+    }
+
+    @Test("Stays false when no prior detection and transcript is empty")
+    func staysFalseWithoutContent() {
+        #expect(!OrbEngine.updatedSpeechContentDetectionFlag(
+            currentValue: false,
+            trimmedTranscript: ""
+        ))
+    }
+}
+
 @Suite("Orb Listening Duration")
 struct OrbListeningDurationTests {
 
