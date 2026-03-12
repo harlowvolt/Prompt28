@@ -959,6 +959,25 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline final-transcript eligible-state gating
+
+Removed a single-use eligible-state helper and kept the eligibility check directly in `shouldFinalizeOnFinalTranscriptUpdate(...)`.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `shouldFinalizeOnFinalTranscriptUpdate(...)`, replaced helper delegation with direct check:
+        - `state == .transcribing || state == .listening`
+    - Removed helper:
+        - `isStateEligibleForFinalTranscriptFinalize(_:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Final Transcript Eligible States`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 326)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline discarded-transcript state mapping
 
 Removed a single-use discarded-transcript state helper and mapped idle-preservation behavior directly in `finalizeTranscript()`.
