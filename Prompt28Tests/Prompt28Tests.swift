@@ -354,3 +354,26 @@ struct OrbListeningDurationTests {
         ))
     }
 }
+
+@Suite("Orb Permission Message Mapping")
+struct OrbPermissionMessageMappingTests {
+
+    @Test("Non-blocking statuses return empty message")
+    func nonBlockingStatuses() {
+        #expect(OrbEngine.permissionMessage(for: .notDetermined).isEmpty)
+        #expect(OrbEngine.permissionMessage(for: .granted).isEmpty)
+    }
+
+    @Test("Denied/restricted/unavailable statuses map to expected text")
+    func deniedAndRestrictedMappings() {
+        #expect(OrbEngine.permissionMessage(for: .speechDenied) == "Speech recognition access is required to transcribe your voice.")
+        #expect(OrbEngine.permissionMessage(for: .microphoneDenied) == "Microphone access is required to capture your voice.")
+        #expect(OrbEngine.permissionMessage(for: .restricted) == "Speech recognition is restricted on this device.")
+        #expect(OrbEngine.permissionMessage(for: .unavailable) == "Speech recognizer is temporarily unavailable.")
+    }
+
+    @Test("Error status returns passthrough message")
+    func errorPassthrough() {
+        #expect(OrbEngine.permissionMessage(for: .error("custom")) == "custom")
+    }
+}

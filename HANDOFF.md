@@ -1361,6 +1361,26 @@ Verification:
     - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; tail -n 60 build.log`
 - No test command was run in this slice.
 
+#### Phase 3 prep continuation — Pure permission-message helper + tests
+
+Extracted permission helper-text mapping into a pure static helper so permission messaging behavior is independently testable and less tied to actor state.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `permissionMessage` now delegates to:
+        - `nonisolated static func permissionMessage(for:) -> String`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Permission Message Mapping` with coverage for:
+        - non-blocking statuses (`notDetermined`, `granted`) return empty text
+        - denied/restricted/unavailable statuses map to expected copy
+        - `.error(message)` returns passthrough message
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.

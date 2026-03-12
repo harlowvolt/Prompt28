@@ -96,20 +96,7 @@ final class OrbEngine {
     }
 
     var permissionMessage: String {
-        switch permissionStatus {
-        case .notDetermined, .granted:
-            return ""
-        case .speechDenied:
-            return "Speech recognition access is required to transcribe your voice."
-        case .microphoneDenied:
-            return "Microphone access is required to capture your voice."
-        case .restricted:
-            return "Speech recognition is restricted on this device."
-        case .unavailable:
-            return "Speech recognizer is temporarily unavailable."
-        case .error(let message):
-            return message
-        }
+        Self.permissionMessage(for: permissionStatus)
     }
 
     func reset() {
@@ -315,6 +302,24 @@ final class OrbEngine {
         guard trimmed.count >= minimumTranscriptCharacterCount else { return false }
         guard hasDetectedSpeechContent || !trimmed.isEmpty else { return false }
         return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
+    }
+
+    /// Pure mapping from permission status to user-facing permission helper text.
+    nonisolated static func permissionMessage(for status: SpeechRecognizerService.PermissionStatus) -> String {
+        switch status {
+        case .notDetermined, .granted:
+            return ""
+        case .speechDenied:
+            return "Speech recognition access is required to transcribe your voice."
+        case .microphoneDenied:
+            return "Microphone access is required to capture your voice."
+        case .restricted:
+            return "Speech recognition is restricted on this device."
+        case .unavailable:
+            return "Speech recognizer is temporarily unavailable."
+        case .error(let message):
+            return message
+        }
     }
 
     /// Pure helper for minimum listen-duration gating before stop is allowed.
