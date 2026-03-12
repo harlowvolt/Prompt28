@@ -548,6 +548,25 @@ struct OrbFailureStateMappingTests {
     }
 }
 
+@Suite("Orb Permission Failure Classification")
+struct OrbPermissionFailureClassificationTests {
+
+    @Test("Failing statuses are classified as failing")
+    func failingStatuses() {
+        #expect(OrbEngine.isFailingPermissionStatus(.speechDenied))
+        #expect(OrbEngine.isFailingPermissionStatus(.microphoneDenied))
+        #expect(OrbEngine.isFailingPermissionStatus(.restricted))
+        #expect(OrbEngine.isFailingPermissionStatus(.unavailable))
+        #expect(OrbEngine.isFailingPermissionStatus(.error("x")))
+    }
+
+    @Test("Non-failing statuses are not classified as failing")
+    func nonFailingStatuses() {
+        #expect(!OrbEngine.isFailingPermissionStatus(.granted))
+        #expect(!OrbEngine.isFailingPermissionStatus(.notDetermined))
+    }
+}
+
 @Suite("Orb Permission Status State Transition")
 struct OrbPermissionStatusStateTransitionTests {
 

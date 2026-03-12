@@ -270,9 +270,8 @@ final class OrbEngine {
 
     /// Pure mapping from permission status to user-facing failure text.
     nonisolated static func failureMessage(for status: SpeechRecognizerService.PermissionStatus) -> String? {
+        guard isFailingPermissionStatus(status) else { return nil }
         switch status {
-        case .granted, .notDetermined:
-            return nil
         case .speechDenied:
             return "Speech recognition permission denied."
         case .microphoneDenied:
@@ -283,6 +282,20 @@ final class OrbEngine {
             return "Speech recognition is unavailable."
         case .error(let message):
             return message
+        case .granted, .notDetermined:
+            return nil
+        }
+    }
+
+    /// Pure helper classifying whether a permission status is a failing condition.
+    nonisolated static func isFailingPermissionStatus(
+        _ status: SpeechRecognizerService.PermissionStatus
+    ) -> Bool {
+        switch status {
+        case .speechDenied, .microphoneDenied, .restricted, .unavailable, .error:
+            return true
+        case .granted, .notDetermined:
+            return false
         }
     }
 

@@ -1660,6 +1660,26 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure permission-failure classification helper + tests
+
+Extracted permission failure classification into a pure helper to make failing-status logic explicit and testable.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Added helper:
+        - `nonisolated static func isFailingPermissionStatus(_:) -> Bool`
+    - `failureMessage(for:)` now early-guards via this helper
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Permission Failure Classification` with coverage for:
+        - failing statuses return `true`
+        - non-failing statuses return `false`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.
