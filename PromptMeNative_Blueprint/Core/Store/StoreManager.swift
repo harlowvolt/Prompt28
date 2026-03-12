@@ -9,7 +9,9 @@ final class StoreManager {
     var errorMessage: String?
     private(set) var isPurchasing = false
 
-    private var updateListenerTask: Task<Void, Error>?
+    // nonisolated(unsafe) lets deinit (which runs outside the actor) cancel the task
+    // without triggering "main actor-isolated property referenced from nonisolated context".
+    nonisolated(unsafe) private var updateListenerTask: Task<Void, Error>?
 
     init() {
         updateListenerTask = listenForTransactions()
