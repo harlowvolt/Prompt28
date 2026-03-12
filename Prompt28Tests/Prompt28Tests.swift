@@ -300,6 +300,20 @@ struct OrbTranscriptDeliveryDedupeTests {
     }
 }
 
+@Suite("Orb Idle Reset Decision")
+struct OrbIdleResetDecisionTests {
+
+    @Test("Resets to idle when recording is false")
+    func resetsWhenNotRecording() {
+        #expect(OrbEngine.shouldResetToIdleAfterDiscardedTranscript(isRecording: false))
+    }
+
+    @Test("Does not reset to idle when recording is true")
+    func doesNotResetWhenRecording() {
+        #expect(!OrbEngine.shouldResetToIdleAfterDiscardedTranscript(isRecording: true))
+    }
+}
+
 @Suite("Orb Transcript Meaning")
 struct OrbTranscriptMeaningTests {
 

@@ -1480,6 +1480,25 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure idle-reset decision helper + tests
+
+Extracted the discarded-transcript idle-reset decision into a pure helper so this state fallback behavior is explicitly testable.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `finalizeTranscript()` now delegates idle-reset condition to:
+        - `nonisolated static func shouldResetToIdleAfterDiscardedTranscript(isRecording:) -> Bool`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Idle Reset Decision` with coverage for:
+        - resets to idle when `isRecording == false`
+        - does not reset when `isRecording == true`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.
