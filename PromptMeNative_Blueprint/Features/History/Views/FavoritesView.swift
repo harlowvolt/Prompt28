@@ -15,12 +15,9 @@ struct FavoritesView: View {
                         .ignoresSafeArea()
 
                     ScrollView(showsIndicators: false) {
-                        let tabClearance = max(0, AppHeights.tabBarClearance - proxy.safeAreaInsets.bottom)
-
                         VStack(alignment: .leading, spacing: 0) {
                             headerRow
                                 .padding(.top, proxy.safeAreaInsets.top + 2)
-                                .background(Color.red.opacity(0.16))
 
                             controlsRow
                                 .padding(.top, 14)
@@ -37,11 +34,10 @@ struct FavoritesView: View {
                                 .padding(.top, 14)
                             }
 
-                            Color.blue.opacity(0.16)
-                                .frame(height: tabClearance)
+                            Color.clear
+                                .frame(height: AppHeights.tabBarClearance)
                         }
                         .padding(.horizontal, 24)
-                        .background(Color.green.opacity(0.12))
                     }
                 }
             }

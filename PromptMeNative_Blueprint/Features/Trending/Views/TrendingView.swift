@@ -15,32 +15,25 @@ struct TrendingView: View {
                         .ignoresSafeArea()
 
                     ScrollView(showsIndicators: false) {
-                        let tabClearance = max(0, AppHeights.tabBarClearance - proxy.safeAreaInsets.bottom)
-
                         VStack(alignment: .leading, spacing: 0) {
-                            VStack(alignment: .leading, spacing: 0) {
-                                Text("Trending • LIVE")
-                                    .font(.system(size: 34, weight: .bold, design: .rounded))
-                                    .foregroundStyle(PromptTheme.paleLilacWhite)
-                                    .padding(.top, proxy.safeAreaInsets.top + 2)
+                            Text("Trending • LIVE")
+                                .font(.system(size: 34, weight: .bold, design: .rounded))
+                                .foregroundStyle(PromptTheme.paleLilacWhite)
+                                .padding(.top, proxy.safeAreaInsets.top + 2)
 
-                                Text("Copy-paste prompts people actually use")
-                                    .font(.system(size: 16, weight: .regular, design: .rounded))
-                                    .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.68))
-                                    .padding(.top, 6)
+                            Text("Copy-paste prompts people actually use")
+                                .font(.system(size: 16, weight: .regular, design: .rounded))
+                                .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.68))
+                                .padding(.top, 6)
 
-                                searchBar
-                                    .padding(.top, 14)
-                            }
-                            .background(Color.red.opacity(0.16))
+                            searchBar
+                                .padding(.top, 14)
 
                             content
 
-                            Color.blue.opacity(0.16)
-                                .frame(height: tabClearance)
+                            Color.clear.frame(height: AppHeights.tabBarClearance)
                         }
                         .padding(.horizontal, 24)
-                        .background(Color.green.opacity(0.12))
                     }
                 }
             }
