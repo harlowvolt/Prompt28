@@ -124,7 +124,7 @@ final class OrbEngine {
 
     func stopListeningAndFinalize() async -> String? {
         guard stopListening() else { return nil }
-        for _ in Self.finalTranscriptPollingAttemptRange() {
+        for _ in 0..<30 {
             let best = Self.normalizedTranscript(finalTranscript)
             if Self.hasNormalizedTranscriptContent(best) {
                 return best
@@ -167,7 +167,7 @@ final class OrbEngine {
     }
 
     private func awaitFinalTranscriptAndFinalize() async {
-        for _ in Self.finalTranscriptPollingAttemptRange() {
+        for _ in 0..<30 {
             let best = Self.normalizedTranscript(speech.finalTranscript)
             if Self.hasNormalizedTranscriptContent(best) {
                 finalTranscript = best
@@ -270,11 +270,6 @@ final class OrbEngine {
         case .granted, .notDetermined:
             return nil
         }
-    }
-
-    /// Pure helper for final transcript polling attempt range.
-    nonisolated static func finalTranscriptPollingAttemptRange() -> Range<Int> {
-        0..<30
     }
 
     /// Pure helper for final transcript polling sleep duration.

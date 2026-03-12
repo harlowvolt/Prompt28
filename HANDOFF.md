@@ -959,6 +959,31 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline polling attempt range in finalize loops
+
+Removed a small polling-range helper and applied the stable range directly in both transcript polling loops.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `stopListeningAndFinalize()`, replaced:
+        - `finalTranscriptPollingAttemptRange()`
+      with:
+        - `0..<30`
+    - In `awaitFinalTranscriptAndFinalize()`, replaced:
+        - `finalTranscriptPollingAttemptRange()`
+      with:
+        - `0..<30`
+    - Removed helper:
+        - `finalTranscriptPollingAttemptRange()`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Final Transcript Polling Range`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 318)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline minimum-listening-duration gate
 
 Removed a single-use listening-duration helper and applied the gate directly in `canStopListeningNow`.
