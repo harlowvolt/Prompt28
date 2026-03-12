@@ -1799,6 +1799,24 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure stop-listening-state helper + tests
+
+Extracted stop-listening initiation state mapping into a pure helper so this transition is directly testable.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `stopListening()` now delegates state transition to:
+        - `nonisolated static func stateAfterBeginningStopListening(currentState:) -> State`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Stop Listening State Mapping` with coverage for:
+        - beginning stop-listening maps to `.transcribing`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.
