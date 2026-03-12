@@ -7,6 +7,8 @@ struct OrbView: View {
     @Environment(\.openURL) private var openURL
     @State private var orbState: OrbTapState = .idle
 
+    private var engineCommands: any OrbEngineProtocol { engine }
+
     var body: some View {
         VStack(spacing: PromptTheme.Spacing.s) {
             GeometryReader { proxy in
@@ -32,12 +34,12 @@ struct OrbView: View {
                 switch orbState {
                 case .idle:
                     HapticService.impact(.heavy)
-                    engine.startListening()
+                    engineCommands.startListening()
                     orbState = .listening
 
                 case .listening:
                     HapticService.impact(.light)
-                    if engine.stopListening() {
+                    if engineCommands.stopListening() {
                         orbState = .processing
                     }
 
@@ -68,12 +70,12 @@ struct OrbView: View {
         }
         .preferredColorScheme(.dark)
         .onAppear {
-            engine.onFinalTranscript = { text in
+            engineCommands.onFinalTranscript = { text in
                 onTranscript(text)
             }
         }
         .onDisappear {
-            engine.onFinalTranscript = nil
+            engineCommands.onFinalTranscript = nil
         }
         .onChange(of: engine.state) { _, newState in
             switch newState {

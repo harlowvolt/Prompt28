@@ -786,6 +786,160 @@ Verification:
 - `get_errors` on edited files: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 2 continuation — RootView and HomeView constructor decoupled from AppEnvironment
+
+Completed the pending Root/Home cleanup by removing `AppEnvironment`-based feature composition and switching Home construction to explicit dependency injection.
+
+- File: `Features/Home/Views/HomeView.swift`
+    - Replaced `init(appEnvironment:)` with explicit dependency initializer:
+        - `authManager`
+        - `router`
+        - `apiClient`
+        - `preferencesStore`
+        - `historyStore`
+        - `usageTracker`
+    - Removed scoped-vs-fallback helper properties now that dependencies are injected directly.
+
+- File: `App/RootView.swift`
+    - Removed `@Environment(AppEnvironment.self)` usage.
+    - Added scoped dependency reads for Home composition:
+        - `apiClient`, `preferencesStore`, `historyStore`, `usageTracker`
+    - Added `homeView` builder that instantiates `HomeView(...)` only when all scoped dependencies are available; otherwise shows `launchView`.
+    - Updated tab and iPad sidebar Home routes to use the shared `homeView` builder.
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 prep continuation — OrbView now uses protocol boundary for commands
+
+Extended protocol-boundary adoption from Home generation flow into `OrbView` interactions.
+
+- File: `Features/Home/Views/OrbView.swift`
+    - Added `engineCommands` helper typed as `any OrbEngineProtocol`
+    - Routed command/callback interactions through protocol boundary:
+        - `startListening`
+        - `stopListening`
+        - `onFinalTranscript` set/unset
+
+Behavior:
+1. No functional change; this is boundary prep for future engine backend swaps.
+2. View still stores concrete `OrbEngine` for Observation compatibility.
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 prep continuation — OrbEngine factory seam added
+
+Added a minimal factory seam so default OrbEngine construction can be swapped later without rewriting Home composition.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Added `OrbEngineFactoryProtocol`
+    - Added default implementation `LiveOrbEngineFactory`
+
+- File: `Features/Home/Views/HomeView.swift`
+    - Replaced inline `@State` default engine construction with init-time factory creation
+    - Added optional init parameter:
+        - `orbEngineFactory: (any OrbEngineFactoryProtocol)? = nil`
+    - Defaults to `LiveOrbEngineFactory` when not provided
+
+Concurrency note:
+1. Initial default-argument form (`orbEngineFactory = LiveOrbEngineFactory()`) triggered actor-isolation compile failure.
+2. Resolved by making the parameter optional and constructing the fallback factory inside init body.
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — Root background flag keys centralized
+
+Consolidated all root-background experiment key strings into one shared constants location to avoid typo drift across screens.
+
+- File: `App/AppUI.swift`
+    - Added `ExperimentFlags.RootBackground` constants:
+        - `home`
+        - `trending`
+        - `history`
+        - `favorites`
+
+- Updated screens to use shared keys:
+    - `Features/Home/Views/HomeView.swift`
+    - `Features/Trending/Views/TrendingView.swift`
+    - `Features/History/Views/HistoryView.swift`
+    - `Features/History/Views/FavoritesView.swift`
+
+Implementation note:
+- Constants were placed in `AppUI.swift` (already target-included) to avoid project-file edits during this migration pass.
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — In-app QA controls for root-background flags
+
+Added Admin UI controls so manual background QA can be run without LLDB commands.
+
+- File: `Features/Admin/Views/AdminDashboardView.swift`
+    - Added new segmented section: `Experiments`
+    - Added `@AppStorage` toggles for:
+        - `ExperimentFlags.RootBackground.home`
+        - `ExperimentFlags.RootBackground.trending`
+        - `ExperimentFlags.RootBackground.history`
+        - `ExperimentFlags.RootBackground.favorites`
+    - Added `Reset All Flags` action to set all four flags to `false`
+
+Usage:
+1. Open Admin -> Experiments.
+2. Enable one flag at a time while running the deterministic QA script.
+3. Use `Reset All Flags` between passes.
+
+Determinism hardening:
+1. Enabling any single flag now auto-disables the other three.
+2. Panel displays the currently active flag (`Active: Home/Trending/History/Favorites/None`).
+3. Entire Experiments section is `#if DEBUG`-gated (internal QA only).
+
+Release safety:
+1. `PromptMeNativeApp` resets all root-background experiment flags to `false` on startup in non-DEBUG builds.
+2. This ensures QA toggles cannot persist into production behavior.
+
+#### Phase 3 prep — OrbEngine transition protocol boundary (low-risk)
+
+Started Phase 3 groundwork by formalizing OrbEngine's command/state surface behind a protocol and consuming transition commands through that boundary in Home generation flow.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Added `OrbEngineProtocol` in the same file (target-included) with:
+        - observable state reads (`state`, `isRecording`, `transcript`, `finalTranscript`, `permissionStatus`, `audioLevel`)
+        - transcript callback (`onFinalTranscript`)
+        - transition commands (`startListening`, `stopListening`, `markGenerating`, `markSuccess`, `markFailure`, `markIdle`, etc.)
+    - `OrbEngine` conforms via extension.
+
+- File: `Features/Home/Views/HomeView.swift`
+    - Added `orbTransitions` helper typed as `any OrbEngineProtocol`
+    - Generation transition calls now flow through protocol boundary (no behavior change):
+        - `markGenerating`
+        - `markFailure` / `markSuccess`
+        - `markIdle`
+
+Implementation note:
+1. Initial protocol file under `Core/Protocols` was not target-visible.
+2. Protocol was relocated into `OrbEngine.swift` to avoid `.pbxproj` churn during migration.
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Remaining AppEnvironment hotspots (updated)
+
+Direct `@Environment(AppEnvironment.self)` usage has now been eliminated from `RootView` and feature views touched in Phase 2.
+
+Current intentional usage:
+1. `PromptMeNative_Blueprint/PromptMeNativeApp.swift` (root container creation + scoped key injection source)
+
 #### Phase 2 continuation — Home sheet routing moved into AppRouter
 
 Home screen sheet presentation state is now router-owned (not local `@State`) to continue unidirectional routing migration.
@@ -1058,16 +1212,59 @@ Verification:
 | History | `experiment.useRootBackground.history` | `false` | Yes | Pending manual QA |
 | Favorites | `experiment.useRootBackground.favorites` | `false` | Yes | Pending manual QA |
 
+#### Deterministic QA Script — Root Background Flags
+
+Use this exact flow to test each screen with minimal variance between runs.
+
+Preconditions:
+1. Build + run `Prompt28` on iPhone 17 simulator.
+2. Sign in and complete privacy/onboarding so all tabs are reachable.
+3. Keep all four flags `false` before starting a new screen pass.
+
+Flag control method (Xcode LLDB console while app is paused/running):
+1. Set one flag `true`:
+    - `e -l swift -- UserDefaults.standard.set(true, forKey: "experiment.useRootBackground.<screen>")`
+2. Reset all others `false`:
+    - `e -l swift -- UserDefaults.standard.set(false, forKey: "experiment.useRootBackground.home")`
+    - `e -l swift -- UserDefaults.standard.set(false, forKey: "experiment.useRootBackground.trending")`
+    - `e -l swift -- UserDefaults.standard.set(false, forKey: "experiment.useRootBackground.history")`
+    - `e -l swift -- UserDefaults.standard.set(false, forKey: "experiment.useRootBackground.favorites")`
+3. Relaunch app after changing values to guarantee `@AppStorage` picks up persisted state from cold start.
+
+Per-screen test steps (run once for each flag):
+1. Open the target tab and scroll top-to-bottom repeatedly (3 passes).
+2. Trigger every major navigation transition on that tab:
+    - push detail, pop back
+    - open sheet/full-screen modal, dismiss
+3. Switch to another tab, then back to target tab (3 cycles).
+4. Perform pull-to-refresh or equivalent gesture if available.
+5. Rotate simulator portrait -> landscape -> portrait (if UI supports it).
+
+Pass criteria:
+1. No black flash or white bleed at any edge.
+2. No background reset flicker after tab switches.
+3. No clipped/empty background regions on rotation.
+4. No regressions in navigation animation smoothness.
+
+Failure logging format:
+1. Screen + flag key.
+2. Exact action that triggered artifact.
+3. Simulator orientation and navigation depth.
+4. Screenshot/video reference.
+
+Note:
+- Flag keys are centralized in `App/AppUI.swift` under `ExperimentFlags.RootBackground`.
+
 #### Remaining AppEnvironment hotspots (current)
 
-Most remaining direct `@Environment(AppEnvironment.self)` usage is now fallback-only for staged safety. High-priority remaining conversion candidates are:
+Verified current state:
 
-1. `Features/Auth/Views/AuthFlowView.swift` (currently fallback to env for auth manager)
-2. `Features/Home/Views/HomeView.swift` (fallback-only, plus constructor dependency)
-3. `Features/Settings/Views/SettingsView.swift` / `UpgradeView.swift` (fallback-only)
-4. `App/RootView.swift` (fallback-only for router/auth)
+1. No direct `@Environment(AppEnvironment.self)` usage remains in feature/root views.
+2. `AppEnvironment` is now intentionally limited to:
+    - `App/AppEnvironment.swift` (container definition)
+    - `PromptMeNativeApp.swift` (root container instantiation + scoped key injection)
 
-Recommendation: keep fallback paths until root-level scoped key injection and manual QA are fully stable, then remove fallback usage in one screen at a time.
+Recommendation: continue manual QA for root-background experiment flags before enabling any of them by default.
 
 #### Phase 2 continuation — AdminDashboardView no longer depends on AppEnvironment
 

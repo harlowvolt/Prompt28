@@ -10,6 +10,9 @@ struct PromptMeNativeApp: App {
     init() {
         UIWindow.appearance().backgroundColor = UIColor(red: 14/255, green: 12/255, blue: 22/255, alpha: 1)
         UIView.appearance(whenContainedInInstancesOf: [UIHostingController<AnyView>.self]).backgroundColor = .clear
+#if !DEBUG
+        resetRootBackgroundExperimentFlags()
+#endif
     }
 
     var body: some Scene {
@@ -30,5 +33,13 @@ struct PromptMeNativeApp: App {
                     GIDSignIn.sharedInstance.handle(url)
                 }
         }
+    }
+
+    private func resetRootBackgroundExperimentFlags() {
+        let defaults = UserDefaults.standard
+        defaults.set(false, forKey: ExperimentFlags.RootBackground.home)
+        defaults.set(false, forKey: ExperimentFlags.RootBackground.trending)
+        defaults.set(false, forKey: ExperimentFlags.RootBackground.history)
+        defaults.set(false, forKey: ExperimentFlags.RootBackground.favorites)
     }
 }

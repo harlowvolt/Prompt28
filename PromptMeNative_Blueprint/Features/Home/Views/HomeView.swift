@@ -1,65 +1,46 @@
 import SwiftUI
 
 struct HomeView: View {
-    @Environment(\.authManager) private var authManager
-    @Environment(\.appRouter) private var appRouter
     @Environment(\.errorState) private var errorState
-    @Environment(\.apiClient) private var scopedAPIClient
-    @Environment(\.preferencesStore) private var scopedPreferencesStore
-    @Environment(\.historyStore) private var scopedHistoryStore
-    @Environment(\.usageTracker) private var scopedUsageTracker
-    @AppStorage("experiment.useRootBackground.home") private var useRootBackgroundExperiment = false
-    @State private var orbEngine = OrbEngine.makeDefault()
+    @AppStorage(ExperimentFlags.RootBackground.home) private var useRootBackgroundExperiment = false
+    @State private var orbEngine: OrbEngine
     @State private var generateViewModel: GenerateViewModel
     @State private var settingsViewModel = SettingsViewModel()
     @State private var lastPresentedGlobalError = ""
 
-    private let fallbackAuthManager: AuthManager
-    private let fallbackRouter: AppRouter
-    private let fallbackAPIClient: any APIClientProtocol
-    private let fallbackPreferencesStore: any PreferenceStoring
-    private let fallbackHistoryStore: any HistoryStoring
-    private let fallbackUsageTracker: UsageTracker
+    private let authManager: AuthManager
+    private let router: AppRouter
+    private let apiClient: any APIClientProtocol
+    private let preferencesStore: any PreferenceStoring
+    private let historyStore: any HistoryStoring
+    private let usageTracker: UsageTracker
 
-    private var router: AppRouter {
-        appRouter ?? fallbackRouter
-    }
+    init(
+        authManager: AuthManager,
+        router: AppRouter,
+        apiClient: any APIClientProtocol,
+        preferencesStore: any PreferenceStoring,
+        historyStore: any HistoryStoring,
+        usageTracker: UsageTracker,
+        orbEngineFactory: (any OrbEngineFactoryProtocol)? = nil
+    ) {
+        self.authManager = authManager
+        self.router = router
+        self.apiClient = apiClient
+        self.preferencesStore = preferencesStore
+        self.historyStore = historyStore
+        self.usageTracker = usageTracker
 
-    private var apiClient: any APIClientProtocol {
-        scopedAPIClient ?? fallbackAPIClient
-    }
-
-    private var preferencesStore: any PreferenceStoring {
-        scopedPreferencesStore ?? fallbackPreferencesStore
-    }
-
-    private var resolvedAuthManager: AuthManager {
-        authManager ?? fallbackAuthManager
-    }
-
-    private var historyStore: any HistoryStoring {
-        scopedHistoryStore ?? fallbackHistoryStore
-    }
-
-    private var usageTracker: UsageTracker {
-        scopedUsageTracker ?? fallbackUsageTracker
-    }
-
-    init(appEnvironment: AppEnvironment) {
-        self.fallbackAuthManager = appEnvironment.authManager
-        self.fallbackRouter = appEnvironment.router
-        self.fallbackAPIClient = appEnvironment.apiClient
-        self.fallbackPreferencesStore = appEnvironment.preferencesStore
-        self.fallbackHistoryStore = appEnvironment.historyStore
-        self.fallbackUsageTracker = appEnvironment.usageTracker
+        let resolvedOrbEngineFactory = orbEngineFactory ?? LiveOrbEngineFactory()
+        self._orbEngine = State(wrappedValue: resolvedOrbEngineFactory.makeOrbEngine())
 
         self._generateViewModel = State(
             wrappedValue: GenerateViewModel(
-                apiClient: appEnvironment.apiClient,
-                authManager: appEnvironment.authManager,
-                historyStore: appEnvironment.historyStore,
-                preferencesStore: appEnvironment.preferencesStore,
-                usageTracker: appEnvironment.usageTracker
+                apiClient: apiClient,
+                authManager: authManager,
+                historyStore: historyStore,
+                preferencesStore: preferencesStore,
+                usageTracker: usageTracker
             )
         )
     }
@@ -211,7 +192,7 @@ struct HomeView: View {
         .task {
             settingsViewModel.bind(
                 apiClient: apiClient,
-                authManager: resolvedAuthManager,
+                authManager: authManager,
                 preferencesStore: preferencesStore,
                 historyStore: historyStore
             )
@@ -364,7 +345,7 @@ struct HomeView: View {
     // MARK: - Greeting
 
     private var firstName: String {
-        let raw = resolvedAuthManager.currentUser?.name ?? ""
+        let raw = authManager.currentUser?.name ?? ""
         let first = raw.split(separator: " ").first.map(String.init) ?? ""
         return first.isEmpty ? "there" : first
     }
@@ -386,17 +367,19 @@ struct HomeView: View {
     // MARK: - Helpers
 
     private var hasResult: Bool { !generateViewModel.latestPromptText.isEmpty }
+    private var orbTransitions: any OrbEngineProtocol { orbEngine }
 
     private func generateFromText(_ finalText: String) {
         Task {
-            orbEngine.markGenerating()
+            let transitions = orbTransitions
+            transitions.markGenerating()
             await generateViewModel.generateFromOrb(text: finalText)
             if let error = generateViewModel.errorMessage {
-                orbEngine.markFailure(error)
+                transitions.markFailure(error)
             } else {
-                orbEngine.markSuccess()
+                transitions.markSuccess()
             }
-            orbEngine.markIdle()
+            transitions.markIdle()
         }
     }
 

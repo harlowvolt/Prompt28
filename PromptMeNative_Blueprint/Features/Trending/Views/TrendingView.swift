@@ -3,7 +3,7 @@ import SwiftUI
 struct TrendingView: View {
     @Environment(\.appRouter) private var appRouter
     @Environment(\.apiClient) private var scopedAPIClient
-    @AppStorage("experiment.useRootBackground.trending") private var useRootBackgroundExperiment = false
+    @AppStorage(ExperimentFlags.RootBackground.trending) private var useRootBackgroundExperiment = false
     @State private var viewModel = TrendingViewModel()
     @State private var searchQuery = ""
     @State private var showCopiedToast = false

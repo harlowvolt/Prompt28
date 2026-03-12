@@ -1,5 +1,14 @@
 import SwiftUI
 
+enum ExperimentFlags {
+    enum RootBackground {
+        static let home = "experiment.useRootBackground.home"
+        static let trending = "experiment.useRootBackground.trending"
+        static let history = "experiment.useRootBackground.history"
+        static let favorites = "experiment.useRootBackground.favorites"
+    }
+}
+
 enum AppSpacing {
     static let screenHorizontal: CGFloat = 18
     static let section: CGFloat = 24

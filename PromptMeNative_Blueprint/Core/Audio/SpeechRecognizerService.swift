@@ -24,6 +24,17 @@ protocol SpeechRecognizing: AnyObject {
 }
 
 @MainActor
+protocol SpeechRecognizerFactoryProtocol {
+    func makeSpeechRecognizer(locale: Locale) -> any SpeechRecognizing
+}
+
+struct LiveSpeechRecognizerFactory: SpeechRecognizerFactoryProtocol {
+    func makeSpeechRecognizer(locale: Locale) -> any SpeechRecognizing {
+        SpeechRecognizerService(locale: locale)
+    }
+}
+
+@MainActor
 final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizing {
 
     enum PermissionStatus: Equatable {

@@ -16,7 +16,7 @@ struct HistoryView: View {
 
     @Environment(\.historyStore) private var historyStore
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("experiment.useRootBackground.history") private var useRootBackgroundExperiment = false
+    @AppStorage(ExperimentFlags.RootBackground.history) private var useRootBackgroundExperiment = false
     @State private var viewModel = HistoryViewModel()
     @State private var activeSheet: ActiveSheet?
     @State private var renameText = ""

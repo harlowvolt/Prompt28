@@ -2,22 +2,17 @@ import SwiftUI
 import UIKit
 
 struct RootView: View {
-    @Environment(AppEnvironment.self) private var env
     @Environment(\.authManager) private var scopedAuthManager
     @Environment(\.appRouter) private var appRouter
     @Environment(\.errorState) private var errorState
+    @Environment(\.apiClient) private var scopedAPIClient
+    @Environment(\.preferencesStore) private var scopedPreferencesStore
+    @Environment(\.historyStore) private var scopedHistoryStore
+    @Environment(\.usageTracker) private var scopedUsageTracker
     @AppStorage("hasAcceptedPrivacy") private var hasAcceptedPrivacy = false
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var didBootstrap = false
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
-    private var router: AppRouter {
-        appRouter ?? env.router
-    }
-
-    private var authManager: AuthManager {
-        scopedAuthManager ?? env.authManager
-    }
 
     init() {
         let appearance = UITabBarAppearance()
@@ -55,7 +50,9 @@ struct RootView: View {
                 .ignoresSafeArea()
 
             Group {
-                if !hasAcceptedPrivacy {
+                if scopedAuthManager == nil || appRouter == nil {
+                    launchView
+                } else if !hasAcceptedPrivacy {
                     // Privacy consent modal — must be accepted before auth or data collection.
                     // Satisfies App Store Review Guideline 5.1.2(i).
                     PrivacyConsentView {
@@ -63,9 +60,9 @@ struct RootView: View {
                             hasAcceptedPrivacy = true
                         }
                     }
-                } else if !didBootstrap || authManager.isBootstrapping {
+                } else if !didBootstrap || scopedAuthManager?.isBootstrapping == true {
                     launchView
-                } else if authManager.isAuthenticated {
+                } else if scopedAuthManager?.isAuthenticated == true {
                     if !hasSeenOnboarding {
                         OnboardingView {
                             withAnimation(.easeInOut(duration: 0.35)) {
@@ -87,13 +84,14 @@ struct RootView: View {
         }
         .task {
             guard !didBootstrap else { return }
+            guard let authManager = scopedAuthManager else { return }
             await authManager.bootstrap()
             didBootstrap = true
         }
-        .onChange(of: authManager.token) { _, token in
+        .onChange(of: scopedAuthManager?.token) { _, token in
             if token == nil {
-                router.switchTab(.home)
-                router.popToRoot()
+                appRouter?.switchTab(.home)
+                appRouter?.popToRoot()
             }
         }
         .alert(item: Binding(
@@ -113,13 +111,15 @@ struct RootView: View {
     // MARK: - iPad Sidebar (NavigationSplitView)
 
     private var iPadSidebar: some View {
-        NavigationSplitView {
+        let router = appRouter
+
+        return NavigationSplitView {
             // List requires Binding<SelectionValue?> — use sidebarSelection and sync below
             List(selection: Binding(
-                get: { router.selectedTab as MainTab? },
+                get: { router?.selectedTab as MainTab? },
                 set: { tab in
                     guard let tab else { return }
-                    router.switchTab(tab)
+                    router?.switchTab(tab)
                 }
             )) {
                 Label("Home", systemImage: "house.fill")
@@ -134,9 +134,9 @@ struct RootView: View {
             .navigationTitle("PROMPT28")
             .listStyle(.sidebar)
         } detail: {
-            switch router.selectedTab {
+            switch router?.selectedTab ?? .home {
             case .home:
-                HomeView(appEnvironment: env)
+                homeView
             case .favorites:
                 FavoritesView()
             case .history:
@@ -145,7 +145,7 @@ struct RootView: View {
                 TrendingView()
             case .admin:
                 // Admin is phone-only; redirect to Home on iPad
-                HomeView(appEnvironment: env)
+                homeView
             }
         }
         .promptClearNavigationSurfaces()
@@ -155,12 +155,12 @@ struct RootView: View {
 
     private var mainTabs: some View {
         TabView(selection: Binding(
-            get: { router.selectedTab },
+            get: { appRouter?.selectedTab ?? .home },
             set: { tab in
-                router.switchTab(tab)
+                appRouter?.switchTab(tab)
             }
         )) {
-            HomeView(appEnvironment: env)
+            homeView
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
                 }
@@ -189,6 +189,27 @@ struct RootView: View {
         .toolbarBackground(.hidden, for: .navigationBar)
         .background(TabBarRaiser(extraInset: 4))
         .promptClearNavigationSurfaces()
+    }
+
+    @ViewBuilder
+    private var homeView: some View {
+        if let authManager = scopedAuthManager,
+           let router = appRouter,
+           let apiClient = scopedAPIClient,
+           let preferencesStore = scopedPreferencesStore,
+           let historyStore = scopedHistoryStore,
+           let usageTracker = scopedUsageTracker {
+            HomeView(
+                authManager: authManager,
+                router: router,
+                apiClient: apiClient,
+                preferencesStore: preferencesStore,
+                historyStore: historyStore,
+                usageTracker: usageTracker
+            )
+        } else {
+            launchView
+        }
     }
 
     private var launchView: some View {

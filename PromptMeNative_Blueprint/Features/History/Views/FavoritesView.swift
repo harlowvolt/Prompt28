@@ -4,7 +4,7 @@ import UIKit
 struct FavoritesView: View {
     @Environment(\.historyStore) private var historyStore
     @Environment(\.dismiss) private var dismiss
-    @AppStorage("experiment.useRootBackground.favorites") private var useRootBackgroundExperiment = false
+    @AppStorage(ExperimentFlags.RootBackground.favorites) private var useRootBackgroundExperiment = false
     @State private var viewModel = HistoryViewModel()
     @State private var showCopiedToast = false
 

@@ -2,6 +2,48 @@ import Combine
 import CoreGraphics
 import Foundation
 
+/// Protocol describing the observable surface and transition commands consumed
+/// by views. `@MainActor` matches OrbEngine's isolation.
+@MainActor
+protocol OrbEngineProtocol: AnyObject {
+
+    // MARK: Observable State
+    var state: OrbEngine.State { get }
+    var isRecording: Bool { get }
+    var transcript: String { get }
+    var finalTranscript: String { get }
+    var permissionStatus: SpeechRecognizerService.PermissionStatus { get }
+    var audioLevel: CGFloat { get }
+    var onFinalTranscript: ((String) -> Void)? { get set }
+
+    // MARK: Derived State
+    var needsPermissionSettingsAction: Bool { get }
+    var permissionMessage: String { get }
+
+    // MARK: Commands
+    func reset()
+    func startListening()
+    @discardableResult func stopListening() -> Bool
+    func stopListeningAndFinalize() async -> String?
+    func markGenerating()
+    func markSuccess()
+    func markFailure(_ message: String)
+    func markIdle()
+}
+
+@MainActor
+protocol OrbEngineFactoryProtocol {
+    func makeOrbEngine() -> OrbEngine
+}
+
+struct LiveOrbEngineFactory: OrbEngineFactoryProtocol {
+    var speechFactory: (any SpeechRecognizerFactoryProtocol)? = nil
+
+    func makeOrbEngine() -> OrbEngine {
+        OrbEngine.makeDefault(speechFactory: speechFactory)
+    }
+}
+
 @Observable
 @MainActor
 final class OrbEngine {
@@ -37,8 +79,12 @@ final class OrbEngine {
         bindSpeechState()
     }
 
-    static func makeDefault() -> OrbEngine {
-        OrbEngine(speech: SpeechRecognizerService(locale: .current))
+    static func makeDefault(
+        speechFactory: (any SpeechRecognizerFactoryProtocol)? = nil,
+        locale: Locale = .current
+    ) -> OrbEngine {
+        let resolvedSpeechFactory = speechFactory ?? LiveSpeechRecognizerFactory()
+        return OrbEngine(speech: resolvedSpeechFactory.makeSpeechRecognizer(locale: locale))
     }
 
     var needsPermissionSettingsAction: Bool {
@@ -239,3 +285,6 @@ final class OrbEngine {
             .store(in: &cancellables)
     }
 }
+
+// MARK: - Conformance
+extension OrbEngine: OrbEngineProtocol {}
