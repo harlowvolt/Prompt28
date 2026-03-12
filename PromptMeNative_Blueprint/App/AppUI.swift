@@ -210,6 +210,19 @@ extension View {
             .background { PromptTheme.glassCard(cornerRadius: radius) }
             .shadow(color: .black.opacity(0.28), radius: 16, y: 10)
     }
+
+    func promptClearNavigationSurfaces() -> some View {
+        modifier(PromptClearNavigationSurfacesModifier())
+    }
+}
+
+private struct PromptClearNavigationSurfacesModifier: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .scrollContentBackground(.hidden)
+            .toolbarBackground(.hidden, for: .navigationBar)
+            .background(Color.clear)
+    }
 }
 
 extension PromptTheme {

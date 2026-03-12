@@ -51,6 +51,7 @@ struct TrendingView: View {
                         .animation(.easeInOut(duration: 0.2), value: showCopiedToast)
                 }
             }
+            .promptClearNavigationSurfaces()
         }
     }
 

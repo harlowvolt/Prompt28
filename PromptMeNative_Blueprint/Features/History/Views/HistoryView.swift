@@ -14,7 +14,7 @@ struct HistoryView: View {
         }
     }
 
-    @Environment(AppEnvironment.self) private var env
+    @Environment(\.historyStore) private var historyStore
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = HistoryViewModel()
     @State private var activeSheet: ActiveSheet?
@@ -51,6 +51,7 @@ struct HistoryView: View {
                                         historyCard(item)
                                     }
                                 }
+                                .animation(.easeInOut(duration: 0.2), value: viewModel.filteredItems.map(\.id))
                                 .padding(.top, 14)
                             }
 
@@ -66,6 +67,7 @@ struct HistoryView: View {
                     viewModel.clearAll()
                 }
             }
+            .promptClearNavigationSurfaces()
             .sheet(item: $activeSheet) { sheet in
                 switch sheet {
                 case .rename(let id):
@@ -182,7 +184,9 @@ struct HistoryView: View {
             }
         }
         .onAppear {
-            viewModel.bind(historyStore: env.historyStore)
+            if let historyStore {
+                viewModel.bind(historyStore: historyStore)
+            }
         }
     }
 

@@ -14,9 +14,12 @@ struct HomeView: View {
     }
 
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.authManager) private var authManager
+    @Environment(\.errorState) private var errorState
     @State private var orbEngine = OrbEngine.makeDefault()
     @State private var generateViewModel: GenerateViewModel
     @State private var settingsViewModel = SettingsViewModel()
+    @State private var lastPresentedGlobalError = ""
 
     @State private var activeSheet: ActiveSheet?
 
@@ -113,6 +116,7 @@ struct HomeView: View {
                 .padding(.bottom, AppSpacing.bottomContentClearance)
             }
             .toolbar(.hidden, for: .navigationBar)
+            .promptClearNavigationSurfaces()
         }
         .overlay(alignment: .bottom) { copiedToast }
         .sheet(item: $activeSheet) { sheet in
@@ -152,6 +156,20 @@ struct HomeView: View {
         }
         .onChange(of: generateViewModel.showPaywall) { _, show in
             if show { activeSheet = .upgrade }
+        }
+        .onChange(of: generateViewModel.errorMessage) { _, message in
+            guard let message else { return }
+            let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, trimmed != lastPresentedGlobalError else { return }
+            lastPresentedGlobalError = trimmed
+            errorState?.present(title: "Request Failed", message: trimmed)
+        }
+        .onChange(of: orbEngine.state) { _, state in
+            guard case .failure(let message) = state else { return }
+            let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, trimmed != lastPresentedGlobalError else { return }
+            lastPresentedGlobalError = trimmed
+            errorState?.present(title: "Voice Error", message: trimmed)
         }
         .task {
             settingsViewModel.bind(
@@ -309,7 +327,7 @@ struct HomeView: View {
     // MARK: - Greeting
 
     private var firstName: String {
-        let raw = env.authManager.currentUser?.name ?? ""
+        let raw = authManager?.currentUser?.name ?? env.authManager.currentUser?.name ?? ""
         let first = raw.split(separator: " ").first.map(String.init) ?? ""
         return first.isEmpty ? "there" : first
     }

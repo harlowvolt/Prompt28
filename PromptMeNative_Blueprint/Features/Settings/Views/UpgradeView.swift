@@ -34,6 +34,7 @@ struct UpgradeView: View {
                         .foregroundStyle(PromptTheme.softLilac)
                 }
             }
+            .promptClearNavigationSurfaces()
         }
         .task { await env.storeManager.loadProducts() }
     }
@@ -152,6 +153,7 @@ private struct ProductCard: View {
 
     @State private var isPurchasing = false
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.authManager) private var authManager
 
     private var planLabel: String {
         switch product.id {
@@ -290,6 +292,7 @@ private struct ProductCard: View {
         if let planType = storeManager.planType(for: product.id) {
             viewModel.selectedPlan = planType
             _ = await viewModel.updatePlan()
+            await (authManager ?? env.authManager).refreshMe()
         }
     }
 }

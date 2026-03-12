@@ -1,5 +1,6 @@
 import Foundation
 import SwiftData
+import SwiftUI
 
 @Observable
 @MainActor
@@ -42,5 +43,65 @@ final class AppEnvironment {
         self.router = AppRouter()
         self.storeManager = StoreManager()
         // Combine forwarding removed — @Observable on AuthManager propagates changes automatically
+    }
+}
+
+@Observable
+@MainActor
+final class ErrorState {
+    struct PresentedError: Identifiable, Equatable {
+        let id = UUID()
+        let title: String
+        let message: String
+    }
+
+    private(set) var presented: PresentedError?
+
+    func present(title: String = "Something Went Wrong", message: String) {
+        let trimmed = message.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        presented = PresentedError(title: title, message: trimmed)
+    }
+
+    func clear() {
+        presented = nil
+    }
+}
+
+private struct HistoryStoreKey: EnvironmentKey {
+    static var defaultValue: (any HistoryStoring)? = nil
+}
+
+private struct AuthManagerKey: EnvironmentKey {
+    static var defaultValue: AuthManager? = nil
+}
+
+private struct AppRouterKey: EnvironmentKey {
+    static var defaultValue: AppRouter? = nil
+}
+
+private struct ErrorStateKey: EnvironmentKey {
+    static var defaultValue: ErrorState? = nil
+}
+
+extension EnvironmentValues {
+    var historyStore: (any HistoryStoring)? {
+        get { self[HistoryStoreKey.self] }
+        set { self[HistoryStoreKey.self] = newValue }
+    }
+
+    var authManager: AuthManager? {
+        get { self[AuthManagerKey.self] }
+        set { self[AuthManagerKey.self] = newValue }
+    }
+
+    var appRouter: AppRouter? {
+        get { self[AppRouterKey.self] }
+        set { self[AppRouterKey.self] = newValue }
+    }
+
+    var errorState: ErrorState? {
+        get { self[ErrorStateKey.self] }
+        set { self[ErrorStateKey.self] = newValue }
     }
 }

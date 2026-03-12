@@ -3,12 +3,11 @@ import UIKit
 
 struct RootView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.appRouter) private var appRouter
+    @Environment(\.errorState) private var errorState
     @AppStorage("hasAcceptedPrivacy") private var hasAcceptedPrivacy = false
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var didBootstrap = false
-    @State private var selectedTab: MainTab = .home
-    /// List(selection:) requires an optional binding — synced with selectedTab via onChange
-    @State private var sidebarSelection: MainTab? = .home
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     init() {
         let appearance = UITabBarAppearance()
@@ -83,8 +82,21 @@ struct RootView: View {
         }
         .onChange(of: env.authManager.token) { _, token in
             if token == nil {
-                selectedTab = .home
+                env.router.switchTab(.home)
+                env.router.popToRoot()
             }
+        }
+        .alert(item: Binding(
+            get: { errorState?.presented },
+            set: { _ in errorState?.clear() }
+        )) { presented in
+            Alert(
+                title: Text(presented.title),
+                message: Text(presented.message),
+                dismissButton: .default(Text("OK")) {
+                    errorState?.clear()
+                }
+            )
         }
     }
 
@@ -93,7 +105,17 @@ struct RootView: View {
     private var iPadSidebar: some View {
         NavigationSplitView {
             // List requires Binding<SelectionValue?> — use sidebarSelection and sync below
-            List(selection: $sidebarSelection) {
+            List(selection: Binding(
+                get: { (appRouter?.selectedTab ?? env.router.selectedTab) as MainTab? },
+                set: { tab in
+                    guard let tab else { return }
+                    if let appRouter {
+                        appRouter.switchTab(tab)
+                    } else {
+                        env.router.switchTab(tab)
+                    }
+                }
+            )) {
                 Label("Home", systemImage: "house.fill")
                     .tag(MainTab.home as MainTab?)
                 Label("Favorites", systemImage: "star.fill")
@@ -105,12 +127,8 @@ struct RootView: View {
             }
             .navigationTitle("PROMPT28")
             .listStyle(.sidebar)
-            // Sync optional sidebar selection → non-optional selectedTab
-            .onChange(of: sidebarSelection) { _, tab in
-                if let tab { selectedTab = tab }
-            }
         } detail: {
-            switch selectedTab {
+            switch appRouter?.selectedTab ?? env.router.selectedTab {
             case .home:
                 HomeView(appEnvironment: env)
             case .favorites:
@@ -124,12 +142,22 @@ struct RootView: View {
                 HomeView(appEnvironment: env)
             }
         }
+        .promptClearNavigationSurfaces()
     }
 
     // MARK: - iPhone Tab Bar
 
     private var mainTabs: some View {
-        TabView(selection: $selectedTab) {
+        TabView(selection: Binding(
+            get: { appRouter?.selectedTab ?? env.router.selectedTab },
+            set: { tab in
+                if let appRouter {
+                    appRouter.switchTab(tab)
+                } else {
+                    env.router.switchTab(tab)
+                }
+            }
+        )) {
             HomeView(appEnvironment: env)
                 .tabItem {
                     Label("Home", systemImage: "house.fill")
@@ -158,6 +186,7 @@ struct RootView: View {
         .toolbarBackground(.hidden, for: .tabBar)
         .toolbarBackground(.hidden, for: .navigationBar)
         .background(TabBarRaiser(extraInset: 4))
+        .promptClearNavigationSurfaces()
     }
 
     private var launchView: some View {

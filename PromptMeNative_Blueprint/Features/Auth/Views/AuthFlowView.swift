@@ -3,6 +3,8 @@ import SwiftUI
 
 struct AuthFlowView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.authManager) private var scopedAuthManager
+    @Environment(\.appRouter) private var appRouter
     // appleHelper removed — SignInWithAppleButton handles the flow natively (Guideline 4.8)
 
     @State private var isSignup = false
@@ -10,6 +12,10 @@ struct AuthFlowView: View {
     @State private var email = ""
     @State private var password = ""
     @FocusState private var focusedField: AuthInputField?
+
+    private var authManager: AuthManager {
+        scopedAuthManager ?? env.authManager
+    }
 
     var body: some View {
         ZStack {
@@ -34,7 +40,7 @@ struct AuthFlowView: View {
                             submitButton
                                 .id("authSubmitButton")
 
-                            if let error = env.authManager.lastError, !error.isEmpty {
+                            if let error = authManager.lastError, !error.isEmpty {
                                 Text(error)
                                     .font(.system(size: 13, weight: .medium, design: .rounded))
                                     .foregroundStyle(Color(red: 1.0, green: 0.42, blue: 0.48))
@@ -71,6 +77,7 @@ struct AuthFlowView: View {
                 Button("Done") { focusedField = nil }
             }
         }
+        .promptClearNavigationSurfaces()
     }
 
     // MARK: - Brand Header
@@ -109,10 +116,10 @@ struct AuthFlowView: View {
                 Task {
                     do {
                         let idToken = try await OAuthCoordinator.googleIDToken()
-                        await env.authManager.loginWithGoogle(credential: idToken)
+                        await authManager.loginWithGoogle(credential: idToken)
                         routeIfAuthenticated()
                     } catch {
-                        env.authManager.lastError = error.localizedDescription
+                        authManager.lastError = error.localizedDescription
                     }
                 }
             } label: {
@@ -127,7 +134,7 @@ struct AuthFlowView: View {
                 .background(.white, in: RoundedRectangle(cornerRadius: AppRadii.control, style: .continuous))
             }
             .buttonStyle(.plain)
-            .disabled(env.authManager.isAuthenticating)
+            .disabled(authManager.isAuthenticating)
 
             // Apple — must use SignInWithAppleButton to comply with App Store Guideline 4.8
             SignInWithAppleButton(.signIn) { request in
@@ -138,14 +145,14 @@ struct AuthFlowView: View {
                 case .success(let authorization):
                     Task { await handleAppleAuth(authorization) }
                 case .failure(let error):
-                    env.authManager.lastError = appleSignInMessage(for: error)
+                    authManager.lastError = appleSignInMessage(for: error)
                 }
             }
             .signInWithAppleButtonStyle(.black)
             .frame(maxWidth: .infinity)
             .frame(height: AppHeights.primaryButton)
             .clipShape(RoundedRectangle(cornerRadius: AppRadii.control, style: .continuous))
-            .disabled(env.authManager.isAuthenticating)
+            .disabled(authManager.isAuthenticating)
         }
     }
 
@@ -321,7 +328,7 @@ struct AuthFlowView: View {
     private var submitButton: some View {
         AppPrimaryButton(
             title: isSignup ? "Create Account" : "Log In",
-            isLoading: env.authManager.isAuthenticating,
+            isLoading: authManager.isAuthenticating,
             isEnabled: canSubmitEmail
         ) {
             focusedField = nil
@@ -382,9 +389,9 @@ struct AuthFlowView: View {
     private func submitEmail() async {
         focusedField = nil
         if isSignup {
-            await env.authManager.register(email: email, password: password, name: name.isEmpty ? nil : name)
+            await authManager.register(email: email, password: password, name: name.isEmpty ? nil : name)
         } else {
-            await env.authManager.login(email: email, password: password)
+            await authManager.login(email: email, password: password)
         }
         routeIfAuthenticated()
     }
@@ -393,10 +400,10 @@ struct AuthFlowView: View {
         guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
               let tokenData = credential.identityToken,
               let token = String(data: tokenData, encoding: .utf8) else {
-            env.authManager.lastError = "Unable to read Apple identity token."
+            authManager.lastError = "Unable to read Apple identity token."
             return
         }
-        await env.authManager.loginWithApple(
+        await authManager.loginWithApple(
             identityToken: token,
             firstName: credential.fullName?.givenName,
             lastName: credential.fullName?.familyName,
@@ -406,9 +413,11 @@ struct AuthFlowView: View {
     }
 
     private func routeIfAuthenticated() {
-        if env.authManager.isAuthenticated {
+        if authManager.isAuthenticated {
             focusedField = nil
-            env.authManager.lastError = nil
+            authManager.lastError = nil
+            appRouter?.switchTab(.home)
+            appRouter?.popToRoot()
         }
     }
 

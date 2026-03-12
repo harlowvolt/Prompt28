@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 struct FavoritesView: View {
-    @Environment(AppEnvironment.self) private var env
+    @Environment(\.historyStore) private var historyStore
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = HistoryViewModel()
     @State private var showCopiedToast = false
@@ -31,6 +31,7 @@ struct FavoritesView: View {
                                         favoriteCard(item)
                                     }
                                 }
+                                .animation(.easeInOut(duration: 0.2), value: viewModel.favoriteItems.map(\.id))
                                 .padding(.top, 14)
                             }
 
@@ -42,6 +43,7 @@ struct FavoritesView: View {
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
+            .promptClearNavigationSurfaces()
             .overlay(alignment: .bottom) {
                 if showCopiedToast {
                     copiedToast
@@ -51,7 +53,9 @@ struct FavoritesView: View {
             }
         }
         .onAppear {
-            viewModel.bind(historyStore: env.historyStore)
+            if let historyStore {
+                viewModel.bind(historyStore: historyStore)
+            }
         }
     }
 

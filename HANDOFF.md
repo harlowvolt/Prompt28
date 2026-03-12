@@ -646,3 +646,41 @@ All of these were introduced by AI edits and reverted/corrected:
 - `ResultView.swift`, `TrendingViewModel.swift`: Scope errors from helper-function extraction — inlined back into view bodies
 - `HistoryView.swift`: `viewModel.items` (old property) replaced with `viewModel.filteredItems` throughout
 
+### Session — 2026-03-12 (Phase 1 stabilization pass)
+
+#### Scoped DI (staged migration started)
+
+Added `EnvironmentValues` keys in `App/AppEnvironment.swift`:
+
+- `\.historyStore` (`any HistoryStoring`)
+- `\.authManager` (`AuthManager`)
+- `\.appRouter` (`AppRouter`)
+- `\.errorState` (`ErrorState`)
+
+Injected all keys in `PromptMeNativeApp.swift` at app root so feature views can adopt keys incrementally without breaking current `AppEnvironment` usage.
+
+#### Global error architecture
+
+Added `ErrorState` (`@Observable`, `@MainActor`) in `App/AppEnvironment.swift` and global presentation in `App/RootView.swift` using `.alert(item:)`.
+
+- API failures from `HomeView` (`GenerateViewModel.errorMessage`) now report to global `ErrorState`.
+- Audio failures from `HomeView` (`OrbEngine.State.failure`) now report to global `ErrorState`.
+- Duplicate error alerts are deduped per message in `HomeView` to prevent alert spam during repeated state updates.
+
+#### History/Favorites deletion safety + animation
+
+Updated both list screens to use scoped history DI and safe list-level animation values:
+
+- `Features/History/Views/HistoryView.swift`
+    - Replaced `@Environment(AppEnvironment.self)` history access with `@Environment(\.historyStore)`
+    - Added `.animation(.easeInOut(duration: 0.2), value: viewModel.filteredItems.map(\.id))` on `LazyVStack`
+- `Features/History/Views/FavoritesView.swift`
+    - Replaced `@Environment(AppEnvironment.self)` history access with `@Environment(\.historyStore)`
+    - Added `.animation(.easeInOut(duration: 0.2), value: viewModel.favoriteItems.map(\.id))` on `LazyVStack`
+
+#### Verification
+
+- `get_errors` on touched files: no Swift diagnostics.
+- Full simulator build passed:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' build`
+
