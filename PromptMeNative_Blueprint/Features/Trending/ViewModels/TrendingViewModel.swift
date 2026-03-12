@@ -39,6 +39,10 @@ final class TrendingViewModel {
 		selectedCategory = category
 	}
 
+	func promptItem(id: String) -> PromptItem? {
+		prompts.first(where: { $0.id == id })
+	}
+
 	/// Loads content for display. On the first call:
 	///   1. Immediately populates the catalog from the bundled JSON (zero-latency).
 	///   2. Fires a background API refresh to pull the latest server-side prompts.

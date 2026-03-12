@@ -684,3 +684,105 @@ Updated both list screens to use scoped history DI and safe list-level animation
 - Full simulator build passed:
     - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' build`
 
+### Session — 2026-03-12 (Phase 2 routing + clear-surface groundwork)
+
+#### Router-owned tab state (staged UDF migration)
+
+`RootView` now reads/writes selected tab through `AppRouter` instead of local `@State` tab vars.
+
+- File: `App/RootView.swift`
+    - Removed local tab-selection ownership.
+    - `TabView(selection:)` now binds to `appRouter.selectedTab` (fallback to `env.router`).
+    - iPad `NavigationSplitView` sidebar selection now binds to router-owned tab state.
+    - On auth token reset, router now executes:
+        - `switchTab(.home)`
+        - `popToRoot()`
+
+#### AppRouter navigation primitives
+
+Extended `AppRouter` with navigation-path primitives for future `navigationDestination` rollout.
+
+- File: `App/Routing/AppRouter.swift`
+    - Added `var path = NavigationPath()`
+    - Added `switchTab(_:)`, `push(_:)`, `popToRoot()` helpers
+    - Added `AppDestination` enum (`trendingDetail(id:)`) as initial typed destination scaffold
+
+#### Global clear-background/navigation-surface modifier
+
+Added a reusable modifier to standardize transparent navigation surfaces while we still keep per-screen backgrounds (per current NavigationStack safety rule).
+
+- File: `App/AppUI.swift`
+    - `promptClearNavigationSurfaces()`
+    - Internals:
+        - `.scrollContentBackground(.hidden)`
+        - `.toolbarBackground(.hidden, for: .navigationBar)`
+        - `.background(Color.clear)`
+
+Applied this modifier to key stack roots in:
+
+- `App/RootView.swift` (`mainTabs`, `iPadSidebar`)
+- `Features/Home/Views/HomeView.swift`
+- `Features/History/Views/HistoryView.swift`
+- `Features/History/Views/FavoritesView.swift`
+- `Features/Trending/Views/TrendingView.swift`
+- `Features/Settings/Views/UpgradeView.swift`
+- `Features/Auth/Views/AuthFlowView.swift`
+
+#### Scoped DI adoption continued
+
+`AuthFlowView` now consumes scoped keys with safe fallback:
+
+- `@Environment(\.authManager)`
+- `@Environment(\.appRouter)`
+
+Auth success path now also resets router navigation context (`home` tab + root path).
+
+#### Verification
+
+- `get_errors` on touched files: no Swift diagnostics.
+- Full simulator build passed after fixes:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -configuration Debug -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 17' build`
+
+#### Phase 2 continuation — Trending moved to router path
+
+Replaced direct view-owned destination navigation in Trending with router-driven typed destinations.
+
+- File: `App/Routing/AppRouter.swift`
+    - `AppDestination` currently includes `trendingDetail(id: String)`
+
+- File: `Features/Trending/Views/TrendingView.swift`
+    - `NavigationStack` now binds to `router.path`
+    - Added `.navigationDestination(for: AppDestination.self)` with destination resolution
+    - Replaced direct `NavigationLink(destination:)` in card action row with router push:
+        - `router.push(.trendingDetail(id: item.id))`
+
+- File: `Features/Trending/ViewModels/TrendingViewModel.swift`
+    - Added `promptItem(id:)` helper to resolve typed destination IDs back to `PromptItem`
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed again (`iPhone 17` destination)
+
+#### Phase 2 continuation — Settings + Root silent DI migration
+
+Further reduced direct `AppEnvironment` coupling by moving Settings and Root routing/state access to scoped keys with safe fallback.
+
+- File: `Features/Settings/Views/SettingsView.swift`
+    - Added scoped env usage:
+        - `@Environment(\.authManager)`
+        - `@Environment(\.historyStore)`
+        - `@Environment(\.appRouter)`
+    - Added local fallback helpers (`authManager`, `historyStore`, `router`) so behavior is unchanged if scoped key injection is absent.
+    - Updated:
+        - `viewModel.bind(...)` to use scoped auth/history
+        - account/subscription UI reads to scoped auth
+        - logout/delete-account route transitions to scoped router
+
+- File: `App/RootView.swift`
+    - Added `router` helper (`appRouter ?? env.router`) and replaced remaining direct `env.router` reads/writes.
+    - Sidebar and tab bindings now read/write via unified router helper.
+
+Verification:
+- `get_errors` on edited files: clean
+- Full simulator build passed (`iPhone 17` destination)
+

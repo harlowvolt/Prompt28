@@ -2,13 +2,21 @@ import SwiftUI
 
 struct TrendingView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.appRouter) private var appRouter
     @State private var viewModel = TrendingViewModel()
     @State private var searchQuery = ""
     @State private var showCopiedToast = false
     @State private var expandedItemIDs: Set<String> = []
 
+    private var router: AppRouter {
+        appRouter ?? env.router
+    }
+
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: Binding(
+            get: { router.path },
+            set: { router.path = $0 }
+        )) {
             GeometryReader { proxy in
                 ZStack(alignment: .top) {
                     PromptPremiumBackground()
@@ -34,6 +42,16 @@ struct TrendingView: View {
                             Color.clear.frame(height: AppHeights.tabBarClearance)
                         }
                         .padding(.horizontal, 24)
+                    }
+                }
+            }
+            .navigationDestination(for: AppDestination.self) { destination in
+                switch destination {
+                case .trendingDetail(let id):
+                    if let item = viewModel.promptItem(id: id) {
+                        PromptDetailView(item: item)
+                    } else {
+                        ContentUnavailableView("Prompt not available", systemImage: "exclamationmark.triangle")
                     }
                 }
             }
@@ -189,7 +207,9 @@ struct TrendingView: View {
 
             // Action row
             HStack(spacing: 10) {
-                NavigationLink(destination: PromptDetailView(item: item)) {
+                Button {
+                    router.push(.trendingDetail(id: item.id))
+                } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "star")
                             .font(.system(size: 17, weight: .medium))

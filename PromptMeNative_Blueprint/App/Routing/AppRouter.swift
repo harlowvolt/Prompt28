@@ -16,7 +16,15 @@ enum MainTab: Hashable {
 }
 
 enum AppDestination: Hashable {
-    case trendingDetail(PromptItem)
+    case trendingDetail(id: String)
+}
+
+enum HomeSheet: String, Identifiable, Hashable {
+    case typePrompt
+    case settings
+    case upgrade
+
+    var id: String { rawValue }
 }
 
 @Observable
@@ -25,6 +33,7 @@ final class AppRouter {
     var rootRoute: RootRoute = .launching
     var selectedTab: MainTab = .home
     var path = NavigationPath()
+    var homeSheet: HomeSheet?
 
     func switchTab(_ tab: MainTab) {
         selectedTab = tab
@@ -36,5 +45,13 @@ final class AppRouter {
 
     func popToRoot() {
         path = NavigationPath()
+    }
+
+    func presentHomeSheet(_ sheet: HomeSheet) {
+        homeSheet = sheet
+    }
+
+    func dismissHomeSheet() {
+        homeSheet = nil
     }
 }

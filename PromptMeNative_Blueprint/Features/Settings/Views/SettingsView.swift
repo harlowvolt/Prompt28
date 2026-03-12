@@ -2,11 +2,26 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.authManager) private var scopedAuthManager
+    @Environment(\.historyStore) private var scopedHistoryStore
+    @Environment(\.appRouter) private var scopedRouter
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = SettingsViewModel()
     @State private var showUpgrade = false
     @State private var showDeleteConfirm = false
     var onDone: (() -> Void)? = nil
+
+    private var authManager: AuthManager {
+        scopedAuthManager ?? env.authManager
+    }
+
+    private var historyStore: any HistoryStoring {
+        scopedHistoryStore ?? env.historyStore
+    }
+
+    private var router: AppRouter {
+        scopedRouter ?? env.router
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -65,9 +80,9 @@ struct SettingsView: View {
         .task {
             viewModel.bind(
                 apiClient: env.apiClient,
-                authManager: env.authManager,
+                authManager: authManager,
                 preferencesStore: env.preferencesStore,
-                historyStore: env.historyStore
+                historyStore: historyStore
             )
             viewModel.syncFromStores()
             await viewModel.loadRemoteSettings()
@@ -80,7 +95,7 @@ struct SettingsView: View {
                 Task {
                     let deleted = await viewModel.deleteAccount()
                     if deleted {
-                        env.router.rootRoute = .auth
+                        router.rootRoute = .auth
                     }
                 }
             }
@@ -134,12 +149,12 @@ struct SettingsView: View {
                 }
 
                 VStack(alignment: .leading, spacing: 3) {
-                    if let name = env.authManager.currentUser?.name, !name.isEmpty {
+                    if let name = authManager.currentUser?.name, !name.isEmpty {
                         Text(name)
                             .font(PromptTheme.Typography.rounded(18, .semibold))
                             .foregroundStyle(PromptTheme.paleLilacWhite)
                     }
-                    Text(env.authManager.currentUser?.email ?? "—")
+                    Text(authManager.currentUser?.email ?? "—")
                         .font(PromptTheme.Typography.rounded(14, .regular))
                         .foregroundStyle(PromptTheme.softLilac.opacity(0.70))
                 }
@@ -175,11 +190,11 @@ struct SettingsView: View {
             sectionHeader("Subscription")
             VStack(spacing: 14) {
                 HStack {
-                    Text(env.authManager.currentUser?.plan.rawValue.capitalized ?? "Starter")
+                    Text(authManager.currentUser?.plan.rawValue.capitalized ?? "Starter")
                         .font(PromptTheme.Typography.rounded(16, .semibold))
                         .foregroundStyle(PromptTheme.paleLilacWhite)
                     Spacer()
-                    Text((env.authManager.currentUser?.plan.rawValue ?? "starter").uppercased())
+                    Text((authManager.currentUser?.plan.rawValue ?? "starter").uppercased())
                         .font(.system(size: 10, weight: .bold, design: .rounded))
                         .foregroundStyle(PromptTheme.softLilac)
                         .padding(.horizontal, 12)
@@ -191,7 +206,7 @@ struct SettingsView: View {
                         )
                 }
 
-                if let user = env.authManager.currentUser, let remaining = user.prompts_remaining {
+                if let user = authManager.currentUser, let remaining = user.prompts_remaining {
                     let total = Double(user.prompts_used + remaining)
                     let fraction = total > 0 ? Double(user.prompts_used) / total : 0.0
 
@@ -251,7 +266,7 @@ struct SettingsView: View {
                 }
                 .buttonStyle(.plain)
 
-                if env.authManager.currentUser?.plan == .dev {
+                if authManager.currentUser?.plan == .dev {
                     Button("Reset Usage") {
                         Task { await viewModel.resetUsage() }
                     }
@@ -318,8 +333,8 @@ struct SettingsView: View {
 
     private var logoutButton: some View {
         Button {
-            env.authManager.logout()
-            env.router.rootRoute = .auth
+            authManager.logout()
+            router.rootRoute = .auth
         } label: {
             Text("Log Out")
                 .font(PromptTheme.Typography.rounded(16, .semibold))
@@ -428,7 +443,7 @@ struct SettingsView: View {
     // MARK: - Helpers
 
     private var avatarInitials: String {
-        let name = env.authManager.currentUser?.name ?? ""
+        let name = authManager.currentUser?.name ?? ""
         let parts = name.split(separator: " ")
         if parts.count >= 2 {
             return "\(parts[0].prefix(1))\(parts[1].prefix(1))".uppercased()

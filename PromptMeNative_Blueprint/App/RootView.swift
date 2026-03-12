@@ -9,6 +9,11 @@ struct RootView: View {
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var didBootstrap = false
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+
+    private var router: AppRouter {
+        appRouter ?? env.router
+    }
+
     init() {
         let appearance = UITabBarAppearance()
         appearance.configureWithTransparentBackground()
@@ -82,8 +87,8 @@ struct RootView: View {
         }
         .onChange(of: env.authManager.token) { _, token in
             if token == nil {
-                env.router.switchTab(.home)
-                env.router.popToRoot()
+                router.switchTab(.home)
+                router.popToRoot()
             }
         }
         .alert(item: Binding(
@@ -106,14 +111,10 @@ struct RootView: View {
         NavigationSplitView {
             // List requires Binding<SelectionValue?> — use sidebarSelection and sync below
             List(selection: Binding(
-                get: { (appRouter?.selectedTab ?? env.router.selectedTab) as MainTab? },
+                get: { router.selectedTab as MainTab? },
                 set: { tab in
                     guard let tab else { return }
-                    if let appRouter {
-                        appRouter.switchTab(tab)
-                    } else {
-                        env.router.switchTab(tab)
-                    }
+                    router.switchTab(tab)
                 }
             )) {
                 Label("Home", systemImage: "house.fill")
@@ -128,7 +129,7 @@ struct RootView: View {
             .navigationTitle("PROMPT28")
             .listStyle(.sidebar)
         } detail: {
-            switch appRouter?.selectedTab ?? env.router.selectedTab {
+            switch router.selectedTab {
             case .home:
                 HomeView(appEnvironment: env)
             case .favorites:
@@ -149,13 +150,9 @@ struct RootView: View {
 
     private var mainTabs: some View {
         TabView(selection: Binding(
-            get: { appRouter?.selectedTab ?? env.router.selectedTab },
+            get: { router.selectedTab },
             set: { tab in
-                if let appRouter {
-                    appRouter.switchTab(tab)
-                } else {
-                    env.router.switchTab(tab)
-                }
+                router.switchTab(tab)
             }
         )) {
             HomeView(appEnvironment: env)
