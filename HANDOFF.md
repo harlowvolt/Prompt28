@@ -1319,6 +1319,26 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Pure listening-duration helper + tests
+
+Extracted the minimum-listening-duration stop gate into a pure helper to reduce actor-coupled decision logic and keep behavior testable.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `canStopListeningNow` now delegates to:
+        - `nonisolated static func hasMetMinimumListeningDuration(listeningStartedAt:now:minimumListeningDuration:) -> Bool`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Listening Duration` with coverage for:
+        - missing start timestamp returns false
+        - elapsed below threshold returns false
+        - elapsed at threshold returns true
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 3 prep continuation — Pure transcript-meaning helper + tests
 
 Extracted transcript meaningfulness logic into a pure helper so actor-state migration can proceed with testable behavior boundaries.
