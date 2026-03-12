@@ -1880,6 +1880,25 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure discarded-transcript-state helper + tests
+
+Extracted discarded-transcript state outcome mapping into a pure helper so this branch is directly testable.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `finalizeTranscript()` discarded-candidate branch now delegates to:
+        - `nonisolated static func stateAfterDiscardingTranscriptCandidate(currentState:isRecording:) -> State`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Discarded Transcript State Mapping` with coverage for:
+        - maps to `.idle` when not recording
+        - preserves current state when still recording
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.

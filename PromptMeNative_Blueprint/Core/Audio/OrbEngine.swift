@@ -139,9 +139,10 @@ final class OrbEngine {
     func finalizeTranscript() {
         let trimmed = Self.preferredTranscriptCandidate(finalTranscript: finalTranscript, transcript: transcript)
         guard isMeaningfulTranscript(trimmed) else {
-            if Self.shouldResetToIdleAfterDiscardedTranscript(isRecording: isRecording) {
-                state = .idle
-            }
+            state = Self.stateAfterDiscardingTranscriptCandidate(
+                currentState: state,
+                isRecording: isRecording
+            )
             return
         }
         guard Self.shouldDeliverTranscriptCandidate(
@@ -397,6 +398,14 @@ final class OrbEngine {
     /// Pure helper for deciding whether a discarded transcript should reset state to idle.
     nonisolated static func shouldResetToIdleAfterDiscardedTranscript(isRecording: Bool) -> Bool {
         !isRecording
+    }
+
+    /// Pure mapping for state outcome when a transcript candidate is discarded.
+    nonisolated static func stateAfterDiscardingTranscriptCandidate(
+        currentState: State,
+        isRecording: Bool
+    ) -> State {
+        shouldResetToIdleAfterDiscardedTranscript(isRecording: isRecording) ? .idle : currentState
     }
 
     /// Pure helper for fallback transcript acceptance during finalize polling.
