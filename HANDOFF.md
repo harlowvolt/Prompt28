@@ -959,6 +959,29 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline non-empty normalized transcript selection
+
+Removed a single-use normalized-transcript wrapper and applied its selection logic directly in both final-transcript polling loops.
+
+- File: `Core/Audio/OrbEngine.swift`
+        - In `stopListeningAndFinalize()`, replaced:
+                - `nonEmptyNormalizedTranscript(finalTranscript)`
+            with inline normalization + non-empty check
+        - In `awaitFinalTranscriptAndFinalize()`, replaced:
+                - `nonEmptyNormalizedTranscript(speech.finalTranscript)`
+            with inline normalization + non-empty check
+        - Removed helper:
+                - `nonEmptyNormalizedTranscript(_:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+        - Removed obsolete suite `Orb Non-Empty Normalized Transcript`
+
+Verification:
+- Build succeeded:
+        - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+        - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 326)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline transcript candidate selection in finalize flow
 
 Removed a single-use transcript-candidate helper and kept candidate selection directly in `finalizeTranscript()`.

@@ -125,7 +125,8 @@ final class OrbEngine {
     func stopListeningAndFinalize() async -> String? {
         guard stopListening() else { return nil }
         for _ in Self.finalTranscriptPollingAttemptRange() {
-            if let best = Self.nonEmptyNormalizedTranscript(finalTranscript) {
+            let best = Self.normalizedTranscript(finalTranscript)
+            if Self.hasNormalizedTranscriptContent(best) {
                 return best
             }
             try? await Task.sleep(nanoseconds: Self.finalTranscriptPollingSleepNanoseconds())
@@ -167,7 +168,8 @@ final class OrbEngine {
 
     private func awaitFinalTranscriptAndFinalize() async {
         for _ in Self.finalTranscriptPollingAttemptRange() {
-            if let best = Self.nonEmptyNormalizedTranscript(speech.finalTranscript) {
+            let best = Self.normalizedTranscript(speech.finalTranscript)
+            if Self.hasNormalizedTranscriptContent(best) {
                 let assignment = Self.transcriptAssignment(for: best)
                 finalTranscript = assignment.finalTranscript
                 transcript = assignment.transcript
@@ -277,12 +279,6 @@ final class OrbEngine {
         case .granted, .notDetermined:
             return nil
         }
-    }
-
-    /// Pure helper returning a normalized transcript only when it has content.
-    nonisolated static func nonEmptyNormalizedTranscript(_ text: String) -> String? {
-        let trimmed = normalizedTranscript(text)
-        return hasNormalizedTranscriptContent(trimmed) ? trimmed : nil
     }
 
     /// Pure helper for final transcript polling iteration bounds.
