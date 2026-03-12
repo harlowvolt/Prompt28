@@ -258,47 +258,67 @@ final class OrbEngine {
         state == .transcribing || state == .listening
     }
 
+    private func handleRecordingChange(_ value: Bool) {
+        isRecording = value
+        if value { setState(.listening) }
+    }
+
+    private func handleTranscriptChange(_ value: String) {
+        transcript = value
+    }
+
+    private func handleFinalTranscriptChange(_ value: String) {
+        finalTranscript = value
+        let trimmed = trimmedTranscriptText(value)
+        if !trimmed.isEmpty && shouldFinalizeOnTranscriptUpdate {
+            finalizeTranscript()
+        }
+    }
+
+    private func handlePermissionStatusChange(_ status: SpeechRecognizerService.PermissionStatus) {
+        permissionStatus = status
+        if let message = permissionFailureMessage(for: status) {
+            setFailureState(message)
+        }
+    }
+
+    private func handleAudioLevelChange(_ value: CGFloat) {
+        audioLevel = value
+    }
+
     private func bindSpeechState() {
         speech.isRecordingPublisher
             .sink { [weak self] value in
                 guard let self else { return }
-                self.isRecording = value
-                if value { self.setState(.listening) }
+                self.handleRecordingChange(value)
             }
             .store(in: &cancellables)
 
         speech.transcriptPublisher
             .sink { [weak self] value in
                 guard let self else { return }
-                self.transcript = value
+                self.handleTranscriptChange(value)
             }
             .store(in: &cancellables)
 
         speech.finalTranscriptPublisher
             .sink { [weak self] value in
                 guard let self else { return }
-                self.finalTranscript = value
-                let trimmed = self.trimmedTranscriptText(value)
-                if !trimmed.isEmpty && self.shouldFinalizeOnTranscriptUpdate {
-                    self.finalizeTranscript()
-                }
+                self.handleFinalTranscriptChange(value)
             }
             .store(in: &cancellables)
 
         speech.permissionStatusPublisher
             .sink { [weak self] status in
                 guard let self else { return }
-                self.permissionStatus = status
-                if let message = self.permissionFailureMessage(for: status) {
-                    self.setFailureState(message)
-                }
+                self.handlePermissionStatusChange(status)
             }
             .store(in: &cancellables)
 
         speech.audioLevelPublisher
             .receive(on: RunLoop.main)
             .sink { [weak self] value in
-                self?.audioLevel = value
+                self?.handleAudioLevelChange(value)
             }
             .store(in: &cancellables)
     }

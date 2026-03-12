@@ -3212,3 +3212,19 @@ Applied a cohesive readability cleanup around transcript finalization while pres
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation (bundled) — Extracted publisher sink handlers in OrbEngine
+
+Refactored `bindSpeechState()` by moving inline sink logic into dedicated private handlers, reducing closure complexity while preserving behavior.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added handler methods:
+        - `handleRecordingChange(_:)`
+        - `handleTranscriptChange(_:)`
+        - `handleFinalTranscriptChange(_:)`
+        - `handlePermissionStatusChange(_:)`
+        - `handleAudioLevelChange(_:)`
+    - Updated all corresponding publisher sinks in `bindSpeechState()` to call the handlers
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
