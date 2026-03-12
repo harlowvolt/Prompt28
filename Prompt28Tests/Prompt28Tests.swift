@@ -398,7 +398,7 @@ struct OrbFallbackRejectionStateMappingTests {
 
     @Test("Rejected fallback maps to idle state")
     func mapsToIdleState() {
-        #expect(OrbEngine.stateAfterRejectingFallbackCandidate(currentState: .transcribing) == .idle)
+        #expect(OrbEngine.stateAfterRejectingFallbackCandidate() == .idle)
     }
 }
 

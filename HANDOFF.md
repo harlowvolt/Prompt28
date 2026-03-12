@@ -959,6 +959,25 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Pure fallback-rejection-state helper signature cleanup + tests
+
+Removed the unused `currentState` parameter from fallback-rejection state mapping so the helper reflects its true behavior and remains simpler to call and test.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - rejected fallback path in `awaitFinalTranscriptAndFinalize()` now calls:
+        - `nonisolated static func stateAfterRejectingFallbackCandidate() -> State`
+    - Removed unused parameter from helper signature
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Updated suite `Orb Fallback Rejection State Mapping` to validate:
+        - rejected fallback maps to `.idle` via the no-argument helper
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 326)
+- No test command was run.
+
 #### Phase 3 prep continuation — Pure fallback-transcript-trimming helper + tests
 
 Extracted fallback transcript trimming into a pure helper so fallback normalization behavior is centralized and directly testable.
