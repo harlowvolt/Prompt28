@@ -128,12 +128,12 @@ final class OrbEngine {
 
     @discardableResult
     func stopListening() -> Bool {
-                let listeningDuration = listeningStartedAt.map { Date().timeIntervalSince($0) }
+        let listeningDuration = listeningStartedAt.map { Date().timeIntervalSince($0) }
         guard isRecording,
               let listeningDuration,
               listeningDuration >= minimumListeningDuration else { return false }
 
-                setState(.transcribing)
+        setState(.transcribing)
         speech.stopRecording()
 
         Task { [weak self] in
@@ -148,19 +148,14 @@ final class OrbEngine {
     }
 
     func finalizeTranscript() {
-        let trimmedFinal = trimmedTranscriptText(finalTranscript)
-        let trimmed = trimmedFinal.isEmpty
-            ? trimmedTranscriptText(transcript)
-            : trimmedFinal
+        let trimmed = preferredFinalizedTranscriptText()
         guard isMeaningfulTranscript(trimmed) else {
             if !isRecording { setState(.idle) }
             return
         }
         guard trimmed != lastDeliveredTranscript else { return }
 
-        lastDeliveredTranscript = trimmed
-        setState(.ready(text: trimmed))
-        onFinalTranscript?(trimmed)
+        deliverFinalizedTranscript(trimmed)
     }
 
     func markGenerating() {
@@ -209,6 +204,17 @@ final class OrbEngine {
 
     private func updateCurrentTranscripts(with text: String) {
         (finalTranscript, transcript) = (text, text)
+    }
+
+    private func preferredFinalizedTranscriptText() -> String {
+        let trimmedFinal = trimmedTranscriptText(finalTranscript)
+        return trimmedFinal.isEmpty ? trimmedTranscriptText(transcript) : trimmedFinal
+    }
+
+    private func deliverFinalizedTranscript(_ text: String) {
+        lastDeliveredTranscript = text
+        setState(.ready(text: text))
+        onFinalTranscript?(text)
     }
 
     private func trimmedTranscriptText(_ text: String) -> String {

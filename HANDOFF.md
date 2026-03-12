@@ -3199,3 +3199,16 @@ Consolidated duplicated polling loops into one async helper to keep final-transc
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation (bundled) — Simplified finalize transcript flow in OrbEngine
+
+Applied a cohesive readability cleanup around transcript finalization while preserving existing behavior.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Fixed indentation drift in `stopListening()` local duration/state lines
+    - Added `preferredFinalizedTranscriptText()` to centralize final-vs-live transcript candidate selection
+    - Added `deliverFinalizedTranscript(_:)` to centralize ready-state delivery (`lastDeliveredTranscript`, state update, callback)
+    - Updated `finalizeTranscript()` to use both helpers
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
