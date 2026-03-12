@@ -3143,3 +3143,14 @@ Moved the repeated final transcript state check behind a small helper to keep th
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation — Extracted current transcript assignment helper in OrbEngine
+
+Replaced repeated `(finalTranscript, transcript)` tuple writes with a helper to keep finalization paths aligned.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `updateCurrentTranscripts(with:)`
+    - Updated both finalized and fallback transcript promotion paths to call the helper
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)

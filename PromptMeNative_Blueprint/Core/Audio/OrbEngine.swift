@@ -190,7 +190,7 @@ final class OrbEngine {
         for _ in 0..<finalTranscriptPollingAttempts {
             let best = trimmedTranscriptText(speech.finalTranscript)
             if !best.isEmpty {
-                (finalTranscript, transcript) = (best, best)
+                updateCurrentTranscripts(with: best)
                 finalizeTranscript()
                 return
             }
@@ -203,8 +203,12 @@ final class OrbEngine {
             return
         }
 
-        (finalTranscript, transcript) = (fallbackCandidate, fallbackCandidate)
+        updateCurrentTranscripts(with: fallbackCandidate)
         finalizeTranscript()
+    }
+
+    private func updateCurrentTranscripts(with text: String) {
+        (finalTranscript, transcript) = (text, text)
     }
 
     private func trimmedTranscriptText(_ text: String) -> String {
