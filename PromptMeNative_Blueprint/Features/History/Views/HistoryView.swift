@@ -37,10 +37,10 @@ struct HistoryView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 0) {
                             headerRow
-                                .padding(.top, proxy.safeAreaInsets.top + 2)
+                                .padding(.top, proxy.safeAreaInsets.top)
 
                             searchField
-                                .padding(.top, 14)
+                                .padding(.top, 10)
 
                             if viewModel.filteredItems.isEmpty {
                                 emptyState
@@ -205,7 +205,7 @@ struct HistoryView: View {
             }
             .buttonStyle(.plain)
 
-            Text("History • LIVE")
+            Text("History")
                 .font(.system(size: 28, weight: .bold, design: .rounded))
                 .foregroundStyle(PromptTheme.paleLilacWhite)
 

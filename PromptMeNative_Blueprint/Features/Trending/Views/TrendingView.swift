@@ -16,10 +16,10 @@ struct TrendingView: View {
 
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 0) {
-                            Text("Trending • LIVE")
+                            Text("Trending")
                                 .font(.system(size: 34, weight: .bold, design: .rounded))
                                 .foregroundStyle(PromptTheme.paleLilacWhite)
-                                .padding(.top, proxy.safeAreaInsets.top + 2)
+                                .padding(.top, proxy.safeAreaInsets.top)
 
                             Text("Copy-paste prompts people actually use")
                                 .font(.system(size: 16, weight: .regular, design: .rounded))
@@ -27,7 +27,7 @@ struct TrendingView: View {
                                 .padding(.top, 6)
 
                             searchBar
-                                .padding(.top, 14)
+                                .padding(.top, 10)
 
                             content
 

@@ -17,10 +17,10 @@ struct FavoritesView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 0) {
                             headerRow
-                                .padding(.top, proxy.safeAreaInsets.top + 2)
+                                .padding(.top, proxy.safeAreaInsets.top)
 
                             controlsRow
-                                .padding(.top, 14)
+                                .padding(.top, 10)
 
                             if viewModel.favoriteItems.isEmpty {
                                 emptyState
@@ -74,7 +74,7 @@ struct FavoritesView: View {
             }
             .buttonStyle(.plain)
 
-            Text("Favorites • LIVE")
+            Text("Favorites")
                 .font(.system(size: 28, weight: .bold, design: .rounded))
                 .foregroundStyle(PromptTheme.paleLilacWhite)
 
