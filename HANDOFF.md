@@ -959,6 +959,28 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline transcript candidate selection in finalize flow
+
+Removed a single-use transcript-candidate helper and kept candidate selection directly in `finalizeTranscript()`.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `finalizeTranscript()`, replaced helper call:
+        - `preferredTranscriptCandidate(finalTranscript:transcript:)`
+      with direct selection logic:
+        - use trimmed `finalTranscript` when non-empty
+        - otherwise fall back to trimmed `transcript`
+    - Removed helper:
+        - `preferredTranscriptCandidate(finalTranscript:transcript:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Transcript Candidate`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 323)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline final-transcript eligible-state gating
 
 Removed a single-use eligible-state helper and kept the eligibility check directly in `shouldFinalizeOnFinalTranscriptUpdate(...)`.

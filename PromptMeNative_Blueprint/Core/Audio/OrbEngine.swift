@@ -134,7 +134,10 @@ final class OrbEngine {
     }
 
     func finalizeTranscript() {
-        let trimmed = Self.preferredTranscriptCandidate(finalTranscript: finalTranscript, transcript: transcript)
+        let trimmedFinal = finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = trimmedFinal.isEmpty
+            ? transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+            : trimmedFinal
         guard isMeaningfulTranscript(trimmed) else {
             state = isRecording ? state : .idle
             return
@@ -274,19 +277,6 @@ final class OrbEngine {
         case .granted, .notDetermined:
             return nil
         }
-    }
-
-    /// Pure helper for transcript selection so behavior can be unit-tested
-    /// independently of actor state and side effects.
-    nonisolated static func preferredTranscriptCandidate(
-        finalTranscript: String,
-        transcript: String
-    ) -> String {
-        let trimmedFinal = finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !trimmedFinal.isEmpty {
-            return trimmedFinal
-        }
-        return transcript.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Pure helper returning a normalized transcript only when it has content.
