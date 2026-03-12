@@ -212,7 +212,6 @@ final class OrbEngine {
     private func isMeaningfulTranscript(_ text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard trimmed.count >= minimumTranscriptCharacterCount else { return false }
-        guard hasDetectedSpeechContent || !trimmed.isEmpty else { return false }
         return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
     }
 
