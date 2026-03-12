@@ -17,7 +17,7 @@ struct FavoritesView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 0) {
                             headerRow
-                                .padding(.top, proxy.safeAreaInsets.top)
+                                .padding(.top, 8)
 
                             controlsRow
                                 .padding(.top, 10)

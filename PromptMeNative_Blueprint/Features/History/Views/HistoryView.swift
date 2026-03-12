@@ -37,7 +37,7 @@ struct HistoryView: View {
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 0) {
                             headerRow
-                                .padding(.top, proxy.safeAreaInsets.top)
+                                .padding(.top, 8)
 
                             searchField
                                 .padding(.top, 10)
