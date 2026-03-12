@@ -959,6 +959,27 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline fallback-rejection idle transition
+
+Removed a fixed-result fallback-rejection state helper and assigned `.idle` directly at the reject branch to reduce indirection while preserving behavior.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `awaitFinalTranscriptAndFinalize()` reject branch, replaced:
+        - `state = Self.stateAfterRejectingFallbackCandidate()`
+      with:
+        - `state = .idle`
+    - Removed helper:
+        - `stateAfterRejectingFallbackCandidate()`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Fallback Rejection State Mapping`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 325)
+- No test command was run.
+
 #### Phase 3 prep continuation — Remove transcript-delivery state mapping indirection
 
 Removed a one-line state-mapping helper and assigned the ready state directly in `finalizeTranscript()` to reduce indirection while preserving behavior.

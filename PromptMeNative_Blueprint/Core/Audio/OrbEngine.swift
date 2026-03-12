@@ -188,7 +188,7 @@ final class OrbEngine {
             hasDetectedSpeechContent: hasDetectedSpeechContent,
             minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
         ) else {
-            state = Self.stateAfterRejectingFallbackCandidate()
+            state = .idle
             return
         }
 
@@ -379,11 +379,6 @@ final class OrbEngine {
         lastDeliveredTranscript: String
     ) -> Bool {
         trimmedTranscript != lastDeliveredTranscript
-    }
-
-    /// Pure mapping for state transition when fallback transcript candidate is rejected.
-    nonisolated static func stateAfterRejectingFallbackCandidate() -> State {
-        .idle
     }
 
     /// Pure helper for assigning finalized transcript values to engine fields.
