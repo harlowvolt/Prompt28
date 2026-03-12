@@ -396,3 +396,44 @@ struct OrbPermissionSettingsActionMappingTests {
         #expect(!OrbEngine.needsPermissionSettingsAction(for: .error("x")))
     }
 }
+
+@Suite("Orb Final Transcript Finalize Gate")
+struct OrbFinalTranscriptFinalizeGateTests {
+
+    @Test("Allows finalize only for listening/transcribing with non-empty transcript")
+    func allowsOnlyEligibleStates() {
+        #expect(OrbEngine.shouldFinalizeOnFinalTranscriptUpdate(
+            trimmedFinalTranscript: "text",
+            state: .listening
+        ))
+        #expect(OrbEngine.shouldFinalizeOnFinalTranscriptUpdate(
+            trimmedFinalTranscript: "text",
+            state: .transcribing
+        ))
+
+        #expect(!OrbEngine.shouldFinalizeOnFinalTranscriptUpdate(
+            trimmedFinalTranscript: "text",
+            state: .idle
+        ))
+        #expect(!OrbEngine.shouldFinalizeOnFinalTranscriptUpdate(
+            trimmedFinalTranscript: "text",
+            state: .generating
+        ))
+        #expect(!OrbEngine.shouldFinalizeOnFinalTranscriptUpdate(
+            trimmedFinalTranscript: "text",
+            state: .success
+        ))
+    }
+
+    @Test("Rejects empty transcript for all states")
+    func rejectsEmptyTranscript() {
+        #expect(!OrbEngine.shouldFinalizeOnFinalTranscriptUpdate(
+            trimmedFinalTranscript: "",
+            state: .listening
+        ))
+        #expect(!OrbEngine.shouldFinalizeOnFinalTranscriptUpdate(
+            trimmedFinalTranscript: "",
+            state: .transcribing
+        ))
+    }
+}
