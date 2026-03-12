@@ -959,6 +959,25 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline failing-permission classification in failure mapping
+
+Removed a single-use failing-permission classification helper and kept classification directly in `failureMessage(for:)`.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Removed helper:
+        - `isFailingPermissionStatus(_:)`
+    - Updated:
+        - `failureMessage(for:)` now directly returns messages for failing statuses and `nil` for non-failing statuses
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Permission Failure Classification`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 324)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline permission-status failure transition
 
 Removed a single-use permission-status state-mapping helper and handled failure-state transition directly in the permission-status publisher sink.
