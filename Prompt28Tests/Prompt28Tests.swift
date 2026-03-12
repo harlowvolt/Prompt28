@@ -618,26 +618,6 @@ struct OrbPermissionStatusStateTransitionTests {
     }
 }
 
-@Suite("Orb Recording State Transition")
-struct OrbRecordingStateTransitionTests {
-
-    @Test("Transitions to listening when recording becomes true")
-    func transitionsToListening() {
-        #expect(OrbEngine.stateAfterRecordingUpdate(
-            currentState: .idle,
-            isRecording: true
-        ) == .listening)
-    }
-
-    @Test("Preserves current state when recording is false")
-    func preservesStateWhenNotRecording() {
-        #expect(OrbEngine.stateAfterRecordingUpdate(
-            currentState: .generating,
-            isRecording: false
-        ) == .generating)
-    }
-}
-
 @Suite("Orb Permission Settings Action Mapping")
 struct OrbPermissionSettingsActionMappingTests {
 

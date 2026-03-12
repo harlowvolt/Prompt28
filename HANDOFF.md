@@ -959,6 +959,27 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline recording-state transition mapping
+
+Removed a single-use recording-state transition helper and assigned the mapped state directly in the recording publisher sink.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `speech.isRecordingPublisher` sink, replaced:
+        - `stateAfterRecordingUpdate(currentState:isRecording:)`
+      with direct assignment:
+        - `self.state = value ? .listening : self.state`
+    - Removed helper:
+        - `stateAfterRecordingUpdate(currentState:isRecording:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Recording State Transition`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 325)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline stop-listening eligibility guard
 
 Removed a single-use stop-listening eligibility helper and performed the eligibility check directly in `stopListening()`.
