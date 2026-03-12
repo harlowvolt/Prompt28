@@ -179,8 +179,9 @@ final class OrbEngine {
             try? await Task.sleep(nanoseconds: Self.finalTranscriptPollingSleepNanoseconds())
         }
 
-        guard let fallback = Self.fallbackTranscriptCandidateAfterPolling(
-            transcript: speech.transcript,
+        let fallbackCandidate = Self.normalizedTranscript(speech.transcript)
+        guard Self.isMeaningfulTranscriptCandidate(
+            text: fallbackCandidate,
             hasDetectedSpeechContent: hasDetectedSpeechContent,
             minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
         ) else {
@@ -188,7 +189,7 @@ final class OrbEngine {
             return
         }
 
-        let fallbackAssignment = Self.transcriptAssignment(for: fallback)
+        let fallbackAssignment = Self.transcriptAssignment(for: fallbackCandidate)
         finalTranscript = fallbackAssignment.finalTranscript
         transcript = fallbackAssignment.transcript
         finalizeTranscript()
@@ -306,23 +307,6 @@ final class OrbEngine {
         for text: String
     ) -> (finalTranscript: String, transcript: String) {
         (finalTranscript: text, transcript: text)
-    }
-
-    /// Pure helper for selecting fallback transcript after final-transcript polling.
-    nonisolated static func fallbackTranscriptCandidateAfterPolling(
-        transcript: String,
-        hasDetectedSpeechContent: Bool,
-        minimumTranscriptCharacterCount: Int = 3
-    ) -> String? {
-        let trimmed = normalizedTranscript(transcript)
-        guard isMeaningfulTranscriptCandidate(
-            text: trimmed,
-            hasDetectedSpeechContent: hasDetectedSpeechContent,
-            minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
-        ) else {
-            return nil
-        }
-        return trimmed
     }
 
     /// Pure helper for transcript meaningfulness checks.

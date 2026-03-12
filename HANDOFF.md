@@ -959,6 +959,29 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline fallback candidate selection in finalize polling
+
+Removed a single-use fallback candidate helper and applied selection logic directly in `awaitFinalTranscriptAndFinalize()`.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In fallback path, replaced helper call:
+        - `fallbackTranscriptCandidateAfterPolling(...)`
+      with inline logic:
+        - normalize `speech.transcript`
+        - gate via `isMeaningfulTranscriptCandidate(...)`
+        - use normalized candidate for transcript assignment
+    - Removed helper:
+        - `fallbackTranscriptCandidateAfterPolling(transcript:hasDetectedSpeechContent:minimumTranscriptCharacterCount:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Fallback Transcript Candidate Selection`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 319)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline final-transcript finalize gate in publisher sink
 
 Removed a single-use finalize-gating helper and applied its gate directly in the final-transcript publisher sink.
