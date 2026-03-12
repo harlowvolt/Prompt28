@@ -959,6 +959,43 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline polling attempt range helper
+
+Removed a small helper for polling range and used the stable range directly in both final-transcript polling loops.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `stopListeningAndFinalize()`, replaced:
+        - `finalTranscriptPollingAttemptRange()` with `0..<30`
+    - In `awaitFinalTranscriptAndFinalize()`, replaced:
+        - `finalTranscriptPollingAttemptRange()` with `0..<30`
+    - Removed helper:
+        - `finalTranscriptPollingAttemptRange()`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Final Transcript Polling Range`
+
+#### Phase 3 prep continuation — Inline normalized transcript-content checks
+
+Removed a single-use normalized-content helper and performed non-empty checks directly at each call site.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Replaced `hasNormalizedTranscriptContent(...)` with `!trimmed.isEmpty`/`!best.isEmpty` in:
+        - `stopListeningAndFinalize()`
+        - `awaitFinalTranscriptAndFinalize()`
+        - transcript publisher sink
+        - final transcript publisher sink
+    - Removed helper:
+        - `hasNormalizedTranscriptContent(_:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Normalized Transcript Content`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 318)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline polling attempt range in finalize loops
 
 Removed a small polling-range helper and applied the stable range directly in both transcript polling loops.

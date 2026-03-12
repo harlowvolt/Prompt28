@@ -126,7 +126,7 @@ final class OrbEngine {
         guard stopListening() else { return nil }
         for _ in 0..<30 {
             let best = Self.normalizedTranscript(finalTranscript)
-            if Self.hasNormalizedTranscriptContent(best) {
+            if !best.isEmpty {
                 return best
             }
             try? await Task.sleep(nanoseconds: Self.finalTranscriptPollingSleepNanoseconds())
@@ -169,7 +169,7 @@ final class OrbEngine {
     private func awaitFinalTranscriptAndFinalize() async {
         for _ in 0..<30 {
             let best = Self.normalizedTranscript(speech.finalTranscript)
-            if Self.hasNormalizedTranscriptContent(best) {
+            if !best.isEmpty {
                 finalTranscript = best
                 transcript = best
                 finalizeTranscript()
@@ -220,7 +220,7 @@ final class OrbEngine {
                 guard let self else { return }
                 self.transcript = value
                 let trimmed = Self.normalizedTranscript(value)
-                self.hasDetectedSpeechContent = self.hasDetectedSpeechContent || Self.hasNormalizedTranscriptContent(trimmed)
+                self.hasDetectedSpeechContent = self.hasDetectedSpeechContent || !trimmed.isEmpty
             }
             .store(in: &cancellables)
 
@@ -229,7 +229,7 @@ final class OrbEngine {
                 guard let self else { return }
                 self.finalTranscript = value
                 let trimmed = Self.normalizedTranscript(value)
-                if Self.hasNormalizedTranscriptContent(trimmed)
+                if !trimmed.isEmpty
                     && (self.state == .transcribing || self.state == .listening) {
                     self.finalizeTranscript()
                 }
@@ -280,11 +280,6 @@ final class OrbEngine {
     /// Pure helper for transcript whitespace normalization.
     nonisolated static func normalizedTranscript(_ text: String) -> String {
         text.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    /// Pure helper for checking content after transcript normalization.
-    nonisolated static func hasNormalizedTranscriptContent(_ normalizedText: String) -> Bool {
-        !normalizedText.isEmpty
     }
 
     /// Pure helper for transcript meaningfulness checks.

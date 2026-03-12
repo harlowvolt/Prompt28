@@ -273,20 +273,6 @@ struct OrbTranscriptNormalizationTests {
     }
 }
 
-@Suite("Orb Normalized Transcript Content")
-struct OrbNormalizedTranscriptContentTests {
-
-    @Test("Returns true for non-empty normalized text")
-    func returnsTrueForContent() {
-        #expect(OrbEngine.hasNormalizedTranscriptContent("value"))
-    }
-
-    @Test("Returns false for empty normalized text")
-    func returnsFalseForEmpty() {
-        #expect(!OrbEngine.hasNormalizedTranscriptContent(""))
-    }
-}
-
 @Suite("Orb Transcript Meaning")
 struct OrbTranscriptMeaningTests {
 
