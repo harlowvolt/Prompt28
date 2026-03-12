@@ -959,6 +959,27 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline discarded-transcript state mapping
+
+Removed a single-use discarded-transcript state helper and mapped idle-preservation behavior directly in `finalizeTranscript()`.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In discarded-transcript branch of `finalizeTranscript()`, replaced:
+        - `stateAfterDiscardingTranscriptCandidate(currentState:isRecording:)`
+      with direct assignment:
+        - `state = isRecording ? state : .idle`
+    - Removed helper:
+        - `stateAfterDiscardingTranscriptCandidate(currentState:isRecording:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Discarded Transcript State Mapping`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 323)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline failing-permission classification in failure mapping
 
 Removed a single-use failing-permission classification helper and kept classification directly in `failureMessage(for:)`.

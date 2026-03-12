@@ -364,26 +364,6 @@ struct OrbTranscriptAssignmentTests {
     }
 }
 
-@Suite("Orb Discarded Transcript State Mapping")
-struct OrbDiscardedTranscriptStateMappingTests {
-
-    @Test("Maps to idle when not recording")
-    func mapsToIdleWhenNotRecording() {
-        #expect(OrbEngine.stateAfterDiscardingTranscriptCandidate(
-            currentState: .listening,
-            isRecording: false
-        ) == .idle)
-    }
-
-    @Test("Preserves current state when still recording")
-    func preservesCurrentStateWhenRecording() {
-        #expect(OrbEngine.stateAfterDiscardingTranscriptCandidate(
-            currentState: .listening,
-            isRecording: true
-        ) == .listening)
-    }
-}
-
 @Suite("Orb Fallback Transcript Candidate Selection")
 struct OrbFallbackTranscriptCandidateSelectionTests {
 

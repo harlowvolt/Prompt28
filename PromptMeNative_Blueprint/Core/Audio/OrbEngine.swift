@@ -136,10 +136,7 @@ final class OrbEngine {
     func finalizeTranscript() {
         let trimmed = Self.preferredTranscriptCandidate(finalTranscript: finalTranscript, transcript: transcript)
         guard isMeaningfulTranscript(trimmed) else {
-            state = Self.stateAfterDiscardingTranscriptCandidate(
-                currentState: state,
-                isRecording: isRecording
-            )
+            state = isRecording ? state : .idle
             return
         }
         guard trimmed != lastDeliveredTranscript else { return }
@@ -328,14 +325,6 @@ final class OrbEngine {
         for text: String
     ) -> (finalTranscript: String, transcript: String) {
         (finalTranscript: text, transcript: text)
-    }
-
-    /// Pure mapping for state outcome when a transcript candidate is discarded.
-    nonisolated static func stateAfterDiscardingTranscriptCandidate(
-        currentState: State,
-        isRecording: Bool
-    ) -> State {
-        !isRecording ? .idle : currentState
     }
 
     /// Pure helper for selecting fallback transcript after final-transcript polling.
