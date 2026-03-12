@@ -3065,3 +3065,15 @@ Collapsed paired transcript reset lines into a tuple assignment in `startListeni
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation — Extracted permission failure message mapping in OrbEngine
+
+Replaced repeated permission-status failure assignments with a single helper that maps permission status to an optional failure message.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `permissionFailureMessage(for:) -> String?`
+    - Updated permission status subscription to set failure state from helper output
+    - Preserved all existing failure messages and non-failure statuses
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)

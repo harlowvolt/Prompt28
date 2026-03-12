@@ -212,6 +212,25 @@ final class OrbEngine {
         return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
     }
 
+    private func permissionFailureMessage(
+        for status: SpeechRecognizerService.PermissionStatus
+    ) -> String? {
+        switch status {
+        case .speechDenied:
+            return "Speech recognition permission denied."
+        case .microphoneDenied:
+            return "Microphone permission denied."
+        case .restricted:
+            return "Speech recognition is restricted on this device."
+        case .unavailable:
+            return "Speech recognition is unavailable."
+        case .error(let message):
+            return message
+        case .granted, .notDetermined:
+            return nil
+        }
+    }
+
     private func bindSpeechState() {
         speech.isRecordingPublisher
             .sink { [weak self] value in
@@ -244,19 +263,8 @@ final class OrbEngine {
             .sink { [weak self] status in
                 guard let self else { return }
                 self.permissionStatus = status
-                switch status {
-                case .speechDenied:
-                    self.state = .failure("Speech recognition permission denied.")
-                case .microphoneDenied:
-                    self.state = .failure("Microphone permission denied.")
-                case .restricted:
-                    self.state = .failure("Speech recognition is restricted on this device.")
-                case .unavailable:
-                    self.state = .failure("Speech recognition is unavailable.")
-                case .error(let message):
+                if let message = self.permissionFailureMessage(for: status) {
                     self.state = .failure(message)
-                case .granted, .notDetermined:
-                    break
                 }
             }
             .store(in: &cancellables)
