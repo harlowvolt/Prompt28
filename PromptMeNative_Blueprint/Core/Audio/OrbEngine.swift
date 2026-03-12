@@ -69,7 +69,6 @@ final class OrbEngine {
     private var lastDeliveredTranscript = ""
     private var listeningStartedAt: Date?
     private let minimumListeningDuration: TimeInterval = 0.7
-    private let minimumTranscriptCharacterCount = 3
     // Combine is kept internally to bridge SpeechRecognizing's thread-safe publishers.
     private var cancellables: Set<AnyCancellable> = []
 
@@ -209,7 +208,7 @@ final class OrbEngine {
 
     private func isMeaningfulTranscript(_ text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= minimumTranscriptCharacterCount else { return false }
+        guard trimmed.count >= 3 else { return false }
         return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
     }
 

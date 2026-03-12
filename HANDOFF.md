@@ -959,6 +959,24 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline minimum transcript threshold constant
+
+Removed a single-use threshold field and applied the stable threshold directly in transcript meaningfulness evaluation.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `isMeaningfulTranscript(_:)`, replaced:
+        - `minimumTranscriptCharacterCount`
+      with direct threshold:
+        - `3`
+    - Removed field:
+        - `minimumTranscriptCharacterCount`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 314)
+- No test command was run.
+
 #### Phase 3 prep continuation — Remove unused speech-content tracking state
 
 Removed dead internal state after meaningfulness logic no longer depended on transcript-content tracking.
