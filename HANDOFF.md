@@ -959,6 +959,27 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline stop-listening eligibility guard
+
+Removed a single-use stop-listening eligibility helper and performed the eligibility check directly in `stopListening()`.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `stopListening()`, replaced helper call:
+        - `shouldBeginStopListening(isRecording:canStopListeningNow:)`
+      with direct guard:
+        - `isRecording && canStopListeningNow`
+    - Removed helper:
+        - `shouldBeginStopListening(isRecording:canStopListeningNow:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Stop Listening Eligibility`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 325)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline transcript-delivery dedupe comparison
 
 Removed a single-use dedupe wrapper and performed direct transcript comparison in `finalizeTranscript()`.

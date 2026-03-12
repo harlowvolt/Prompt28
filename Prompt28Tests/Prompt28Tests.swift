@@ -384,19 +384,6 @@ struct OrbDiscardedTranscriptStateMappingTests {
     }
 }
 
-@Suite("Orb Stop Listening Eligibility")
-struct OrbStopListeningEligibilityTests {
-
-    @Test("Requires both recording and minimum duration")
-    func requiresBothConditions() {
-        #expect(OrbEngine.shouldBeginStopListening(isRecording: true, canStopListeningNow: true))
-
-        #expect(!OrbEngine.shouldBeginStopListening(isRecording: false, canStopListeningNow: true))
-        #expect(!OrbEngine.shouldBeginStopListening(isRecording: true, canStopListeningNow: false))
-        #expect(!OrbEngine.shouldBeginStopListening(isRecording: false, canStopListeningNow: false))
-    }
-}
-
 @Suite("Orb Fallback Transcript Candidate Selection")
 struct OrbFallbackTranscriptCandidateSelectionTests {
 
