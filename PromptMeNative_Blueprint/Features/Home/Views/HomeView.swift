@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct HomeView: View {
-    @Environment(AppEnvironment.self) private var env
     @Environment(\.authManager) private var authManager
     @Environment(\.appRouter) private var appRouter
     @Environment(\.errorState) private var errorState
@@ -15,31 +14,45 @@ struct HomeView: View {
     @State private var settingsViewModel = SettingsViewModel()
     @State private var lastPresentedGlobalError = ""
 
+    private let fallbackAuthManager: AuthManager
+    private let fallbackRouter: AppRouter
+    private let fallbackAPIClient: any APIClientProtocol
+    private let fallbackPreferencesStore: any PreferenceStoring
+    private let fallbackHistoryStore: any HistoryStoring
+    private let fallbackUsageTracker: UsageTracker
+
     private var router: AppRouter {
-        appRouter ?? env.router
+        appRouter ?? fallbackRouter
     }
 
     private var apiClient: any APIClientProtocol {
-        scopedAPIClient ?? env.apiClient
+        scopedAPIClient ?? fallbackAPIClient
     }
 
     private var preferencesStore: any PreferenceStoring {
-        scopedPreferencesStore ?? env.preferencesStore
+        scopedPreferencesStore ?? fallbackPreferencesStore
     }
 
     private var resolvedAuthManager: AuthManager {
-        authManager ?? env.authManager
+        authManager ?? fallbackAuthManager
     }
 
     private var historyStore: any HistoryStoring {
-        scopedHistoryStore ?? env.historyStore
+        scopedHistoryStore ?? fallbackHistoryStore
     }
 
     private var usageTracker: UsageTracker {
-        scopedUsageTracker ?? env.usageTracker
+        scopedUsageTracker ?? fallbackUsageTracker
     }
 
     init(appEnvironment: AppEnvironment) {
+        self.fallbackAuthManager = appEnvironment.authManager
+        self.fallbackRouter = appEnvironment.router
+        self.fallbackAPIClient = appEnvironment.apiClient
+        self.fallbackPreferencesStore = appEnvironment.preferencesStore
+        self.fallbackHistoryStore = appEnvironment.historyStore
+        self.fallbackUsageTracker = appEnvironment.usageTracker
+
         self._generateViewModel = State(
             wrappedValue: GenerateViewModel(
                 apiClient: appEnvironment.apiClient,
@@ -351,7 +364,7 @@ struct HomeView: View {
     // MARK: - Greeting
 
     private var firstName: String {
-        let raw = authManager?.currentUser?.name ?? env.authManager.currentUser?.name ?? ""
+        let raw = resolvedAuthManager.currentUser?.name ?? ""
         let first = raw.split(separator: " ").first.map(String.init) ?? ""
         return first.isEmpty ? "there" : first
     }

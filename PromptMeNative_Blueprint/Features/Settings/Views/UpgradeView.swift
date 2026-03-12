@@ -73,39 +73,38 @@ struct UpgradeView: View {
 
     @ViewBuilder
     private var productList: some View {
-        guard let scopedStoreManager else {
-            Text("Store services are currently unavailable.")
-                .font(.system(size: 13, design: .rounded))
-                .foregroundStyle(.red.opacity(0.85))
-                .multilineTextAlignment(.center)
-            return
-        }
-
-        if scopedStoreManager.products.isEmpty {
-            VStack(spacing: 14) {
-                ProgressView()
-                    .tint(PromptTheme.softLilac)
-                Text("Loading plans…")
-                    .font(.system(size: 14, design: .rounded))
-                    .foregroundStyle(PromptTheme.softLilac.opacity(0.6))
-            }
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 32)
-        } else {
-            VStack(spacing: 14) {
-                ForEach(scopedStoreManager.products, id: \.id) { product in
-                    ProductCard(
-                        product: product,
-                        storeManager: scopedStoreManager,
-                        viewModel: viewModel,
-                        authManager: scopedAuthManager
-                    )
+        if let scopedStoreManager {
+            if scopedStoreManager.products.isEmpty {
+                VStack(spacing: 14) {
+                    ProgressView()
+                        .tint(PromptTheme.softLilac)
+                    Text("Loading plans…")
+                        .font(.system(size: 14, design: .rounded))
+                        .foregroundStyle(PromptTheme.softLilac.opacity(0.6))
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 32)
+            } else {
+                VStack(spacing: 14) {
+                    ForEach(scopedStoreManager.products, id: \.id) { product in
+                        ProductCard(
+                            product: product,
+                            storeManager: scopedStoreManager,
+                            viewModel: viewModel,
+                            authManager: scopedAuthManager
+                        )
+                    }
                 }
             }
-        }
 
-        if let error = scopedStoreManager.errorMessage {
-            Text(error)
+            if let error = scopedStoreManager.errorMessage {
+                Text(error)
+                    .font(.system(size: 13, design: .rounded))
+                    .foregroundStyle(.red.opacity(0.85))
+                    .multilineTextAlignment(.center)
+            }
+        } else {
+            Text("Store services are currently unavailable.")
                 .font(.system(size: 13, design: .rounded))
                 .foregroundStyle(.red.opacity(0.85))
                 .multilineTextAlignment(.center)

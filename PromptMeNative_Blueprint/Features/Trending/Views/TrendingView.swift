@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct TrendingView: View {
-    @Environment(AppEnvironment.self) private var env
     @Environment(\.appRouter) private var appRouter
     @Environment(\.apiClient) private var scopedAPIClient
     @AppStorage("experiment.useRootBackground.trending") private var useRootBackgroundExperiment = false
@@ -9,20 +8,51 @@ struct TrendingView: View {
     @State private var searchQuery = ""
     @State private var showCopiedToast = false
     @State private var expandedItemIDs: Set<String> = []
+    @State private var localPath = NavigationPath()
 
-    private var router: AppRouter {
-        appRouter ?? env.router
+    private var pathBinding: Binding<NavigationPath> {
+        Binding(
+            get: { appRouter?.path ?? localPath },
+            set: {
+                if let appRouter {
+                    appRouter.path = $0
+                } else {
+                    localPath = $0
+                }
+            }
+        )
     }
 
-    private var apiClient: any APIClientProtocol {
-        scopedAPIClient ?? env.apiClient
+    private func pushDestination(_ destination: AppDestination) {
+        if let appRouter {
+            appRouter.push(destination)
+        } else {
+            localPath.append(destination)
+        }
+    }
+
+    private func loadIfPossible() async {
+        guard let scopedAPIClient else {
+            if viewModel.catalog == nil {
+                viewModel.errorMessage = "Trending service unavailable."
+            }
+            return
+        }
+        await viewModel.loadIfNeeded(apiClient: scopedAPIClient)
+    }
+
+    private func refreshIfPossible() async {
+        guard let scopedAPIClient else {
+            if viewModel.catalog == nil {
+                viewModel.errorMessage = "Trending service unavailable."
+            }
+            return
+        }
+        await viewModel.refresh(apiClient: scopedAPIClient)
     }
 
     var body: some View {
-        NavigationStack(path: Binding(
-            get: { router.path },
-            set: { router.path = $0 }
-        )) {
+        NavigationStack(path: pathBinding) {
             GeometryReader { proxy in
                 ZStack(alignment: .top) {
                     if useRootBackgroundExperiment {
@@ -63,10 +93,10 @@ struct TrendingView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .task {
-                await viewModel.loadIfNeeded(apiClient: apiClient)
+                await loadIfPossible()
             }
             .refreshable {
-                await viewModel.refresh(apiClient: apiClient)
+                await refreshIfPossible()
             }
             .overlay(alignment: .bottom) {
                 if showCopiedToast {
@@ -214,7 +244,7 @@ struct TrendingView: View {
             // Action row
             HStack(spacing: 10) {
                 Button {
-                    router.push(.trendingDetail(id: item.id))
+                    pushDestination(.trendingDetail(id: item.id))
                 } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "star")
@@ -352,7 +382,7 @@ struct TrendingView: View {
                 .multilineTextAlignment(.center)
 
             Button("Retry") {
-                Task { await viewModel.refresh(apiClient: apiClient) }
+                Task { await refreshIfPossible() }
             }
             .font(PromptTheme.Typography.rounded(15, .semibold))
             .buttonStyle(.borderedProminent)

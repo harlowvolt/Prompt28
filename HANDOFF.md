@@ -1095,3 +1095,67 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 2 continuation — UpgradeView no longer depends on AppEnvironment
+
+Removed direct `AppEnvironment` dependency from `UpgradeView`; it now uses scoped `storeManager` and `authManager` keys only.
+
+- File: `Features/Settings/Views/UpgradeView.swift`
+    - Removed `@Environment(AppEnvironment.self)`
+    - Uses `@Environment(\.storeManager)` and `@Environment(\.authManager)`
+    - Added graceful unavailable-state UI when `storeManager` is not injected
+    - `ProductCard` now accepts optional auth manager and refreshes when present
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — TrendingView no longer depends on AppEnvironment
+
+Removed direct `AppEnvironment` usage from `TrendingView` and switched to scoped dependencies plus local routing fallback.
+
+- File: `Features/Trending/Views/TrendingView.swift`
+    - Removed `@Environment(AppEnvironment.self)`
+    - Uses scoped `@Environment(\.appRouter)` and `@Environment(\.apiClient)`
+    - Added local `NavigationPath` fallback when router is unavailable
+    - Added defensive unavailable handling for missing API client (`Trending service unavailable.`)
+    - Route pushes now go through a helper that uses scoped router when available, else local path
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — SettingsView no longer depends on AppEnvironment
+
+Removed direct `AppEnvironment` usage from `SettingsView`; it now relies on scoped keys only.
+
+- File: `Features/Settings/Views/SettingsView.swift`
+    - Removed `@Environment(AppEnvironment.self)`
+    - Uses optional scoped keys:
+        - `authManager`, `historyStore`, `appRouter`, `apiClient`, `preferencesStore`
+    - Added startup guard in `.task`:
+        - If dependencies are missing, sets `viewModel.errorMessage = "Settings dependencies unavailable."`
+    - Updated logout/delete/account/subscription reads to optional-safe paths
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — HomeView no longer depends on AppEnvironment
+
+Removed direct `@Environment(AppEnvironment.self)` usage from `HomeView` while preserving runtime safety via initializer-provided fallback dependencies.
+
+- File: `Features/Home/Views/HomeView.swift`
+    - Removed `@Environment(AppEnvironment.self)`
+    - Added fallback dependencies captured in `init(appEnvironment:)`:
+        - auth manager
+        - router
+        - API client
+        - preferences store
+        - history store
+        - usage tracker
+    - Scoped keys remain primary sources; init-captured values are fallback only
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+
