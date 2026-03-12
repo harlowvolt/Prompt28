@@ -1723,6 +1723,26 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure minimum-transcript-length helper + tests
+
+Extracted minimum transcript length checking into a pure helper to isolate threshold logic and improve direct testability.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Added helper:
+        - `nonisolated static func meetsMinimumTranscriptLength(trimmedText:minimumTranscriptCharacterCount:) -> Bool`
+    - `isMeaningfulTranscriptCandidate(...)` now uses this helper
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Transcript Minimum Length` with coverage for:
+        - returns `true` when length meets threshold
+        - returns `false` when below threshold
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.
