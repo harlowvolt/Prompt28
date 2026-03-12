@@ -1,27 +1,23 @@
 import SwiftUI
 
 struct HomeView: View {
-    private enum ActiveSheet: Identifiable {
-        case typePrompt, settings, upgrade
-
-        var id: String {
-            switch self {
-            case .typePrompt: return "typePrompt"
-            case .settings:   return "settings"
-            case .upgrade:    return "upgrade"
-            }
-        }
-    }
-
     @Environment(AppEnvironment.self) private var env
     @Environment(\.authManager) private var authManager
+    @Environment(\.appRouter) private var appRouter
     @Environment(\.errorState) private var errorState
+    @Environment(\.apiClient) private var scopedAPIClient
     @State private var orbEngine = OrbEngine.makeDefault()
     @State private var generateViewModel: GenerateViewModel
     @State private var settingsViewModel = SettingsViewModel()
     @State private var lastPresentedGlobalError = ""
 
-    @State private var activeSheet: ActiveSheet?
+    private var router: AppRouter {
+        appRouter ?? env.router
+    }
+
+    private var apiClient: any APIClientProtocol {
+        scopedAPIClient ?? env.apiClient
+    }
 
     init(appEnvironment: AppEnvironment) {
         self._generateViewModel = State(
@@ -86,7 +82,7 @@ struct HomeView: View {
                             .frame(maxHeight: .infinity)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
                     } else {
-                        Button { activeSheet = .typePrompt } label: {
+                        Button { router.presentHomeSheet(.typePrompt) } label: {
                             Text("Type instead")
                                 .font(.system(size: 17, weight: .medium, design: .rounded))
                                 .foregroundStyle(.white.opacity(0.78))
@@ -119,7 +115,10 @@ struct HomeView: View {
             .promptClearNavigationSurfaces()
         }
         .overlay(alignment: .bottom) { copiedToast }
-        .sheet(item: $activeSheet) { sheet in
+        .sheet(item: Binding(
+            get: { router.homeSheet },
+            set: { router.homeSheet = $0 }
+        )) { sheet in
             switch sheet {
             case .typePrompt:
                 NavigationStack {
@@ -128,7 +127,7 @@ struct HomeView: View {
                         .navigationBarTitleDisplayMode(.inline)
                         .toolbar {
                             ToolbarItem(placement: .cancellationAction) {
-                                Button("Done") { activeSheet = nil }
+                                Button("Done") { router.dismissHomeSheet() }
                             }
                         }
                 }
@@ -139,7 +138,7 @@ struct HomeView: View {
 
             case .settings:
                 SettingsView {
-                    activeSheet = nil
+                    router.dismissHomeSheet()
                 }
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
@@ -155,7 +154,7 @@ struct HomeView: View {
             }
         }
         .onChange(of: generateViewModel.showPaywall) { _, show in
-            if show { activeSheet = .upgrade }
+            if show { router.presentHomeSheet(.upgrade) }
         }
         .onChange(of: generateViewModel.errorMessage) { _, message in
             guard let message else { return }
@@ -173,7 +172,7 @@ struct HomeView: View {
         }
         .task {
             settingsViewModel.bind(
-                apiClient: env.apiClient,
+                apiClient: apiClient,
                 authManager: env.authManager,
                 preferencesStore: env.preferencesStore,
                 historyStore: env.historyStore
@@ -187,7 +186,7 @@ struct HomeView: View {
         HStack {
             Spacer()
 
-            Button { activeSheet = .settings } label: {
+            Button { router.presentHomeSheet(.settings) } label: {
                 Image(systemName: "gearshape.fill")
                     .font(.system(size: 18, weight: .medium))
                     .foregroundStyle(.white.opacity(0.82))

@@ -3,6 +3,7 @@ import SwiftUI
 struct TrendingView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.appRouter) private var appRouter
+    @Environment(\.apiClient) private var scopedAPIClient
     @State private var viewModel = TrendingViewModel()
     @State private var searchQuery = ""
     @State private var showCopiedToast = false
@@ -10,6 +11,10 @@ struct TrendingView: View {
 
     private var router: AppRouter {
         appRouter ?? env.router
+    }
+
+    private var apiClient: any APIClientProtocol {
+        scopedAPIClient ?? env.apiClient
     }
 
     var body: some View {
@@ -57,10 +62,10 @@ struct TrendingView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .task {
-                await viewModel.loadIfNeeded(apiClient: env.apiClient)
+                await viewModel.loadIfNeeded(apiClient: apiClient)
             }
             .refreshable {
-                await viewModel.refresh(apiClient: env.apiClient)
+                await viewModel.refresh(apiClient: apiClient)
             }
             .overlay(alignment: .bottom) {
                 if showCopiedToast {
@@ -346,7 +351,7 @@ struct TrendingView: View {
                 .multilineTextAlignment(.center)
 
             Button("Retry") {
-                Task { await viewModel.refresh(apiClient: env.apiClient) }
+                Task { await viewModel.refresh(apiClient: apiClient) }
             }
             .font(PromptTheme.Typography.rounded(15, .semibold))
             .buttonStyle(.borderedProminent)

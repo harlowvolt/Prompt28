@@ -5,6 +5,7 @@ struct SettingsView: View {
     @Environment(\.authManager) private var scopedAuthManager
     @Environment(\.historyStore) private var scopedHistoryStore
     @Environment(\.appRouter) private var scopedRouter
+    @Environment(\.apiClient) private var scopedAPIClient
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = SettingsViewModel()
     @State private var showUpgrade = false
@@ -21,6 +22,10 @@ struct SettingsView: View {
 
     private var router: AppRouter {
         scopedRouter ?? env.router
+    }
+
+    private var apiClient: any APIClientProtocol {
+        scopedAPIClient ?? env.apiClient
     }
 
     var body: some View {
@@ -79,7 +84,7 @@ struct SettingsView: View {
         }
         .task {
             viewModel.bind(
-                apiClient: env.apiClient,
+                apiClient: apiClient,
                 authManager: authManager,
                 preferencesStore: env.preferencesStore,
                 historyStore: historyStore

@@ -84,6 +84,10 @@ private struct ErrorStateKey: EnvironmentKey {
     static var defaultValue: ErrorState? = nil
 }
 
+private struct APIClientKey: EnvironmentKey {
+    static var defaultValue: (any APIClientProtocol)? = nil
+}
+
 extension EnvironmentValues {
     var historyStore: (any HistoryStoring)? {
         get { self[HistoryStoreKey.self] }
@@ -103,5 +107,10 @@ extension EnvironmentValues {
     var errorState: ErrorState? {
         get { self[ErrorStateKey.self] }
         set { self[ErrorStateKey.self] = newValue }
+    }
+
+    var apiClient: (any APIClientProtocol)? {
+        get { self[APIClientKey.self] }
+        set { self[APIClientKey.self] = newValue }
     }
 }

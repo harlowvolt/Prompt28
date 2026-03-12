@@ -786,3 +786,54 @@ Verification:
 - `get_errors` on edited files: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 2 continuation — Home sheet routing moved into AppRouter
+
+Home screen sheet presentation state is now router-owned (not local `@State`) to continue unidirectional routing migration.
+
+- File: `App/Routing/AppRouter.swift`
+    - Added `HomeSheet` enum (`typePrompt`, `settings`, `upgrade`) conforming to `Identifiable` + `Hashable`
+    - Added router state: `var homeSheet: HomeSheet?`
+    - Added helpers:
+        - `presentHomeSheet(_:)`
+        - `dismissHomeSheet()`
+
+- File: `Features/Home/Views/HomeView.swift`
+    - Removed local `ActiveSheet` enum and `@State activeSheet`
+    - Added scoped router usage (`@Environment(\.appRouter)` + fallback to `env.router`)
+    - `.sheet(item:)` now binds to `router.homeSheet`
+    - Updated triggers:
+        - Type button -> `router.presentHomeSheet(.typePrompt)`
+        - Settings gear -> `router.presentHomeSheet(.settings)`
+        - Paywall change -> `router.presentHomeSheet(.upgrade)`
+        - Dismiss actions -> `router.dismissHomeSheet()`
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — Scoped `apiClient` key added and adopted
+
+Continued staged DI migration by introducing a scoped API client environment key and moving key feature views off direct `AppEnvironment` API access.
+
+- File: `App/AppEnvironment.swift`
+    - Added `EnvironmentValues.apiClient` (`any APIClientProtocol`)
+
+- File: `PromptMeNativeApp.swift`
+    - Injected `\.apiClient` at app root from `env.apiClient`
+
+- File: `Features/Trending/Views/TrendingView.swift`
+    - Added `@Environment(\.apiClient)` + fallback helper
+    - `loadIfNeeded`, `refresh`, and retry now use scoped API client
+
+- File: `Features/Home/Views/HomeView.swift`
+    - Added `@Environment(\.apiClient)` + fallback helper
+    - `settingsViewModel.bind(...)` now passes scoped API client
+
+- File: `Features/Settings/Views/SettingsView.swift`
+    - Added `@Environment(\.apiClient)` + fallback helper
+    - `viewModel.bind(...)` now passes scoped API client
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
