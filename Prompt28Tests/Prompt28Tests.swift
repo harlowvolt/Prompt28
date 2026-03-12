@@ -308,17 +308,6 @@ struct OrbNormalizedTranscriptContentTests {
     }
 }
 
-@Suite("Orb Transcript Assignment")
-struct OrbTranscriptAssignmentTests {
-
-    @Test("Assignment copies text into both transcript fields")
-    func assignmentCopiesBothFields() {
-        let assignment = OrbEngine.transcriptAssignment(for: "hello")
-        #expect(assignment.finalTranscript == "hello")
-        #expect(assignment.transcript == "hello")
-    }
-}
-
 @Suite("Orb Transcript Meaning")
 struct OrbTranscriptMeaningTests {
 

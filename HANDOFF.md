@@ -959,6 +959,29 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline transcript field assignment in finalize polling paths
+
+Removed a single-use transcript-assignment helper and assigned transcript fields directly in the two finalize polling paths.
+
+- File: `Core/Audio/OrbEngine.swift`
+        - In successful final-transcript polling path, replaced:
+                - `transcriptAssignment(for:)`
+            with direct assignments to `finalTranscript` and `transcript`
+        - In fallback-accepted path, replaced:
+                - `transcriptAssignment(for:)`
+            with direct assignments to `finalTranscript` and `transcript`
+        - Removed helper:
+                - `transcriptAssignment(for:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+        - Removed obsolete suite `Orb Transcript Assignment`
+
+Verification:
+- Build succeeded:
+        - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+        - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 319)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline fallback candidate selection in finalize polling
 
 Removed a single-use fallback candidate helper and applied selection logic directly in `awaitFinalTranscriptAndFinalize()`.

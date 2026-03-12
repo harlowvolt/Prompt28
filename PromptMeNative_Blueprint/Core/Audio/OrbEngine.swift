@@ -170,9 +170,8 @@ final class OrbEngine {
         for _ in Self.finalTranscriptPollingAttemptRange() {
             let best = Self.normalizedTranscript(speech.finalTranscript)
             if Self.hasNormalizedTranscriptContent(best) {
-                let assignment = Self.transcriptAssignment(for: best)
-                finalTranscript = assignment.finalTranscript
-                transcript = assignment.transcript
+                finalTranscript = best
+                transcript = best
                 finalizeTranscript()
                 return
             }
@@ -189,9 +188,8 @@ final class OrbEngine {
             return
         }
 
-        let fallbackAssignment = Self.transcriptAssignment(for: fallbackCandidate)
-        finalTranscript = fallbackAssignment.finalTranscript
-        transcript = fallbackAssignment.transcript
+        finalTranscript = fallbackCandidate
+        transcript = fallbackCandidate
         finalizeTranscript()
     }
 
@@ -300,13 +298,6 @@ final class OrbEngine {
     /// Pure helper for checking content after transcript normalization.
     nonisolated static func hasNormalizedTranscriptContent(_ normalizedText: String) -> Bool {
         !normalizedText.isEmpty
-    }
-
-    /// Pure helper for assigning finalized transcript values to engine fields.
-    nonisolated static func transcriptAssignment(
-        for text: String
-    ) -> (finalTranscript: String, transcript: String) {
-        (finalTranscript: text, transcript: text)
     }
 
     /// Pure helper for transcript meaningfulness checks.
