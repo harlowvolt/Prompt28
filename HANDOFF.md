@@ -959,6 +959,28 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline final-transcript finalize gate in publisher sink
+
+Removed a single-use finalize-gating helper and applied its gate directly in the final-transcript publisher sink.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `speech.finalTranscriptPublisher` sink, replaced helper call:
+        - `shouldFinalizeOnFinalTranscriptUpdate(trimmedFinalTranscript:state:)`
+      with direct gate:
+        - normalized transcript has content
+        - state is `.transcribing` or `.listening`
+    - Removed helper:
+        - `shouldFinalizeOnFinalTranscriptUpdate(trimmedFinalTranscript:state:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Final Transcript Finalize Gate`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 318)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline speech-content detection flag updates
 
 Removed a single-use speech-content detection helper and updated the transcript sink to apply sticky-detection logic directly.

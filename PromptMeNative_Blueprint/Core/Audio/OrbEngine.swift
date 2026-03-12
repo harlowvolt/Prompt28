@@ -233,10 +233,8 @@ final class OrbEngine {
                 guard let self else { return }
                 self.finalTranscript = value
                 let trimmed = Self.normalizedTranscript(value)
-                if Self.shouldFinalizeOnFinalTranscriptUpdate(
-                    trimmedFinalTranscript: trimmed,
-                    state: self.state
-                ) {
+                if Self.hasNormalizedTranscriptContent(trimmed)
+                    && (self.state == .transcribing || self.state == .listening) {
                     self.finalizeTranscript()
                 }
             }
@@ -395,14 +393,6 @@ final class OrbEngine {
         return now.timeIntervalSince(listeningStartedAt) >= minimumListeningDuration
     }
 
-    /// Pure gate for whether a final-transcript publisher update should trigger finalize.
-    nonisolated static func shouldFinalizeOnFinalTranscriptUpdate(
-        trimmedFinalTranscript: String,
-        state: State
-    ) -> Bool {
-        guard hasNormalizedTranscriptContent(trimmedFinalTranscript) else { return false }
-        return state == .transcribing || state == .listening
-    }
 }
 
 // MARK: - Conformance
