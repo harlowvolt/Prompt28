@@ -87,12 +87,7 @@ final class OrbEngine {
     }
 
     var needsPermissionSettingsAction: Bool {
-        switch permissionStatus {
-        case .speechDenied, .microphoneDenied, .restricted:
-            return true
-        case .notDetermined, .granted, .unavailable, .error:
-            return false
-        }
+        Self.needsPermissionSettingsAction(for: permissionStatus)
     }
 
     var permissionMessage: String {
@@ -319,6 +314,18 @@ final class OrbEngine {
             return "Speech recognizer is temporarily unavailable."
         case .error(let message):
             return message
+        }
+    }
+
+    /// Pure mapping for whether opening Settings is a meaningful recovery action.
+    nonisolated static func needsPermissionSettingsAction(
+        for status: SpeechRecognizerService.PermissionStatus
+    ) -> Bool {
+        switch status {
+        case .speechDenied, .microphoneDenied, .restricted:
+            return true
+        case .notDetermined, .granted, .unavailable, .error:
+            return false
         }
     }
 

@@ -377,3 +377,22 @@ struct OrbPermissionMessageMappingTests {
         #expect(OrbEngine.permissionMessage(for: .error("custom")) == "custom")
     }
 }
+
+@Suite("Orb Permission Settings Action Mapping")
+struct OrbPermissionSettingsActionMappingTests {
+
+    @Test("Denied/restricted statuses require Settings action")
+    func deniedStatusesRequireSettings() {
+        #expect(OrbEngine.needsPermissionSettingsAction(for: .speechDenied))
+        #expect(OrbEngine.needsPermissionSettingsAction(for: .microphoneDenied))
+        #expect(OrbEngine.needsPermissionSettingsAction(for: .restricted))
+    }
+
+    @Test("Other statuses do not require Settings action")
+    func otherStatusesDoNotRequireSettings() {
+        #expect(!OrbEngine.needsPermissionSettingsAction(for: .notDetermined))
+        #expect(!OrbEngine.needsPermissionSettingsAction(for: .granted))
+        #expect(!OrbEngine.needsPermissionSettingsAction(for: .unavailable))
+        #expect(!OrbEngine.needsPermissionSettingsAction(for: .error("x")))
+    }
+}

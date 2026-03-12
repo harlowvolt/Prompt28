@@ -1381,6 +1381,25 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure permission-settings-action helper + tests
+
+Extracted the permission-settings-action decision into a pure helper so recovery-action behavior is testable and isolated from actor state.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `needsPermissionSettingsAction` now delegates to:
+        - `nonisolated static func needsPermissionSettingsAction(for:) -> Bool`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Permission Settings Action Mapping` with coverage for:
+        - denied/restricted statuses return `true`
+        - not-determined/granted/unavailable/error statuses return `false`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.
