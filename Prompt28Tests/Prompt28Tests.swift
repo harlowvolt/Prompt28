@@ -464,8 +464,7 @@ struct OrbStopListeningStateMappingTests {
 
     @Test("Beginning stop-listening maps to transcribing")
     func mapsToTranscribing() {
-        #expect(OrbEngine.stateAfterBeginningStopListening(currentState: .listening) == .transcribing)
-        #expect(OrbEngine.stateAfterBeginningStopListening(currentState: .idle) == .transcribing)
+        #expect(OrbEngine.stateAfterBeginningStopListening() == .transcribing)
     }
 }
 

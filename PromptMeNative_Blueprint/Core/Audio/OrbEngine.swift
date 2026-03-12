@@ -116,7 +116,7 @@ final class OrbEngine {
             canStopListeningNow: canStopListeningNow
         ) else { return false }
 
-        state = Self.stateAfterBeginningStopListening(currentState: state)
+        state = Self.stateAfterBeginningStopListening()
         speech.stopRecording()
 
         Task { [weak self] in
@@ -406,7 +406,7 @@ final class OrbEngine {
     }
 
     /// Pure mapping for state transition when stop-listening flow begins.
-    nonisolated static func stateAfterBeginningStopListening(currentState: State) -> State {
+    nonisolated static func stateAfterBeginningStopListening() -> State {
         .transcribing
     }
 

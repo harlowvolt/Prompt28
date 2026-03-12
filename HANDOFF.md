@@ -959,6 +959,25 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Pure stop-listening-state helper signature cleanup + tests
+
+Removed the unused `currentState` parameter from stop-listening state mapping so the helper more accurately expresses its fixed transition behavior.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - stop-listening path in `stopListening()` now calls:
+        - `nonisolated static func stateAfterBeginningStopListening() -> State`
+    - Removed unused parameter from helper signature
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Updated suite `Orb Stop Listening State Mapping` to validate:
+        - beginning stop-listening maps to `.transcribing` via the no-argument helper
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 323)
+- No test command was run.
+
 #### Phase 3 prep continuation — Pure fallback-rejection-state helper signature cleanup + tests
 
 Removed the unused `currentState` parameter from fallback-rejection state mapping so the helper reflects its true behavior and remains simpler to call and test.
