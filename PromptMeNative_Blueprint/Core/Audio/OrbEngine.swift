@@ -254,9 +254,10 @@ final class OrbEngine {
             .sink { [weak self] status in
                 guard let self else { return }
                 self.permissionStatus = status
-                if let failureState = Self.failureState(for: status) {
-                    self.state = failureState
-                }
+                self.state = Self.stateAfterPermissionStatusUpdate(
+                    currentState: self.state,
+                    status: status
+                )
             }
             .store(in: &cancellables)
 
@@ -290,6 +291,14 @@ final class OrbEngine {
     nonisolated static func failureState(for status: SpeechRecognizerService.PermissionStatus) -> State? {
         guard let message = failureMessage(for: status) else { return nil }
         return .failure(message)
+    }
+
+    /// Pure mapping for state updates after permission status changes.
+    nonisolated static func stateAfterPermissionStatusUpdate(
+        currentState: State,
+        status: SpeechRecognizerService.PermissionStatus
+    ) -> State {
+        failureState(for: status) ?? currentState
     }
 
     /// Pure mapping from recording-flag updates to state transitions.

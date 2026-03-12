@@ -512,6 +512,36 @@ struct OrbFailureStateMappingTests {
     }
 }
 
+@Suite("Orb Permission Status State Transition")
+struct OrbPermissionStatusStateTransitionTests {
+
+    @Test("Preserves current state for non-failing statuses")
+    func preservesCurrentState() {
+        #expect(OrbEngine.stateAfterPermissionStatusUpdate(
+            currentState: .listening,
+            status: .granted
+        ) == .listening)
+
+        #expect(OrbEngine.stateAfterPermissionStatusUpdate(
+            currentState: .generating,
+            status: .notDetermined
+        ) == .generating)
+    }
+
+    @Test("Transitions to failure for failing statuses")
+    func transitionsToFailure() {
+        #expect(OrbEngine.stateAfterPermissionStatusUpdate(
+            currentState: .listening,
+            status: .speechDenied
+        ) == .failure("Speech recognition permission denied."))
+
+        #expect(OrbEngine.stateAfterPermissionStatusUpdate(
+            currentState: .idle,
+            status: .error("boom")
+        ) == .failure("boom"))
+    }
+}
+
 @Suite("Orb Recording Transition Mapping")
 struct OrbRecordingTransitionMappingTests {
 
