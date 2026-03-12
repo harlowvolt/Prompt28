@@ -365,26 +365,6 @@ struct OrbAlphanumericContentDetectionTests {
     }
 }
 
-@Suite("Orb Transcript Minimum Length")
-struct OrbTranscriptMinimumLengthTests {
-
-    @Test("Returns true when length meets threshold")
-    func meetsThreshold() {
-        #expect(OrbEngine.meetsMinimumTranscriptLength(
-            trimmedText: "abc",
-            minimumTranscriptCharacterCount: 3
-        ))
-    }
-
-    @Test("Returns false when length is below threshold")
-    func belowThreshold() {
-        #expect(!OrbEngine.meetsMinimumTranscriptLength(
-            trimmedText: "ab",
-            minimumTranscriptCharacterCount: 3
-        ))
-    }
-}
-
 @Suite("Orb Listening Duration")
 struct OrbListeningDurationTests {
 

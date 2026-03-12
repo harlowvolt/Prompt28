@@ -959,6 +959,27 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline transcript minimum-length check
+
+Removed a single-use minimum-length helper and performed the length gate directly in transcript meaningfulness evaluation.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `isMeaningfulTranscriptCandidate(...)`, replaced helper call:
+        - `meetsMinimumTranscriptLength(...)`
+      with direct check:
+        - `trimmed.count >= minimumTranscriptCharacterCount`
+    - Removed helper:
+        - `meetsMinimumTranscriptLength(trimmedText:minimumTranscriptCharacterCount:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Transcript Minimum Length`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 320)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline transcript field assignment in finalize polling paths
 
 Removed a single-use transcript-assignment helper and assigned transcript fields directly in the two finalize polling paths.

@@ -307,20 +307,9 @@ final class OrbEngine {
         minimumTranscriptCharacterCount: Int = 3
     ) -> Bool {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard meetsMinimumTranscriptLength(
-            trimmedText: trimmed,
-            minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
-        ) else { return false }
+        guard trimmed.count >= minimumTranscriptCharacterCount else { return false }
         guard hasDetectedSpeechContent || !trimmed.isEmpty else { return false }
         return containsAlphanumericContent(trimmed)
-    }
-
-    /// Pure helper for transcript minimum-length validation.
-    nonisolated static func meetsMinimumTranscriptLength(
-        trimmedText: String,
-        minimumTranscriptCharacterCount: Int
-    ) -> Bool {
-        trimmedText.count >= minimumTranscriptCharacterCount
     }
 
     /// Pure helper for alphanumeric content checks in transcript text.
