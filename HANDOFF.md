@@ -959,6 +959,27 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline speech-content detection flag updates
+
+Removed a single-use speech-content detection helper and updated the transcript sink to apply sticky-detection logic directly.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `speech.transcriptPublisher` sink, replaced helper call:
+        - `updatedSpeechContentDetectionFlag(currentValue:trimmedTranscript:)`
+      with direct expression:
+        - `self.hasDetectedSpeechContent || hasNormalizedTranscriptContent(trimmed)`
+    - Removed helper:
+        - `updatedSpeechContentDetectionFlag(currentValue:trimmedTranscript:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Speech Content Detection Flag`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 325)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline non-empty normalized transcript selection
 
 Removed a single-use normalized-transcript wrapper and applied its selection logic directly in both final-transcript polling loops.

@@ -224,10 +224,7 @@ final class OrbEngine {
                 guard let self else { return }
                 self.transcript = value
                 let trimmed = Self.normalizedTranscript(value)
-                self.hasDetectedSpeechContent = Self.updatedSpeechContentDetectionFlag(
-                    currentValue: self.hasDetectedSpeechContent,
-                    trimmedTranscript: trimmed
-                )
+                self.hasDetectedSpeechContent = self.hasDetectedSpeechContent || Self.hasNormalizedTranscriptContent(trimmed)
             }
             .store(in: &cancellables)
 
@@ -356,14 +353,6 @@ final class OrbEngine {
     /// Pure helper for alphanumeric content checks in transcript text.
     nonisolated static func containsAlphanumericContent(_ text: String) -> Bool {
         text.rangeOfCharacter(from: .alphanumerics) != nil
-    }
-
-    /// Pure helper for sticky speech-content detection updates.
-    nonisolated static func updatedSpeechContentDetectionFlag(
-        currentValue: Bool,
-        trimmedTranscript: String
-    ) -> Bool {
-        currentValue || hasNormalizedTranscriptContent(trimmedTranscript)
     }
 
     /// Pure mapping from permission status to user-facing permission helper text.
