@@ -145,7 +145,7 @@ final class OrbEngine {
     func stopListeningAndFinalize() async -> String? {
         guard stopListening() else { return nil }
         for _ in 0..<finalTranscriptPollingAttempts {
-            let best = finalTranscript.trimmingCharacters(in: transcriptTrimCharacterSet)
+            let best = trimmedTranscriptText(finalTranscript)
             if !best.isEmpty {
                 return best
             }
@@ -155,9 +155,9 @@ final class OrbEngine {
     }
 
     func finalizeTranscript() {
-        let trimmedFinal = finalTranscript.trimmingCharacters(in: transcriptTrimCharacterSet)
+        let trimmedFinal = trimmedTranscriptText(finalTranscript)
         let trimmed = trimmedFinal.isEmpty
-            ? transcript.trimmingCharacters(in: transcriptTrimCharacterSet)
+            ? trimmedTranscriptText(transcript)
             : trimmedFinal
         guard isMeaningfulTranscript(trimmed) else {
             state = isRecording ? state : .idle
@@ -188,7 +188,7 @@ final class OrbEngine {
 
     private func awaitFinalTranscriptAndFinalize() async {
         for _ in 0..<finalTranscriptPollingAttempts {
-            let best = speech.finalTranscript.trimmingCharacters(in: transcriptTrimCharacterSet)
+            let best = trimmedTranscriptText(speech.finalTranscript)
             if !best.isEmpty {
                 (finalTranscript, transcript) = (best, best)
                 finalizeTranscript()
@@ -197,7 +197,7 @@ final class OrbEngine {
             try? await Task.sleep(nanoseconds: finalTranscriptPollingSleepNanoseconds)
         }
 
-        let fallbackCandidate = speech.transcript.trimmingCharacters(in: transcriptTrimCharacterSet)
+        let fallbackCandidate = trimmedTranscriptText(speech.transcript)
         guard isMeaningfulTranscript(fallbackCandidate) else {
             state = .idle
             return
@@ -207,8 +207,12 @@ final class OrbEngine {
         finalizeTranscript()
     }
 
+    private func trimmedTranscriptText(_ text: String) -> String {
+        text.trimmingCharacters(in: transcriptTrimCharacterSet)
+    }
+
     private func isMeaningfulTranscript(_ text: String) -> Bool {
-        let trimmed = text.trimmingCharacters(in: transcriptTrimCharacterSet)
+        let trimmed = trimmedTranscriptText(text)
         guard trimmed.count >= minimumMeaningfulTranscriptLength else { return false }
         return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
     }

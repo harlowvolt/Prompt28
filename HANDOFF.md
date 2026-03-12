@@ -3109,3 +3109,15 @@ Introduced a local `listeningDuration` value in `stopListening()` so the minimum
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation — Added transcript trim helper in OrbEngine
+
+Introduced a private trim helper and used it in finalize/polling transcript normalization paths to reduce repeated trim expressions.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `trimmedTranscriptText(_:)`
+    - Updated finalize and polling callsites to use the helper
+    - No behavior change; trimming rules remain the same
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
