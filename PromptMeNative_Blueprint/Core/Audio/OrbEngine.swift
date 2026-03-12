@@ -441,7 +441,12 @@ final class OrbEngine {
         state: State
     ) -> Bool {
         guard !trimmedFinalTranscript.isEmpty else { return false }
-        return state == .transcribing || state == .listening
+        return isStateEligibleForFinalTranscriptFinalize(state)
+    }
+
+    /// Pure helper listing states where final transcript updates should trigger finalize.
+    nonisolated static func isStateEligibleForFinalTranscriptFinalize(_ state: State) -> Bool {
+        state == .transcribing || state == .listening
     }
 }
 

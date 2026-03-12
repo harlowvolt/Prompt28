@@ -637,3 +637,21 @@ struct OrbFinalTranscriptFinalizeGateTests {
         ))
     }
 }
+
+@Suite("Orb Final Transcript Eligible States")
+struct OrbFinalTranscriptEligibleStatesTests {
+
+    @Test("Listening/transcribing are eligible")
+    func eligibleStates() {
+        #expect(OrbEngine.isStateEligibleForFinalTranscriptFinalize(.listening))
+        #expect(OrbEngine.isStateEligibleForFinalTranscriptFinalize(.transcribing))
+    }
+
+    @Test("Other states are not eligible")
+    func ineligibleStates() {
+        #expect(!OrbEngine.isStateEligibleForFinalTranscriptFinalize(.idle))
+        #expect(!OrbEngine.isStateEligibleForFinalTranscriptFinalize(.generating))
+        #expect(!OrbEngine.isStateEligibleForFinalTranscriptFinalize(.success))
+        #expect(!OrbEngine.isStateEligibleForFinalTranscriptFinalize(.failure("x")))
+    }
+}
