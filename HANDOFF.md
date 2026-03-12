@@ -1400,6 +1400,26 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure final-transcript finalize gate + tests
+
+Extracted the final-transcript update finalize gate into a pure helper to make this state-transition decision independently testable.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - final transcript subscriber now delegates finalize gating to:
+        - `nonisolated static func shouldFinalizeOnFinalTranscriptUpdate(trimmedFinalTranscript:state:) -> Bool`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Final Transcript Finalize Gate` with coverage for:
+        - allows non-empty transcript only when state is `.listening` or `.transcribing`
+        - rejects non-empty transcript for non-eligible states (`idle`, `generating`, `success`)
+        - rejects empty transcript for eligible states
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.
