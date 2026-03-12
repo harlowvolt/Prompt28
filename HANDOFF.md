@@ -3088,3 +3088,13 @@ Replaced the inline minimum transcript length literal with a private constant in
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation — Consolidated startListening empty-string resets in OrbEngine
+
+Merged transcript and last-delivered transcript reset writes into one tuple assignment for a tighter start-listening initialization block.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Replaced separate reset lines with `(transcript, finalTranscript, lastDeliveredTranscript) = ("", "", "")`
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
