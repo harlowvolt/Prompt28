@@ -129,7 +129,9 @@ final class OrbEngine {
 
     @discardableResult
     func stopListening() -> Bool {
-        guard isRecording && canStopListeningNow else { return false }
+        guard isRecording,
+              let listeningStartedAt,
+              Date().timeIntervalSince(listeningStartedAt) >= minimumListeningDuration else { return false }
 
         state = .transcribing
         speech.stopRecording()
@@ -205,11 +207,6 @@ final class OrbEngine {
         finalTranscript = fallbackCandidate
         transcript = fallbackCandidate
         finalizeTranscript()
-    }
-
-    private var canStopListeningNow: Bool {
-        guard let listeningStartedAt else { return false }
-        return Date().timeIntervalSince(listeningStartedAt) >= minimumListeningDuration
     }
 
     private func isMeaningfulTranscript(_ text: String) -> Bool {

@@ -959,6 +959,23 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline stop-listening time gate property
+
+Removed a small computed-property indirection and applied the stop-listening time gate directly in `stopListening()`.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `stopListening()`, replaced `canStopListeningNow` usage with direct guard logic:
+        - `listeningStartedAt` must exist
+        - elapsed time since start must meet `minimumListeningDuration`
+    - Removed computed property:
+        - `canStopListeningNow`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 315)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline transcript normalization helper
 
 Removed the final transcript-normalization helper and inlined trimming logic directly at all call sites.
