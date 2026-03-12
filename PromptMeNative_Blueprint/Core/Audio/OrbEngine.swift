@@ -197,11 +197,7 @@ final class OrbEngine {
         }
 
         let fallbackCandidate = Self.normalizedTranscript(speech.transcript)
-        guard Self.isMeaningfulTranscriptCandidate(
-            text: fallbackCandidate,
-            hasDetectedSpeechContent: hasDetectedSpeechContent,
-            minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
-        ) else {
+        guard isMeaningfulTranscript(fallbackCandidate) else {
             state = .idle
             return
         }
@@ -217,11 +213,10 @@ final class OrbEngine {
     }
 
     private func isMeaningfulTranscript(_ text: String) -> Bool {
-        Self.isMeaningfulTranscriptCandidate(
-            text: text,
-            hasDetectedSpeechContent: hasDetectedSpeechContent,
-            minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
-        )
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= minimumTranscriptCharacterCount else { return false }
+        guard hasDetectedSpeechContent || !trimmed.isEmpty else { return false }
+        return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
     }
 
     private func bindSpeechState() {
@@ -286,18 +281,6 @@ final class OrbEngine {
     /// Pure helper for transcript whitespace normalization.
     nonisolated static func normalizedTranscript(_ text: String) -> String {
         text.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    /// Pure helper for transcript meaningfulness checks.
-    nonisolated static func isMeaningfulTranscriptCandidate(
-        text: String,
-        hasDetectedSpeechContent: Bool,
-        minimumTranscriptCharacterCount: Int = 3
-    ) -> Bool {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= minimumTranscriptCharacterCount else { return false }
-        guard hasDetectedSpeechContent || !trimmed.isEmpty else { return false }
-        return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
     }
 
 }

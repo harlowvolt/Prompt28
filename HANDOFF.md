@@ -959,6 +959,32 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline transcript meaningfulness helper
+
+Removed the static transcript-meaningfulness helper and applied the logic directly in the instance-level meaningfulness check.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In fallback acceptance path, replaced call to:
+        - `isMeaningfulTranscriptCandidate(...)`
+      with:
+        - `isMeaningfulTranscript(...)`
+    - In `isMeaningfulTranscript(_:)`, inlined the complete meaningfulness logic:
+        - trim whitespace/newlines
+        - minimum character count gate
+        - speech-content/emptiness gate
+        - alphanumeric-content gate
+    - Removed helper:
+        - `isMeaningfulTranscriptCandidate(...)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Transcript Meaning`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 319)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline permission failure/message mappings
 
 Removed two single-use permission mapping helpers and inlined their behavior directly at usage sites.

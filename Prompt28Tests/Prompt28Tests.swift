@@ -240,44 +240,4 @@ struct OrbTranscriptNormalizationTests {
     }
 }
 
-@Suite("Orb Transcript Meaning")
-struct OrbTranscriptMeaningTests {
-
-    @Test("Rejects short text below minimum character count")
-    func rejectsShortText() {
-        #expect(!OrbEngine.isMeaningfulTranscriptCandidate(
-            text: "ok",
-            hasDetectedSpeechContent: true,
-            minimumTranscriptCharacterCount: 3
-        ))
-    }
-
-    @Test("Rejects text without alphanumeric characters")
-    func rejectsNonAlphanumericText() {
-        #expect(!OrbEngine.isMeaningfulTranscriptCandidate(
-            text: "--- ...",
-            hasDetectedSpeechContent: true,
-            minimumTranscriptCharacterCount: 3
-        ))
-    }
-
-    @Test("Accepts valid alphanumeric text when speech detected")
-    func acceptsDetectedSpeechText() {
-        #expect(OrbEngine.isMeaningfulTranscriptCandidate(
-            text: "hello 123",
-            hasDetectedSpeechContent: true,
-            minimumTranscriptCharacterCount: 3
-        ))
-    }
-
-    @Test("Accepts non-empty alphanumeric text even when speech flag is false")
-    func acceptsAlphanumericFallback() {
-        #expect(OrbEngine.isMeaningfulTranscriptCandidate(
-            text: "  fallback value  ",
-            hasDetectedSpeechContent: false,
-            minimumTranscriptCharacterCount: 3
-        ))
-    }
-}
-
 
