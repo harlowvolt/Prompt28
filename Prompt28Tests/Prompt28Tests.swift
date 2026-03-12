@@ -248,3 +248,34 @@ struct OrbPermissionFailureMappingTests {
         #expect(OrbEngine.failureMessage(for: .error("boom")) == "boom")
     }
 }
+
+@Suite("Orb Transcript Candidate")
+struct OrbTranscriptCandidateTests {
+
+    @Test("Prefers non-empty final transcript after trimming")
+    func prefersFinalTranscript() {
+        let result = OrbEngine.preferredTranscriptCandidate(
+            finalTranscript: "  final result  ",
+            transcript: "live value"
+        )
+        #expect(result == "final result")
+    }
+
+    @Test("Falls back to live transcript when final is empty")
+    func fallsBackToLiveTranscript() {
+        let result = OrbEngine.preferredTranscriptCandidate(
+            finalTranscript: "   ",
+            transcript: "  live value  "
+        )
+        #expect(result == "live value")
+    }
+
+    @Test("Returns empty when both sources are empty")
+    func returnsEmptyWhenBothAreEmpty() {
+        let result = OrbEngine.preferredTranscriptCandidate(
+            finalTranscript: "   ",
+            transcript: "\n\t"
+        )
+        #expect(result.isEmpty)
+    }
+}
