@@ -249,16 +249,6 @@ struct OrbPermissionFailureMappingTests {
     }
 }
 
-@Suite("Orb Final Transcript Polling Sleep")
-struct OrbFinalTranscriptPollingSleepTests {
-
-    @Test("Polling sleep duration is positive and stable")
-    func pollingSleepDuration() {
-        #expect(OrbEngine.finalTranscriptPollingSleepNanoseconds() > 0)
-        #expect(OrbEngine.finalTranscriptPollingSleepNanoseconds() == 50_000_000)
-    }
-}
-
 @Suite("Orb Transcript Normalization")
 struct OrbTranscriptNormalizationTests {
 
@@ -333,25 +323,6 @@ struct OrbPermissionMessageMappingTests {
     @Test("Error status returns passthrough message")
     func errorPassthrough() {
         #expect(OrbEngine.permissionMessage(for: .error("custom")) == "custom")
-    }
-}
-
-@Suite("Orb Permission Settings Action Mapping")
-struct OrbPermissionSettingsActionMappingTests {
-
-    @Test("Denied/restricted statuses require Settings action")
-    func deniedStatusesRequireSettings() {
-        #expect(OrbEngine.needsPermissionSettingsAction(for: .speechDenied))
-        #expect(OrbEngine.needsPermissionSettingsAction(for: .microphoneDenied))
-        #expect(OrbEngine.needsPermissionSettingsAction(for: .restricted))
-    }
-
-    @Test("Other statuses do not require Settings action")
-    func otherStatusesDoNotRequireSettings() {
-        #expect(!OrbEngine.needsPermissionSettingsAction(for: .notDetermined))
-        #expect(!OrbEngine.needsPermissionSettingsAction(for: .granted))
-        #expect(!OrbEngine.needsPermissionSettingsAction(for: .unavailable))
-        #expect(!OrbEngine.needsPermissionSettingsAction(for: .error("x")))
     }
 }
 

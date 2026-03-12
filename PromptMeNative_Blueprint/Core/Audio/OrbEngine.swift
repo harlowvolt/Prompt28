@@ -87,7 +87,12 @@ final class OrbEngine {
     }
 
     var needsPermissionSettingsAction: Bool {
-        Self.needsPermissionSettingsAction(for: permissionStatus)
+        switch permissionStatus {
+        case .speechDenied, .microphoneDenied, .restricted:
+            return true
+        case .notDetermined, .granted, .unavailable, .error:
+            return false
+        }
     }
 
     var permissionMessage: String {
@@ -129,7 +134,7 @@ final class OrbEngine {
             if !best.isEmpty {
                 return best
             }
-            try? await Task.sleep(nanoseconds: Self.finalTranscriptPollingSleepNanoseconds())
+            try? await Task.sleep(nanoseconds: 50_000_000)
         }
         return nil
     }
@@ -175,7 +180,7 @@ final class OrbEngine {
                 finalizeTranscript()
                 return
             }
-            try? await Task.sleep(nanoseconds: Self.finalTranscriptPollingSleepNanoseconds())
+            try? await Task.sleep(nanoseconds: 50_000_000)
         }
 
         let fallbackCandidate = Self.normalizedTranscript(speech.transcript)
@@ -272,11 +277,6 @@ final class OrbEngine {
         }
     }
 
-    /// Pure helper for final transcript polling sleep duration.
-    nonisolated static func finalTranscriptPollingSleepNanoseconds() -> UInt64 {
-        50_000_000
-    }
-
     /// Pure helper for transcript whitespace normalization.
     nonisolated static func normalizedTranscript(_ text: String) -> String {
         text.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -309,18 +309,6 @@ final class OrbEngine {
             return "Speech recognizer is temporarily unavailable."
         case .error(let message):
             return message
-        }
-    }
-
-    /// Pure mapping for whether opening Settings is a meaningful recovery action.
-    nonisolated static func needsPermissionSettingsAction(
-        for status: SpeechRecognizerService.PermissionStatus
-    ) -> Bool {
-        switch status {
-        case .speechDenied, .microphoneDenied, .restricted:
-            return true
-        case .notDetermined, .granted, .unavailable, .error:
-            return false
         }
     }
 

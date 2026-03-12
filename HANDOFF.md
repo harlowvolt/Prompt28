@@ -959,6 +959,45 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline polling sleep duration constant
+
+Removed a small polling-sleep helper and used the stable sleep constant directly in both final-transcript polling loops.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `stopListeningAndFinalize()`, replaced:
+        - `finalTranscriptPollingSleepNanoseconds()`
+      with:
+        - `50_000_000`
+    - In `awaitFinalTranscriptAndFinalize()`, replaced:
+        - `finalTranscriptPollingSleepNanoseconds()`
+      with:
+        - `50_000_000`
+    - Removed helper:
+        - `finalTranscriptPollingSleepNanoseconds()`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Final Transcript Polling Sleep`
+
+#### Phase 3 prep continuation — Inline permission settings-action mapping in property
+
+Removed a single-use permission-settings helper and mapped statuses directly in the computed property.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `needsPermissionSettingsAction`, replaced helper call:
+        - `needsPermissionSettingsAction(for: permissionStatus)`
+      with inline `switch` over `permissionStatus`
+    - Removed helper:
+        - `needsPermissionSettingsAction(for:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Permission Settings Action Mapping`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 319)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline polling attempt range helper
 
 Removed a small helper for polling range and used the stable range directly in both final-transcript polling loops.
