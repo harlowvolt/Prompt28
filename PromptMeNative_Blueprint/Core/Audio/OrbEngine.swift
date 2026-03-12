@@ -150,7 +150,7 @@ final class OrbEngine {
         ) else { return }
 
         lastDeliveredTranscript = trimmed
-        state = .ready(text: trimmed)
+        state = Self.stateAfterDeliveringTranscript(trimmed)
         onFinalTranscript?(trimmed)
     }
 
@@ -362,6 +362,11 @@ final class OrbEngine {
         lastDeliveredTranscript: String
     ) -> Bool {
         trimmedTranscript != lastDeliveredTranscript
+    }
+
+    /// Pure mapping for state transition after successful transcript delivery.
+    nonisolated static func stateAfterDeliveringTranscript(_ transcript: String) -> State {
+        .ready(text: transcript)
     }
 
     /// Pure helper for deciding whether a discarded transcript should reset state to idle.

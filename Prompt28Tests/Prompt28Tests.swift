@@ -342,6 +342,15 @@ struct OrbTranscriptDeliveryDedupeTests {
     }
 }
 
+@Suite("Orb Transcript Delivery State Mapping")
+struct OrbTranscriptDeliveryStateMappingTests {
+
+    @Test("Maps delivered transcript to ready state")
+    func mapsToReadyState() {
+        #expect(OrbEngine.stateAfterDeliveringTranscript("hello") == .ready(text: "hello"))
+    }
+}
+
 @Suite("Orb Idle Reset Decision")
 struct OrbIdleResetDecisionTests {
 
