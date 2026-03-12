@@ -6,6 +6,8 @@ final class HomeViewModel {
     private(set) var settings: AppSettings = .default
     private(set) var user: User?
     var errorMessage: String?
+    var inputText: String = ""
+    var onGeneratePrompt: ((String) -> Void)?
 
     private let apiClient: APIClient
     private let authManager: AuthManager
@@ -31,5 +33,16 @@ final class HomeViewModel {
         } catch {
             errorMessage = error.localizedDescription
         }
+    }
+
+    func generatePrompt() {
+        let cleaned = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !cleaned.isEmpty else { return }
+        onGeneratePrompt?(cleaned)
+    }
+
+    func orbEngineDidFinishSpeech(_ text: String) {
+        inputText = text
+        generatePrompt()
     }
 }

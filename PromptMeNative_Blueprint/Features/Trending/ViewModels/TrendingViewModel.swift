@@ -1,26 +1,42 @@
 import Foundation
 
+enum TrendingCategory: String, CaseIterable {
+	case all = "All"
+	case school = "School"
+	case work = "Work"
+	case business = "Business"
+	case fitness = "Fitness"
+}
+
 @Observable
 @MainActor
 final class TrendingViewModel {
 	private(set) var catalog: PromptCatalog?
 	private(set) var isLoading = false
 	var errorMessage: String?
-	var selectedCategoryKey: String?
+	var selectedCategory: TrendingCategory = .all
 
 	var categories: [PromptCategory] {
 		catalog?.categories ?? []
 	}
 
-	var selectedCategory: PromptCategory? {
-		guard let categoryKey = selectedCategoryKey else {
-			return categories.first
-		}
-		return categories.first(where: { $0.key == categoryKey }) ?? categories.first
+	var prompts: [PromptItem] {
+		categories.flatMap(\.items)
 	}
 
-	func selectCategory(_ key: String) {
-		selectedCategoryKey = key
+	var filteredPrompts: [PromptItem] {
+		if selectedCategory == .all {
+			return prompts
+		}
+
+		let key = selectedCategory.rawValue.lowercased()
+		return categories
+			.filter { $0.key.lowercased() == key }
+			.flatMap(\.items)
+	}
+
+	func selectCategory(_ category: TrendingCategory) {
+		selectedCategory = category
 	}
 
 	/// Loads content for display. On the first call:
@@ -43,9 +59,6 @@ final class TrendingViewModel {
 		do {
 			let data = try await apiClient.promptsTrending()
 			catalog = data
-			if selectedCategoryKey == nil {
-				selectedCategoryKey = data.categories.first?.key
-			}
 		} catch {
 			// Only surface the error if we have nothing to show.
 			if catalog == nil {

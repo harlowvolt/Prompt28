@@ -40,7 +40,7 @@ extension AppHeights {
     static let segmented: CGFloat = segmentedControl
     static let primaryButton: CGFloat = 56
     static let tabBarFloating: CGFloat = floatingTabBar
-    static let tabBarClearance: CGFloat = 102
+    static let tabBarClearance: CGFloat = 72
 }
 
 enum AppShadows {

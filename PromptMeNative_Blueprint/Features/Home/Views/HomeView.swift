@@ -341,6 +341,7 @@ struct HomeView: View {
             } else {
                 orbEngine.markSuccess()
             }
+            orbEngine.markIdle()
         }
     }
 

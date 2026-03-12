@@ -81,37 +81,9 @@ struct TrendingView: View {
 
     private var categoryPicker: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 12) {
-                ForEach(viewModel.categories) { category in
-                    let isSelected = viewModel.selectedCategory?.key == category.key
-                    Button {
-                        viewModel.selectCategory(category.key)
-                    } label: {
-                        Text(category.name)
-                            .font(.system(size: 16, weight: .medium, design: .rounded))
-                            .foregroundStyle(isSelected ? .white : PromptTheme.softLilac.opacity(0.65))
-                            .padding(.horizontal, 20)
-                            .frame(height: 46)
-                            .background {
-                                if isSelected {
-                                    Capsule()
-                                        .fill(
-                                            LinearGradient(
-                                                colors: [Color(hex: "#5A638A").opacity(0.90), Color(hex: "#3F4766").opacity(0.88)],
-                                                startPoint: .topLeading,
-                                                endPoint: .bottomTrailing
-                                            )
-                                        )
-                                        .overlay(Capsule().stroke(Color.white.opacity(0.20), lineWidth: 0.8))
-                                        .shadow(color: Color(hex: "#5E6E9B").opacity(0.20), radius: 10)
-                                } else {
-                                    Capsule()
-                                        .fill(PromptTheme.glassFill)
-                                        .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.5))
-                                }
-                            }
-                    }
-                    .buttonStyle(.plain)
+            HStack(spacing: 10) {
+                ForEach(TrendingCategory.allCases, id: \.self) { category in
+                    categoryChip(category)
                 }
             }
             .padding(.vertical, 12)
@@ -129,15 +101,15 @@ struct TrendingView: View {
         } else if let message = viewModel.errorMessage, viewModel.catalog == nil {
             errorState(message: message)
 
-        } else if let category = viewModel.selectedCategory {
-            let items = filteredItems(from: category)
+        } else {
+            let items = filteredItems(viewModel.filteredPrompts)
 
             VStack(spacing: AppSpacing.sectionTight) {
                 categoryPicker
 
                 // Section header
                 HStack(spacing: 6) {
-                    Text(category.name.uppercased())
+                    Text(viewModel.selectedCategory.rawValue.uppercased())
                         .font(.system(size: 12, weight: .bold, design: .rounded))
                         .foregroundStyle(.white.opacity(0.48))
 
@@ -169,8 +141,6 @@ struct TrendingView: View {
                     }
                 }
             }
-        } else {
-            emptyState
         }
     }
 
@@ -280,14 +250,47 @@ struct TrendingView: View {
 
     // MARK: - Filter Helper
 
-    private func filteredItems(from category: PromptCategory) -> [PromptItem] {
+    private func filteredItems(_ items: [PromptItem]) -> [PromptItem] {
         guard !searchQuery.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return category.items
+            return items
         }
         let q = searchQuery.lowercased()
-        return category.items.filter {
+        return items.filter {
             $0.title.lowercased().contains(q) || $0.prompt.lowercased().contains(q)
         }
+    }
+
+    private func categoryChip(_ category: TrendingCategory) -> some View {
+        let isSelected = viewModel.selectedCategory == category
+
+        return Button {
+            viewModel.selectCategory(category)
+        } label: {
+            Text(category.rawValue)
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundStyle(isSelected ? .white : PromptTheme.softLilac.opacity(0.65))
+                .padding(.horizontal, 20)
+                .frame(height: 46)
+                .background {
+                    if isSelected {
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [Color(hex: "#5A638A").opacity(0.90), Color(hex: "#3F4766").opacity(0.88)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing
+                                )
+                            )
+                            .overlay(Capsule().stroke(Color.white.opacity(0.20), lineWidth: 0.8))
+                            .shadow(color: Color(hex: "#5E6E9B").opacity(0.20), radius: 10)
+                    } else {
+                        Capsule()
+                            .fill(PromptTheme.glassFill)
+                            .overlay(Capsule().stroke(Color.white.opacity(0.12), lineWidth: 0.5))
+                    }
+                }
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - State Views

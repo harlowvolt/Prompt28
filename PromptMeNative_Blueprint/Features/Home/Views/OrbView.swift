@@ -5,42 +5,45 @@ struct OrbView: View {
     var engine: OrbEngine
     let onTranscript: (String) -> Void
     @Environment(\.openURL) private var openURL
+    @State private var orbState: OrbTapState = .idle
 
     var body: some View {
         VStack(spacing: PromptTheme.Spacing.s) {
-            Button {
-                Task {
-                    if engine.isRecording {
-                        HapticService.impact(.light)
-                        if let final = await engine.stopListeningAndFinalize() {
-                            onTranscript(final)
-                        }
-                    } else {
-                        HapticService.impact(.heavy)
-                        engine.startListening()
-                    }
-                }
-            } label: {
-                GeometryReader { proxy in
-                    let size = min(proxy.size.width, proxy.size.height)
-                    let orbSize = size * 0.78
+            GeometryReader { proxy in
+                let size = min(proxy.size.width, proxy.size.height)
+                let orbSize = size * 0.78
 
-                    TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: visualState == .idle)) { timeline in
-                        let t = timeline.date.timeIntervalSinceReferenceDate
+                TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: visualState == .idle)) { timeline in
+                    let t = timeline.date.timeIntervalSinceReferenceDate
 
-                        ZStack {
-                            backgroundAtmosphere(size: size * 0.76)
-                            coreOrb(size: orbSize, time: t)
-                            processingSpinner(size: orbSize * 1.04, time: t)
-                        }
-                        .frame(width: size, height: size)
+                    ZStack {
+                        backgroundAtmosphere(size: size * 0.76)
+                        coreOrb(size: orbSize, time: t)
+                        processingSpinner(size: orbSize * 1.04, time: t)
                     }
+                    .frame(width: size, height: size)
                 }
-                .aspectRatio(1, contentMode: .fit)
-                .frame(maxWidth: 420)
-                .padding(.horizontal, 8)
             }
-            .buttonStyle(.plain)
+            .aspectRatio(1, contentMode: .fit)
+            .frame(maxWidth: 420)
+            .padding(.horizontal, 8)
+            .contentShape(Rectangle())
+            .onTapGesture {
+                switch orbState {
+                case .idle:
+                    HapticService.impact(.heavy)
+                    engine.startListening()
+                    orbState = .listening
+
+                case .listening:
+                    HapticService.impact(.light)
+                    engine.stopListening()
+                    orbState = .processing
+
+                case .processing:
+                    break
+                }
+            }
 
             if !engine.permissionMessage.isEmpty {
                 VStack(spacing: 8) {
@@ -63,6 +66,24 @@ struct OrbView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onAppear {
+            engine.onFinalTranscript = { text in
+                onTranscript(text)
+            }
+        }
+        .onDisappear {
+            engine.onFinalTranscript = nil
+        }
+        .onChange(of: engine.state) { _, newState in
+            switch newState {
+            case .idle, .success, .failure:
+                orbState = .idle
+            case .listening:
+                orbState = .listening
+            case .transcribing, .ready, .generating:
+                orbState = .processing
+            }
+        }
     }
 
     private var visualState: OrbVisualState {
@@ -295,4 +316,10 @@ private enum OrbVisualState {
     case listening
     case processing
     case error
+}
+
+private enum OrbTapState {
+    case idle
+    case listening
+    case processing
 }

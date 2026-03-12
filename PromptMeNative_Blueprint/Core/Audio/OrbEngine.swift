@@ -21,8 +21,10 @@ final class OrbEngine {
     private(set) var finalTranscript = ""
     private(set) var permissionStatus: SpeechRecognizerService.PermissionStatus = .notDetermined
     private(set) var audioLevel: CGFloat = 0
+    var onFinalTranscript: ((String) -> Void)?
 
     private let speech: SpeechRecognizing
+    private var lastDeliveredTranscript = ""
     // Combine is kept internally to bridge SpeechRecognizing's thread-safe publishers.
     private var cancellables: Set<AnyCancellable> = []
 
@@ -67,37 +69,45 @@ final class OrbEngine {
     }
 
     func startListening() {
+        transcript = ""
+        finalTranscript = ""
+        lastDeliveredTranscript = ""
         state = .listening
         speech.startRecording()
     }
 
-    func stopListeningAndFinalize() async -> String? {
-        guard isRecording else { return nil }
-
+    func stopListening() {
+        guard isRecording else { return }
         state = .transcribing
         speech.stopRecording()
 
+        Task { [weak self] in
+            await self?.awaitFinalTranscriptAndFinalize()
+        }
+    }
+
+    func stopListeningAndFinalize() async -> String? {
+        stopListening()
         for _ in 0..<30 {
-            let best = speech.finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+            let best = finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
             if !best.isEmpty {
-                finalTranscript = best
-                transcript = best
-                state = .ready(text: best)
                 return best
             }
             try? await Task.sleep(nanoseconds: 50_000_000)
         }
+        return nil
+    }
 
-        let fallback = speech.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-        if fallback.isEmpty {
-            state = .failure("No speech detected.")
-            return nil
-        }
+    func finalizeTranscript() {
+        let current = finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+            ? transcript
+            : finalTranscript
+        let trimmed = current.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        guard trimmed != lastDeliveredTranscript else { return }
 
-        finalTranscript = fallback
-        transcript = fallback
-        state = .ready(text: fallback)
-        return fallback
+        lastDeliveredTranscript = trimmed
+        onFinalTranscript?(trimmed)
     }
 
     func markGenerating() {
@@ -110,6 +120,35 @@ final class OrbEngine {
 
     func markFailure(_ message: String) {
         state = .failure(message)
+    }
+
+    func markIdle() {
+        state = .idle
+    }
+
+    private func awaitFinalTranscriptAndFinalize() async {
+        for _ in 0..<30 {
+            let best = speech.finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+            if !best.isEmpty {
+                finalTranscript = best
+                transcript = best
+                state = .ready(text: best)
+                finalizeTranscript()
+                return
+            }
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
+
+        let fallback = speech.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        if fallback.isEmpty {
+            state = .failure("No speech detected.")
+            return
+        }
+
+        finalTranscript = fallback
+        transcript = fallback
+        state = .ready(text: fallback)
+        finalizeTranscript()
     }
 
     private func bindSpeechState() {
@@ -137,6 +176,7 @@ final class OrbEngine {
                 let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmed.isEmpty, self.state == .transcribing || self.state == .listening {
                     self.state = .ready(text: trimmed)
+                    self.finalizeTranscript()
                 }
             }
             .store(in: &cancellables)
