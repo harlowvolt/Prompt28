@@ -3054,3 +3054,14 @@ Replaced the inline minimum-recording-duration literal with a private constant t
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation — Simplified startListening transcript reset in OrbEngine
+
+Collapsed paired transcript reset lines into a tuple assignment in `startListening()` to reduce repetitive state write boilerplate.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Replaced `transcript = ""` plus `finalTranscript = ""`
+    - With `(transcript, finalTranscript) = ("", "")`
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)

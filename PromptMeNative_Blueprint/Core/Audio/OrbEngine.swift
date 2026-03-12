@@ -119,8 +119,7 @@ final class OrbEngine {
     }
 
     func startListening() {
-        transcript = ""
-        finalTranscript = ""
+        (transcript, finalTranscript) = ("", "")
         lastDeliveredTranscript = ""
         listeningStartedAt = Date()
         state = .listening
