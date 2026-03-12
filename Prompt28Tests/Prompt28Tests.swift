@@ -378,6 +378,29 @@ struct OrbPermissionMessageMappingTests {
     }
 }
 
+@Suite("Orb Failure State Mapping")
+struct OrbFailureStateMappingTests {
+
+    @Test("Non-failing statuses map to nil state")
+    func nonFailingStatuses() {
+        #expect(OrbEngine.failureState(for: .notDetermined) == nil)
+        #expect(OrbEngine.failureState(for: .granted) == nil)
+    }
+
+    @Test("Permission-related statuses map to failure state")
+    func permissionFailures() {
+        #expect(OrbEngine.failureState(for: .speechDenied) == .failure("Speech recognition permission denied."))
+        #expect(OrbEngine.failureState(for: .microphoneDenied) == .failure("Microphone permission denied."))
+        #expect(OrbEngine.failureState(for: .restricted) == .failure("Speech recognition is restricted on this device."))
+        #expect(OrbEngine.failureState(for: .unavailable) == .failure("Speech recognition is unavailable."))
+    }
+
+    @Test("Error status maps to passthrough failure state")
+    func passthroughError() {
+        #expect(OrbEngine.failureState(for: .error("boom")) == .failure("boom"))
+    }
+}
+
 @Suite("Orb Permission Settings Action Mapping")
 struct OrbPermissionSettingsActionMappingTests {
 
