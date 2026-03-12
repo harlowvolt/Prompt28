@@ -88,6 +88,22 @@ private struct APIClientKey: EnvironmentKey {
     static var defaultValue: (any APIClientProtocol)? = nil
 }
 
+private struct PreferencesStoreKey: EnvironmentKey {
+    static var defaultValue: (any PreferenceStoring)? = nil
+}
+
+private struct UsageTrackerKey: EnvironmentKey {
+    static var defaultValue: UsageTracker? = nil
+}
+
+private struct StoreManagerKey: EnvironmentKey {
+    static var defaultValue: StoreManager? = nil
+}
+
+private struct KeychainServiceKey: EnvironmentKey {
+    static var defaultValue: KeychainService? = nil
+}
+
 extension EnvironmentValues {
     var historyStore: (any HistoryStoring)? {
         get { self[HistoryStoreKey.self] }
@@ -112,5 +128,25 @@ extension EnvironmentValues {
     var apiClient: (any APIClientProtocol)? {
         get { self[APIClientKey.self] }
         set { self[APIClientKey.self] = newValue }
+    }
+
+    var preferencesStore: (any PreferenceStoring)? {
+        get { self[PreferencesStoreKey.self] }
+        set { self[PreferencesStoreKey.self] = newValue }
+    }
+
+    var usageTracker: UsageTracker? {
+        get { self[UsageTrackerKey.self] }
+        set { self[UsageTrackerKey.self] = newValue }
+    }
+
+    var storeManager: StoreManager? {
+        get { self[StoreManagerKey.self] }
+        set { self[StoreManagerKey.self] = newValue }
+    }
+
+    var keychainService: KeychainService? {
+        get { self[KeychainServiceKey.self] }
+        set { self[KeychainServiceKey.self] = newValue }
     }
 }

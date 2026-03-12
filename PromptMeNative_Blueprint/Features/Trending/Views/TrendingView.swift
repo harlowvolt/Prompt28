@@ -4,6 +4,7 @@ struct TrendingView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.appRouter) private var appRouter
     @Environment(\.apiClient) private var scopedAPIClient
+    @AppStorage("experiment.useRootBackground.trending") private var useRootBackgroundExperiment = false
     @State private var viewModel = TrendingViewModel()
     @State private var searchQuery = ""
     @State private var showCopiedToast = false
@@ -24,8 +25,13 @@ struct TrendingView: View {
         )) {
             GeometryReader { proxy in
                 ZStack(alignment: .top) {
-                    PromptPremiumBackground()
-                        .ignoresSafeArea()
+                    if useRootBackgroundExperiment {
+                        Color.clear
+                            .ignoresSafeArea()
+                    } else {
+                        PromptPremiumBackground()
+                            .ignoresSafeArea()
+                    }
 
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 0) {
@@ -51,13 +57,8 @@ struct TrendingView: View {
                 }
             }
             .navigationDestination(for: AppDestination.self) { destination in
-                switch destination {
-                case .trendingDetail(let id):
-                    if let item = viewModel.promptItem(id: id) {
-                        PromptDetailView(item: item)
-                    } else {
-                        ContentUnavailableView("Prompt not available", systemImage: "exclamationmark.triangle")
-                    }
+                AppDestinationHost(destination: destination) { id in
+                    viewModel.promptItem(id: id)
                 }
             }
             .toolbar(.hidden, for: .navigationBar)

@@ -21,6 +21,10 @@ struct PromptMeNativeApp: App {
                 .environment(\.appRouter, env.router)
                 .environment(\.errorState, errorState)
                 .environment(\.apiClient, env.apiClient)
+                .environment(\.preferencesStore, env.preferencesStore)
+                .environment(\.usageTracker, env.usageTracker)
+                .environment(\.storeManager, env.storeManager)
+                .environment(\.keychainService, env.keychain)
                 .onOpenURL { url in
                     // Hands Google's OAuth redirect back to the SDK
                     GIDSignIn.sharedInstance.handle(url)

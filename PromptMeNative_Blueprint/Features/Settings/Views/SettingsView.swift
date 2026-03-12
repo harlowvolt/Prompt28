@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Environment(\.historyStore) private var scopedHistoryStore
     @Environment(\.appRouter) private var scopedRouter
     @Environment(\.apiClient) private var scopedAPIClient
+    @Environment(\.preferencesStore) private var scopedPreferencesStore
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = SettingsViewModel()
     @State private var showUpgrade = false
@@ -26,6 +27,10 @@ struct SettingsView: View {
 
     private var apiClient: any APIClientProtocol {
         scopedAPIClient ?? env.apiClient
+    }
+
+    private var preferencesStore: any PreferenceStoring {
+        scopedPreferencesStore ?? env.preferencesStore
     }
 
     var body: some View {
@@ -86,7 +91,7 @@ struct SettingsView: View {
             viewModel.bind(
                 apiClient: apiClient,
                 authManager: authManager,
-                preferencesStore: env.preferencesStore,
+                preferencesStore: preferencesStore,
                 historyStore: historyStore
             )
             viewModel.syncFromStores()

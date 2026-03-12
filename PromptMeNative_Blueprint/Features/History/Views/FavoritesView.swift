@@ -4,6 +4,7 @@ import UIKit
 struct FavoritesView: View {
     @Environment(\.historyStore) private var historyStore
     @Environment(\.dismiss) private var dismiss
+    @AppStorage("experiment.useRootBackground.favorites") private var useRootBackgroundExperiment = false
     @State private var viewModel = HistoryViewModel()
     @State private var showCopiedToast = false
 
@@ -11,8 +12,13 @@ struct FavoritesView: View {
         NavigationStack {
             GeometryReader { proxy in
                 ZStack(alignment: .top) {
-                    PromptPremiumBackground()
-                        .ignoresSafeArea()
+                    if useRootBackgroundExperiment {
+                        Color.clear
+                            .ignoresSafeArea()
+                    } else {
+                        PromptPremiumBackground()
+                            .ignoresSafeArea()
+                    }
 
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 0) {

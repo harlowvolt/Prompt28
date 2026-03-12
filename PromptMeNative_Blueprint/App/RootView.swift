@@ -3,6 +3,7 @@ import UIKit
 
 struct RootView: View {
     @Environment(AppEnvironment.self) private var env
+    @Environment(\.authManager) private var scopedAuthManager
     @Environment(\.appRouter) private var appRouter
     @Environment(\.errorState) private var errorState
     @AppStorage("hasAcceptedPrivacy") private var hasAcceptedPrivacy = false
@@ -12,6 +13,10 @@ struct RootView: View {
 
     private var router: AppRouter {
         appRouter ?? env.router
+    }
+
+    private var authManager: AuthManager {
+        scopedAuthManager ?? env.authManager
     }
 
     init() {
@@ -58,9 +63,9 @@ struct RootView: View {
                             hasAcceptedPrivacy = true
                         }
                     }
-                } else if !didBootstrap || env.authManager.isBootstrapping {
+                } else if !didBootstrap || authManager.isBootstrapping {
                     launchView
-                } else if env.authManager.isAuthenticated {
+                } else if authManager.isAuthenticated {
                     if !hasSeenOnboarding {
                         OnboardingView {
                             withAnimation(.easeInOut(duration: 0.35)) {
@@ -82,10 +87,10 @@ struct RootView: View {
         }
         .task {
             guard !didBootstrap else { return }
-            await env.authManager.bootstrap()
+            await authManager.bootstrap()
             didBootstrap = true
         }
-        .onChange(of: env.authManager.token) { _, token in
+        .onChange(of: authManager.token) { _, token in
             if token == nil {
                 router.switchTab(.home)
                 router.popToRoot()

@@ -3,7 +3,8 @@ import StoreKit
 
 struct UpgradeView: View {
     @Environment(\.dismiss) private var dismiss
-    @Environment(AppEnvironment.self) private var env
+    @Environment(\.storeManager) private var scopedStoreManager
+    @Environment(\.authManager) private var scopedAuthManager
     @Bindable var viewModel: SettingsViewModel
 
     // MARK: - Body
@@ -36,7 +37,10 @@ struct UpgradeView: View {
             }
             .promptClearNavigationSurfaces()
         }
-        .task { await env.storeManager.loadProducts() }
+        .task {
+            guard let scopedStoreManager else { return }
+            await scopedStoreManager.loadProducts()
+        }
     }
 
     // MARK: - Header
@@ -69,7 +73,15 @@ struct UpgradeView: View {
 
     @ViewBuilder
     private var productList: some View {
-        if env.storeManager.products.isEmpty {
+        guard let scopedStoreManager else {
+            Text("Store services are currently unavailable.")
+                .font(.system(size: 13, design: .rounded))
+                .foregroundStyle(.red.opacity(0.85))
+                .multilineTextAlignment(.center)
+            return
+        }
+
+        if scopedStoreManager.products.isEmpty {
             VStack(spacing: 14) {
                 ProgressView()
                     .tint(PromptTheme.softLilac)
@@ -81,13 +93,18 @@ struct UpgradeView: View {
             .padding(.vertical, 32)
         } else {
             VStack(spacing: 14) {
-                ForEach(env.storeManager.products, id: \.id) { product in
-                    ProductCard(product: product, storeManager: env.storeManager, viewModel: viewModel)
+                ForEach(scopedStoreManager.products, id: \.id) { product in
+                    ProductCard(
+                        product: product,
+                        storeManager: scopedStoreManager,
+                        viewModel: viewModel,
+                        authManager: scopedAuthManager
+                    )
                 }
             }
         }
 
-        if let error = env.storeManager.errorMessage {
+        if let error = scopedStoreManager.errorMessage {
             Text(error)
                 .font(.system(size: 13, design: .rounded))
                 .foregroundStyle(.red.opacity(0.85))
@@ -99,14 +116,15 @@ struct UpgradeView: View {
 
     private var restoreButton: some View {
         Button {
-            Task { await env.storeManager.restorePurchases() }
+            guard let scopedStoreManager else { return }
+            Task { await scopedStoreManager.restorePurchases() }
         } label: {
             Text("Restore Purchases")
                 .font(.system(size: 14, weight: .medium, design: .rounded))
                 .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
         }
         .buttonStyle(.plain)
-        .disabled(env.storeManager.isPurchasing)
+        .disabled(scopedStoreManager?.isPurchasing ?? true)
     }
 
     // MARK: - Dev section (DEBUG / admin only)
@@ -150,10 +168,9 @@ private struct ProductCard: View {
     let product: Product
     var storeManager: StoreManager
     var viewModel: SettingsViewModel
+    var authManager: AuthManager?
 
     @State private var isPurchasing = false
-    @Environment(AppEnvironment.self) private var env
-    @Environment(\.authManager) private var authManager
 
     private var planLabel: String {
         switch product.id {
@@ -292,7 +309,7 @@ private struct ProductCard: View {
         if let planType = storeManager.planType(for: product.id) {
             viewModel.selectedPlan = planType
             _ = await viewModel.updatePlan()
-            await (authManager ?? env.authManager).refreshMe()
+            await authManager?.refreshMe()
         }
     }
 }

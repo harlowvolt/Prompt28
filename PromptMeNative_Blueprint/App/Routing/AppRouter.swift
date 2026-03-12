@@ -55,3 +55,19 @@ final class AppRouter {
         homeSheet = nil
     }
 }
+
+struct AppDestinationHost: View {
+    let destination: AppDestination
+    let promptItemForID: (String) -> PromptItem?
+
+    var body: some View {
+        switch destination {
+        case .trendingDetail(let id):
+            if let item = promptItemForID(id) {
+                PromptDetailView(item: item)
+            } else {
+                ContentUnavailableView("Prompt not available", systemImage: "exclamationmark.triangle")
+            }
+        }
+    }
+}

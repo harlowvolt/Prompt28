@@ -1,7 +1,8 @@
 import SwiftUI
 
 struct AdminDashboardView: View {
-	@Environment(AppEnvironment.self) private var env
+	@Environment(\.apiClient) private var scopedAPIClient
+	@Environment(\.keychainService) private var scopedKeychain
 	@State private var viewModel = AdminViewModel()
 	@State private var selection = 0
 
@@ -43,7 +44,11 @@ struct AdminDashboardView: View {
 				}
 			}
 			.task {
-				viewModel.bind(apiClient: env.apiClient, keychain: env.keychain)
+				guard let scopedAPIClient, let scopedKeychain else {
+					viewModel.errorMessage = "Admin dependencies unavailable."
+					return
+				}
+				viewModel.bind(apiClient: scopedAPIClient, keychain: scopedKeychain)
 				await viewModel.bootstrap()
 			}
 		}

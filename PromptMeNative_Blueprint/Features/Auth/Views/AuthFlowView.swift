@@ -2,7 +2,6 @@ import AuthenticationServices
 import SwiftUI
 
 struct AuthFlowView: View {
-    @Environment(AppEnvironment.self) private var env
     @Environment(\.authManager) private var scopedAuthManager
     @Environment(\.appRouter) private var appRouter
     // appleHelper removed — SignInWithAppleButton handles the flow natively (Guideline 4.8)
@@ -13,9 +12,7 @@ struct AuthFlowView: View {
     @State private var password = ""
     @FocusState private var focusedField: AuthInputField?
 
-    private var authManager: AuthManager {
-        scopedAuthManager ?? env.authManager
-    }
+    private var authManager: AuthManager? { scopedAuthManager }
 
     var body: some View {
         ZStack {
@@ -40,7 +37,7 @@ struct AuthFlowView: View {
                             submitButton
                                 .id("authSubmitButton")
 
-                            if let error = authManager.lastError, !error.isEmpty {
+                            if let error = authManager?.lastError, !error.isEmpty {
                                 Text(error)
                                     .font(.system(size: 13, weight: .medium, design: .rounded))
                                     .foregroundStyle(Color(red: 1.0, green: 0.42, blue: 0.48))
@@ -116,10 +113,11 @@ struct AuthFlowView: View {
                 Task {
                     do {
                         let idToken = try await OAuthCoordinator.googleIDToken()
+                        guard let authManager else { return }
                         await authManager.loginWithGoogle(credential: idToken)
                         routeIfAuthenticated()
                     } catch {
-                        authManager.lastError = error.localizedDescription
+                        authManager?.lastError = error.localizedDescription
                     }
                 }
             } label: {
@@ -134,7 +132,7 @@ struct AuthFlowView: View {
                 .background(.white, in: RoundedRectangle(cornerRadius: AppRadii.control, style: .continuous))
             }
             .buttonStyle(.plain)
-            .disabled(authManager.isAuthenticating)
+            .disabled(authManager?.isAuthenticating ?? false)
 
             // Apple — must use SignInWithAppleButton to comply with App Store Guideline 4.8
             SignInWithAppleButton(.signIn) { request in
@@ -145,14 +143,14 @@ struct AuthFlowView: View {
                 case .success(let authorization):
                     Task { await handleAppleAuth(authorization) }
                 case .failure(let error):
-                    authManager.lastError = appleSignInMessage(for: error)
+                    authManager?.lastError = appleSignInMessage(for: error)
                 }
             }
             .signInWithAppleButtonStyle(.black)
             .frame(maxWidth: .infinity)
             .frame(height: AppHeights.primaryButton)
             .clipShape(RoundedRectangle(cornerRadius: AppRadii.control, style: .continuous))
-            .disabled(authManager.isAuthenticating)
+            .disabled(authManager?.isAuthenticating ?? false)
         }
     }
 
@@ -328,7 +326,7 @@ struct AuthFlowView: View {
     private var submitButton: some View {
         AppPrimaryButton(
             title: isSignup ? "Create Account" : "Log In",
-            isLoading: authManager.isAuthenticating,
+            isLoading: authManager?.isAuthenticating ?? false,
             isEnabled: canSubmitEmail
         ) {
             focusedField = nil
@@ -388,6 +386,7 @@ struct AuthFlowView: View {
 
     private func submitEmail() async {
         focusedField = nil
+        guard let authManager else { return }
         if isSignup {
             await authManager.register(email: email, password: password, name: name.isEmpty ? nil : name)
         } else {
@@ -397,6 +396,7 @@ struct AuthFlowView: View {
     }
 
     private func handleAppleAuth(_ authorization: ASAuthorization) async {
+        guard let authManager else { return }
         guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
               let tokenData = credential.identityToken,
               let token = String(data: tokenData, encoding: .utf8) else {
@@ -413,6 +413,7 @@ struct AuthFlowView: View {
     }
 
     private func routeIfAuthenticated() {
+        guard let authManager, authManager.isAuthenticated else { return }
         if authManager.isAuthenticated {
             focusedField = nil
             authManager.lastError = nil

@@ -837,3 +837,261 @@ Verification:
 - `get_errors` on touched files: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 2 continuation — Scoped `preferencesStore` key added and adopted
+
+Extended DI decoupling by adding a scoped preferences-store key and migrating Home/Settings bind paths to use it.
+
+- File: `App/AppEnvironment.swift`
+    - Added `EnvironmentValues.preferencesStore` (`any PreferenceStoring`)
+
+- File: `PromptMeNativeApp.swift`
+    - Injected `\.preferencesStore` from `env.preferencesStore`
+
+- File: `Features/Home/Views/HomeView.swift`
+    - Added `@Environment(\.preferencesStore)` with fallback helper
+    - `settingsViewModel.bind(...)` now passes scoped preferences store
+
+- File: `Features/Settings/Views/SettingsView.swift`
+    - Added `@Environment(\.preferencesStore)` with fallback helper
+    - `viewModel.bind(...)` now passes scoped preferences store
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — Scoped `usageTracker` key added
+
+Added a scoped usage-tracker key to continue DI decoupling and prepared Home for scoped dependency fallback paths.
+
+- File: `App/AppEnvironment.swift`
+    - Added `EnvironmentValues.usageTracker` (`UsageTracker`)
+
+- File: `PromptMeNativeApp.swift`
+    - Injected `\.usageTracker` from `env.usageTracker`
+
+- File: `Features/Home/Views/HomeView.swift`
+    - Added scoped fallback helpers for auth/history (used in settings binding path)
+    - No behavioral routing/UI changes in this step
+
+Note:
+- A temporary attempt to reinitialize `GenerateViewModel` inside `.task` was removed in the same session to avoid resetting in-progress UI state.
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — Scoped `storeManager` key and Upgrade migration
+
+Added scoped store-manager DI and migrated `UpgradeView` purchase/restore paths off direct `env.storeManager` access.
+
+- File: `App/AppEnvironment.swift`
+    - Added `EnvironmentValues.storeManager` (`StoreManager`)
+
+- File: `PromptMeNativeApp.swift`
+    - Injected `\.storeManager` from `env.storeManager`
+
+- File: `Features/Settings/Views/UpgradeView.swift`
+    - Added `@Environment(\.storeManager)` with fallback helper to `env.storeManager`
+    - Updated all StoreKit UI reads/actions to use the scoped helper:
+        - product loading
+        - product list rendering
+        - restore purchases
+        - purchasing state and error state reads
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — Root auth lifecycle moved to scoped key
+
+Reduced remaining `AppEnvironment` coupling in root flow by migrating auth lifecycle checks to the scoped `authManager` key (with fallback).
+
+- File: `App/RootView.swift`
+    - Added `@Environment(\.authManager)` + local fallback helper
+    - Migrated auth-driven branches and lifecycle hooks to use scoped helper:
+        - bootstrapping check
+        - authenticated gate
+        - bootstrap task call
+        - token reset observer
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — Shared destination host extracted
+
+Started centralizing destination rendering logic by extracting typed `AppDestination` rendering out of feature view switch statements.
+
+- File: `App/Routing/AppRouter.swift`
+    - Added reusable `AppDestinationHost` view:
+        - Accepts `AppDestination`
+        - Accepts resolver closure for `PromptItem` by ID
+        - Handles empty/missing destination data with `ContentUnavailableView`
+
+- File: `Features/Trending/Views/TrendingView.swift`
+    - Replaced inline `.navigationDestination` switch body with `AppDestinationHost`
+
+This is an intermediate step toward broader, shared destination hosting while preserving current per-screen `NavigationStack` ownership.
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — Global background pilot scaffold (Trending only)
+
+Added a controlled pilot switch to test root-level background strategy on one screen without changing default behavior.
+
+- File: `Features/Trending/Views/TrendingView.swift`
+    - Added flag:
+        - `@AppStorage("experiment.useRootBackground.trending")`
+    - Behavior:
+        - `false` (default): keeps existing local `PromptPremiumBackground` (current safe path)
+        - `true`: suppresses local background (`Color.clear`) to test root-background propagation behavior
+
+Safety:
+- Default remains unchanged (`false`), so this is non-breaking unless explicitly enabled.
+- Use only for controlled visual testing while NavigationStack background migration is in progress.
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — Global background pilot expanded (History)
+
+Added the same controlled pilot switch to `HistoryView` so root-background experiments can be compared across two NavigationStack-heavy screens.
+
+- File: `Features/History/Views/HistoryView.swift`
+    - Added `@AppStorage("experiment.useRootBackground.history")`
+    - `false` (default): uses local `PromptPremiumBackground`
+    - `true`: suppresses local background with `Color.clear`
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — Global background pilot expanded (Favorites)
+
+Added the third pilot switch in `FavoritesView` for broader A/B coverage across NavigationStack screens.
+
+- File: `Features/History/Views/FavoritesView.swift`
+    - Added `@AppStorage("experiment.useRootBackground.favorites")`
+    - `false` (default): uses local `PromptPremiumBackground`
+    - `true`: suppresses local background with `Color.clear`
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Experiment Matrix (Root Background Pilot)
+
+| Screen | Flag | Default | Local Background Suppressed When `true` | Manual Visual QA Status |
+|---|---|---|---|---|
+| Trending | `experiment.useRootBackground.trending` | `false` | Yes | Pending manual QA |
+| History | `experiment.useRootBackground.history` | `false` | Yes | Pending manual QA |
+| Favorites | `experiment.useRootBackground.favorites` | `false` | Yes | Pending manual QA |
+
+Notes:
+- Both pilots are opt-in and non-breaking by default.
+- Keep flags off in normal builds until manual QA confirms acceptable transitions/background behavior.
+
+Manual QA checklist (per screen with flag `true`):
+1. Launch into tab and scroll to top/bottom: verify no black flashes or white bleed.
+2. Push/present detail or sheet and dismiss: verify transitions retain consistent background.
+3. Return to tab from another tab: verify background persists (no reset flicker).
+4. Trigger pull-to-refresh (where available): verify background remains stable during rubber-banding.
+5. Rotate simulator (if supported): verify no clipped/empty regions appear.
+
+#### Phase 2 continuation — Scoped `keychainService` key + Admin migration
+
+Continued DI decoupling by adding a scoped keychain service and moving Admin dashboard binding to scoped dependencies.
+
+- File: `App/AppEnvironment.swift`
+    - Added `EnvironmentValues.keychainService` (`KeychainService`)
+
+- File: `PromptMeNativeApp.swift`
+    - Injected `\.keychainService` from `env.keychain`
+
+- File: `Features/Admin/Views/AdminDashboardView.swift`
+    - Added scoped env usage:
+        - `@Environment(\.apiClient)`
+        - `@Environment(\.keychainService)`
+    - Added fallback helpers to preserve behavior if scoped keys are absent
+    - Updated `viewModel.bind(...)` to use scoped dependencies
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — Upgrade `ProductCard` no longer depends on AppEnvironment
+
+Removed direct `AppEnvironment` usage from `ProductCard` by resolving auth in parent `UpgradeView` and passing it as an explicit dependency.
+
+- File: `Features/Settings/Views/UpgradeView.swift`
+    - `UpgradeView` now resolves scoped auth manager (`@Environment(\.authManager)` with fallback)
+    - `ProductCard` now receives `authManager: AuthManager` as input
+    - Removed `@Environment(AppEnvironment.self)` from `ProductCard`
+    - Purchase-success refresh now calls `await authManager.refreshMe()` directly
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — Global background pilot expanded (Home)
+
+Added the same opt-in root-background experiment switch to `HomeView`.
+
+- File: `Features/Home/Views/HomeView.swift`
+    - Added `@AppStorage("experiment.useRootBackground.home")`
+    - `false` (default): keeps local `PromptPremiumBackground`
+    - `true`: suppresses local background with `Color.clear`
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Experiment Matrix (Root Background Pilot) — updated
+
+| Screen | Flag | Default | Local Background Suppressed When `true` | Manual Visual QA Status |
+|---|---|---|---|---|
+| Home | `experiment.useRootBackground.home` | `false` | Yes | Pending manual QA |
+| Trending | `experiment.useRootBackground.trending` | `false` | Yes | Pending manual QA |
+| History | `experiment.useRootBackground.history` | `false` | Yes | Pending manual QA |
+| Favorites | `experiment.useRootBackground.favorites` | `false` | Yes | Pending manual QA |
+
+#### Remaining AppEnvironment hotspots (current)
+
+Most remaining direct `@Environment(AppEnvironment.self)` usage is now fallback-only for staged safety. High-priority remaining conversion candidates are:
+
+1. `Features/Auth/Views/AuthFlowView.swift` (currently fallback to env for auth manager)
+2. `Features/Home/Views/HomeView.swift` (fallback-only, plus constructor dependency)
+3. `Features/Settings/Views/SettingsView.swift` / `UpgradeView.swift` (fallback-only)
+4. `App/RootView.swift` (fallback-only for router/auth)
+
+Recommendation: keep fallback paths until root-level scoped key injection and manual QA are fully stable, then remove fallback usage in one screen at a time.
+
+#### Phase 2 continuation — AdminDashboardView no longer depends on AppEnvironment
+
+Removed direct `AppEnvironment` dependency from `AdminDashboardView` and switched to scoped keys only.
+
+- File: `Features/Admin/Views/AdminDashboardView.swift`
+    - Removed `@Environment(AppEnvironment.self)`
+    - Uses `@Environment(\.apiClient)` and `@Environment(\.keychainService)` directly
+    - Added guard in `.task` to handle missing scoped dependencies gracefully by setting an error message
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 2 continuation — AuthFlowView no longer depends on AppEnvironment
+
+Removed direct `AppEnvironment` dependency from auth flow and moved to scoped keys.
+
+- File: `Features/Auth/Views/AuthFlowView.swift`
+    - Removed `@Environment(AppEnvironment.self)`
+    - Uses scoped `@Environment(\.authManager)` and `@Environment(\.appRouter)`
+    - Added nil-safe handling for auth manager reads/actions (defensive in case scoped injection is absent)
+
+Verification:
+- `get_errors` on touched file: clean
+- Full simulator build passed (`iPhone 17` destination)
+

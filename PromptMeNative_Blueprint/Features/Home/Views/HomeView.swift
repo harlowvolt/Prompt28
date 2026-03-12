@@ -6,6 +6,10 @@ struct HomeView: View {
     @Environment(\.appRouter) private var appRouter
     @Environment(\.errorState) private var errorState
     @Environment(\.apiClient) private var scopedAPIClient
+    @Environment(\.preferencesStore) private var scopedPreferencesStore
+    @Environment(\.historyStore) private var scopedHistoryStore
+    @Environment(\.usageTracker) private var scopedUsageTracker
+    @AppStorage("experiment.useRootBackground.home") private var useRootBackgroundExperiment = false
     @State private var orbEngine = OrbEngine.makeDefault()
     @State private var generateViewModel: GenerateViewModel
     @State private var settingsViewModel = SettingsViewModel()
@@ -17,6 +21,22 @@ struct HomeView: View {
 
     private var apiClient: any APIClientProtocol {
         scopedAPIClient ?? env.apiClient
+    }
+
+    private var preferencesStore: any PreferenceStoring {
+        scopedPreferencesStore ?? env.preferencesStore
+    }
+
+    private var resolvedAuthManager: AuthManager {
+        authManager ?? env.authManager
+    }
+
+    private var historyStore: any HistoryStoring {
+        scopedHistoryStore ?? env.historyStore
+    }
+
+    private var usageTracker: UsageTracker {
+        scopedUsageTracker ?? env.usageTracker
     }
 
     init(appEnvironment: AppEnvironment) {
@@ -34,8 +54,13 @@ struct HomeView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                PromptPremiumBackground()
-                    .ignoresSafeArea()
+                if useRootBackgroundExperiment {
+                    Color.clear
+                        .ignoresSafeArea()
+                } else {
+                    PromptPremiumBackground()
+                        .ignoresSafeArea()
+                }
 
                 VStack(spacing: 0) {
                     topBar
@@ -173,9 +198,9 @@ struct HomeView: View {
         .task {
             settingsViewModel.bind(
                 apiClient: apiClient,
-                authManager: env.authManager,
-                preferencesStore: env.preferencesStore,
-                historyStore: env.historyStore
+                authManager: resolvedAuthManager,
+                preferencesStore: preferencesStore,
+                historyStore: historyStore
             )
         }
     }
