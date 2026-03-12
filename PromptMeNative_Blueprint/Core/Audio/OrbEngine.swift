@@ -68,7 +68,6 @@ final class OrbEngine {
     private let speech: SpeechRecognizing
     private var lastDeliveredTranscript = ""
     private var listeningStartedAt: Date?
-    private let minimumListeningDuration: TimeInterval = 0.7
     // Combine is kept internally to bridge SpeechRecognizing's thread-safe publishers.
     private var cancellables: Set<AnyCancellable> = []
 
@@ -128,7 +127,7 @@ final class OrbEngine {
     func stopListening() -> Bool {
         guard isRecording,
               let listeningStartedAt,
-              Date().timeIntervalSince(listeningStartedAt) >= minimumListeningDuration else { return false }
+              Date().timeIntervalSince(listeningStartedAt) >= 0.7 else { return false }
 
         state = .transcribing
         speech.stopRecording()

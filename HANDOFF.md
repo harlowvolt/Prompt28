@@ -959,6 +959,24 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline minimum listening-duration constant
+
+Removed a single-use listening-duration field and applied the stable threshold directly in the stop-listening guard.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `stopListening()`, replaced:
+        - `minimumListeningDuration`
+      with direct threshold:
+        - `0.7`
+    - Removed field:
+        - `minimumListeningDuration`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 315)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline minimum transcript threshold constant
 
 Removed a single-use threshold field and applied the stable threshold directly in transcript meaningfulness evaluation.
