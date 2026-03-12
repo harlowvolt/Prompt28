@@ -32,17 +32,21 @@ final class HistoryViewModel {
 		filteredItems.filter(\.favorite)
 	}
 
-	func toggleFavorite(_ item: PromptHistoryItem) {
-		historyStore?.toggleFavorite(id: item.id)
+	func item(id: UUID) -> PromptHistoryItem? {
+		historyStore?.items.first(where: { $0.id == id })
 	}
 
-	func delete(_ item: PromptHistoryItem) {
-		historyStore?.remove(id: item.id)
+	func toggleFavorite(id: UUID) {
+		historyStore?.toggleFavorite(id: id)
 	}
 
-	func rename(_ item: PromptHistoryItem, to customName: String?) {
+	func delete(id: UUID) {
+		historyStore?.remove(id: id)
+	}
+
+	func rename(id: UUID, to customName: String?) {
 		let cleaned = customName?.trimmingCharacters(in: .whitespacesAndNewlines)
-		historyStore?.rename(id: item.id, customName: cleaned?.isEmpty == true ? nil : cleaned)
+		historyStore?.rename(id: id, customName: cleaned?.isEmpty == true ? nil : cleaned)
 	}
 
 	func clearAll() {
