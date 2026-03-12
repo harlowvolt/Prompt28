@@ -3098,3 +3098,14 @@ Merged transcript and last-delivered transcript reset writes into one tuple assi
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation — Named stopListening elapsed duration in OrbEngine
+
+Introduced a local `listeningDuration` value in `stopListening()` so the minimum-duration gate reads more clearly without changing behavior.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `let listeningDuration = listeningStartedAt.map { Date().timeIntervalSince($0) }`
+    - Updated guard to check `listeningDuration >= minimumListeningDuration`
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
