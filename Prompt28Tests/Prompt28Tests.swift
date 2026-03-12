@@ -304,6 +304,17 @@ struct OrbFinalTranscriptPollingLimitTests {
     }
 }
 
+@Suite("Orb Final Transcript Polling Range")
+struct OrbFinalTranscriptPollingRangeTests {
+
+    @Test("Polling range starts at zero and matches limit")
+    func pollingRangeShape() {
+        let range = OrbEngine.finalTranscriptPollingAttemptRange()
+        #expect(range.lowerBound == 0)
+        #expect(range.count == OrbEngine.finalTranscriptPollingIterationLimit())
+    }
+}
+
 @Suite("Orb Final Transcript Polling Sleep")
 struct OrbFinalTranscriptPollingSleepTests {
 
