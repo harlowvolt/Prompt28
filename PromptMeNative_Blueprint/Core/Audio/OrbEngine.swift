@@ -192,6 +192,7 @@ final class OrbEngine {
             return
         }
 
+        state = Self.stateAfterAcceptingFallbackCandidate(currentState: state)
         finalTranscript = fallback
         transcript = fallback
         finalizeTranscript()
@@ -388,6 +389,11 @@ final class OrbEngine {
     /// Pure mapping for state transition when fallback transcript candidate is rejected.
     nonisolated static func stateAfterRejectingFallbackCandidate(currentState: State) -> State {
         .idle
+    }
+
+    /// Pure mapping for state transition when fallback transcript candidate is accepted.
+    nonisolated static func stateAfterAcceptingFallbackCandidate(currentState: State) -> State {
+        currentState
     }
 
     /// Pure mapping for state transition when stop-listening flow begins.

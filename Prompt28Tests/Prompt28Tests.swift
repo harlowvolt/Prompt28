@@ -391,6 +391,16 @@ struct OrbFallbackRejectionStateMappingTests {
     }
 }
 
+@Suite("Orb Fallback Acceptance State Mapping")
+struct OrbFallbackAcceptanceStateMappingTests {
+
+    @Test("Accepted fallback preserves current state")
+    func preservesState() {
+        #expect(OrbEngine.stateAfterAcceptingFallbackCandidate(currentState: .transcribing) == .transcribing)
+        #expect(OrbEngine.stateAfterAcceptingFallbackCandidate(currentState: .listening) == .listening)
+    }
+}
+
 @Suite("Orb Idle Reset Decision")
 struct OrbIdleResetDecisionTests {
 

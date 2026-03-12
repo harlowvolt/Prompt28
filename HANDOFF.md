@@ -1899,6 +1899,24 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure fallback-acceptance-state helper + tests
+
+Extracted fallback-acceptance state mapping into a pure helper so accepted fallback transition behavior is explicit and testable.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - accepted fallback path in `awaitFinalTranscriptAndFinalize()` now delegates to:
+        - `nonisolated static func stateAfterAcceptingFallbackCandidate(currentState:) -> State`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Fallback Acceptance State Mapping` with coverage for:
+        - accepted fallback preserves current state
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.
