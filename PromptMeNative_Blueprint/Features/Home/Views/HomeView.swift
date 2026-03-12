@@ -87,7 +87,8 @@ struct HomeView: View {
                             Text("Type instead")
                                 .font(.system(size: 17, weight: .medium, design: .rounded))
                                 .foregroundStyle(.white.opacity(0.78))
-                                .frame(width: 158, height: 50)
+                                .frame(maxWidth: .infinity)
+                                .frame(height: 50)
                                 .background(
                                     RoundedRectangle(cornerRadius: 25, style: .continuous)
                                         .fill(.ultraThinMaterial)
@@ -102,7 +103,7 @@ struct HomeView: View {
                                 )
                         }
                         .buttonStyle(.plain)
-                            .frame(maxWidth: .infinity)
+                        .padding(.horizontal, 32)
                         .padding(.top, 18)
 
                         Spacer()

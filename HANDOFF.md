@@ -1,6 +1,6 @@
 # Prompt28 — AI Handoff Document
 
-**Last updated from live codebase. Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
+**Last updated: 2026-03-12. Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
 
 ---
 
@@ -600,3 +600,49 @@ Button { dismiss() } label: {
 }
 .buttonStyle(.plain)
 ```
+
+---
+
+## 10. Session Fix Log
+
+### Session — 2026-03-12
+
+#### Crash: `withAnimation` + `@Observable` + `LazyVStack/ForEach` removal
+
+**Symptom**: Tapping the Delete button (HistoryView) or Remove button (FavoritesView) immediately crashed the app.
+
+**Root cause**: Wrapping an `@Observable` mutation that removes an item from a `LazyVStack/ForEach` data source inside `withAnimation(.easeInOut(duration:))` triggers a SwiftUI layout pass on the lazy container during item removal. The framework attempts to recalculate layout for a cell that has already been deallocated from the `@Observable` store, causing a runtime crash.
+
+This pattern is safe in older `@ObservableObject` code but breaks with the `@Observable` macro (iOS 17+) because property tracking is synthesized differently — observation accesses happen on property read, not on publisher subscription, so the timing of mutations vs. layout is tighter.
+
+**Files fixed**:
+
+- `Features/History/Views/HistoryView.swift` — `historyCard()` Delete button action:
+  ```swift
+  // Before (crashes):
+  withAnimation(.easeInOut(duration: 0.2)) { viewModel.delete(item) }
+  
+  // After (fixed):
+  viewModel.delete(item)
+  ```
+
+- `Features/History/Views/FavoritesView.swift` — `favoriteCard()` Remove button action:
+  ```swift
+  // Before (crashes):
+  withAnimation(.easeInOut(duration: 0.2)) { viewModel.toggleFavorite(item) }
+  
+  // After (fixed):
+  viewModel.toggleFavorite(item)
+  ```
+
+**Rule for future sessions**: Never wrap `@Observable` state mutations that remove items from a `ForEach`/`LazyVStack` data source in `withAnimation`. The removal animation (fade-out, slide) will not play, but the app will be stable. If animation is required, use `.animation(_:value:)` on the `LazyVStack` itself with a value that changes on removal, rather than wrapping the mutation.
+
+#### Previous sessions — compile errors fixed
+
+All of these were introduced by AI edits and reverted/corrected:
+
+- `AdminUnlockView.swift`: `Cannot find '$viewModel' in scope` — `@Bindable` binding syntax fix
+- `GenerateViewModel.swift`: `withAnimation`/`easeInOut` misuse in ViewModel — removed
+- `ResultView.swift`, `TrendingViewModel.swift`: Scope errors from helper-function extraction — inlined back into view bodies
+- `HistoryView.swift`: `viewModel.items` (old property) replaced with `viewModel.filteredItems` throughout
+

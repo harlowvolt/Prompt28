@@ -46,20 +46,30 @@ final class HistoryStore {
     }
 
     func remove(id: UUID) {
-        guard let item = items.first(where: { $0.id == id }) else { return }
-        modelContext.delete(item)
+        // Drop stale references from the observable cache before mutating SwiftData.
+        items.removeAll { $0.id == id }
+
+        if let item = fetchByID(id) {
+            modelContext.delete(item)
+        }
         save()
         refreshCache()
     }
 
     func clearAll() {
-        items.forEach { modelContext.delete($0) }
+        // Clear cache first so views do not read invalidated model instances.
+        items = []
+
+        let descriptor = FetchDescriptor<PromptHistoryItem>()
+        if let all = try? modelContext.fetch(descriptor) {
+            all.forEach { modelContext.delete($0) }
+        }
         save()
         refreshCache()
     }
 
     func toggleFavorite(id: UUID) {
-        guard let item = items.first(where: { $0.id == id }) else { return }
+        guard let item = fetchByID(id) else { return }
         item.favorite.toggle()
         save()
         // Reassign so @Observable propagates the change to any view observing `items`.
@@ -67,7 +77,7 @@ final class HistoryStore {
     }
 
     func rename(id: UUID, customName: String?) {
-        guard let item = items.first(where: { $0.id == id }) else { return }
+        guard let item = fetchByID(id) else { return }
         item.customName = customName
         save()
         refreshCache()
@@ -80,6 +90,13 @@ final class HistoryStore {
             sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
         )
         items = (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    private func fetchByID(_ id: UUID) -> PromptHistoryItem? {
+        let descriptor = FetchDescriptor<PromptHistoryItem>(
+            predicate: #Predicate { $0.id == id }
+        )
+        return try? modelContext.fetch(descriptor).first
     }
 
     private func pruneIfNeeded() {

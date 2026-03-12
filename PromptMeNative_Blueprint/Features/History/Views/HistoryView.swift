@@ -360,9 +360,7 @@ struct HistoryView: View {
                     .foregroundStyle(PromptTheme.softLilac.opacity(0.44))
 
                 cardActionButton(icon: "trash.fill", label: "Delete", color: Color(red: 1.0, green: 0.38, blue: 0.44)) {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        viewModel.delete(item)
-                    }
+                    viewModel.delete(item)
                 }
             }
         }

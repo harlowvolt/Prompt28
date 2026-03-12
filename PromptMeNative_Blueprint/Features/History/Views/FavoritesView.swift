@@ -184,9 +184,7 @@ struct FavoritesView: View {
             modeBadge(item.mode)
 
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
-                    viewModel.toggleFavorite(item)
-                }
+                viewModel.toggleFavorite(item)
             } label: {
                 Text("Remove")
                     .font(.system(size: 16, weight: .medium, design: .rounded))
