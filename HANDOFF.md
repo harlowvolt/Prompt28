@@ -3241,3 +3241,15 @@ Applied a cohesive internal cleanup around listening start/stop orchestration wi
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation (bundled) — Simplified finalize candidate handling in OrbEngine
+
+Refined finalization internals by extracting shared transcript-candidate promotion and fallback handling helpers, keeping behavior unchanged.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `finalizeUsingTranscriptCandidate(_:)` for shared transcript promotion + finalize invocation
+    - Added `finalizeWithFallbackTranscriptIfMeaningful() -> Bool` for fallback candidate gating
+    - Updated `awaitFinalTranscriptAndFinalize()` to use the new helpers and remove duplicated inline logic
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
