@@ -34,3 +34,17 @@ final class PreferencesStore {
         }
     }
 }
+
+// MARK: - PreferenceStoring
+// Defined here (rather than Core/Protocols/StorageProtocols.swift) so it is
+// always compiled as part of the Storage group — no manual Xcode target
+// membership required for a separate Protocols/ folder.
+
+@MainActor
+protocol PreferenceStoring: AnyObject {
+    var preferences: AppPreferences { get }
+    func update(_ transform: (inout AppPreferences) -> Void)
+    func setMode(_ mode: PromptMode)
+}
+
+extension PreferencesStore: PreferenceStoring {}

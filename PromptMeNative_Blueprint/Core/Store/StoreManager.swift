@@ -9,8 +9,10 @@ final class StoreManager {
     var errorMessage: String?
     private(set) var isPurchasing = false
 
-    // nonisolated(unsafe) lets deinit (which runs outside the actor) cancel the task
-    // without triggering "main actor-isolated property referenced from nonisolated context".
+    // @ObservationIgnored opts this property out of the @Observable macro's tracking,
+    // which allows nonisolated(unsafe) to apply so that deinit (which runs off the
+    // main actor) can cancel the task without a compiler error.
+    @ObservationIgnored
     nonisolated(unsafe) private var updateListenerTask: Task<Void, Error>?
 
     init() {

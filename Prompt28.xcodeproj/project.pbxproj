@@ -70,6 +70,7 @@
 		CCDE00000000000000000008 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000007 /* PrivacyInfo.xcprivacy */; };
 		CCDE00000000000000000011 /* StoreConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000010 /* StoreConfig.swift */; };
 		CCDE00000000000000000013 /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000012 /* StoreManager.swift */; };
+		CCDE00000000000000000016 /* UsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000015 /* UsageTracker.swift */; };
 		CCDE00000000000000000016 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000015 /* NotificationService.swift */; };
 /* End PBXBuildFile section */
 
@@ -156,6 +157,7 @@
 		CCDE00000000000000000007 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = file.xcprivacy; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		CCDE00000000000000000010 /* StoreConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreConfig.swift; sourceTree = "<group>"; };
 		CCDE00000000000000000012 /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
+		CCDE00000000000000000015 /* UsageTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageTracker.swift; sourceTree = "<group>"; };
 		CCDE00000000000000000015 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -589,6 +591,7 @@
 			children = (
 				CCDE00000000000000000010 /* StoreConfig.swift */,
 				CCDE00000000000000000012 /* StoreManager.swift */,
+				CCDE00000000000000000015 /* UsageTracker.swift */,
 			);
 			path = Store;
 			sourceTree = "<group>";
@@ -808,6 +811,7 @@
 				CCDE00000000000000000006 /* OnboardingView.swift in Sources */,
 				CCDE00000000000000000011 /* StoreConfig.swift in Sources */,
 				CCDE00000000000000000013 /* StoreManager.swift in Sources */,
+				CCDE00000000000000000016 /* UsageTracker.swift in Sources */,
 				CCDE00000000000000000016 /* NotificationService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

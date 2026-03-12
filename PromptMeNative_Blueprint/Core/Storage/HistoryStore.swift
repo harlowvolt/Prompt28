@@ -154,3 +154,21 @@ final class HistoryStore {
         try? FileManager.default.removeItem(at: url)
     }
 }
+
+// MARK: - HistoryStoring
+// Defined here (rather than Core/Protocols/StorageProtocols.swift) so it is
+// always compiled as part of the Storage group — no manual Xcode target
+// membership required for a separate Protocols/ folder.
+
+@MainActor
+protocol HistoryStoring: AnyObject {
+    var items: [PromptHistoryItem] { get }
+    var favorites: [PromptHistoryItem] { get }
+    func add(_ item: PromptHistoryItem)
+    func remove(id: UUID)
+    func clearAll()
+    func toggleFavorite(id: UUID)
+    func rename(id: UUID, customName: String?)
+}
+
+extension HistoryStore: HistoryStoring {}
