@@ -143,7 +143,10 @@ final class OrbEngine {
             }
             return
         }
-        guard trimmed != lastDeliveredTranscript else { return }
+        guard Self.shouldDeliverTranscriptCandidate(
+            trimmedTranscript: trimmed,
+            lastDeliveredTranscript: lastDeliveredTranscript
+        ) else { return }
 
         lastDeliveredTranscript = trimmed
         state = .ready(text: trimmed)
@@ -299,6 +302,14 @@ final class OrbEngine {
             return trimmedFinal
         }
         return transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Pure helper for transcript-delivery dedupe.
+    nonisolated static func shouldDeliverTranscriptCandidate(
+        trimmedTranscript: String,
+        lastDeliveredTranscript: String
+    ) -> Bool {
+        trimmedTranscript != lastDeliveredTranscript
     }
 
     /// Pure helper for transcript meaningfulness checks.

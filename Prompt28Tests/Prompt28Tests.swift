@@ -280,6 +280,26 @@ struct OrbTranscriptCandidateTests {
     }
 }
 
+@Suite("Orb Transcript Delivery Dedupe")
+struct OrbTranscriptDeliveryDedupeTests {
+
+    @Test("Delivers when candidate differs from last delivered")
+    func deliversDifferentCandidate() {
+        #expect(OrbEngine.shouldDeliverTranscriptCandidate(
+            trimmedTranscript: "new value",
+            lastDeliveredTranscript: "old value"
+        ))
+    }
+
+    @Test("Skips when candidate matches last delivered")
+    func skipsDuplicateCandidate() {
+        #expect(!OrbEngine.shouldDeliverTranscriptCandidate(
+            trimmedTranscript: "same value",
+            lastDeliveredTranscript: "same value"
+        ))
+    }
+}
+
 @Suite("Orb Transcript Meaning")
 struct OrbTranscriptMeaningTests {
 
