@@ -19,7 +19,7 @@ struct TrendingView: View {
                             Text("Trending")
                                 .font(.system(size: 34, weight: .bold, design: .rounded))
                                 .foregroundStyle(PromptTheme.paleLilacWhite)
-                                .padding(.top, proxy.safeAreaInsets.top + 8)
+                                .padding(.top, proxy.safeAreaInsets.top + 2)
 
                             Text("Copy-paste prompts people actually use")
                                 .font(.system(size: 16, weight: .regular, design: .rounded))

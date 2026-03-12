@@ -37,8 +37,9 @@ struct OrbView: View {
 
                 case .listening:
                     HapticService.impact(.light)
-                    engine.stopListening()
-                    orbState = .processing
+                    if engine.stopListening() {
+                        orbState = .processing
+                    }
 
                 case .processing:
                     break

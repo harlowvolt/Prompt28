@@ -157,7 +157,7 @@ struct RootView: View {
         .scrollContentBackground(.hidden)
         .toolbarBackground(.hidden, for: .tabBar)
         .toolbarBackground(.hidden, for: .navigationBar)
-        .background(TabBarRaiser(extraInset: 10))
+        .background(TabBarRaiser(extraInset: 4))
     }
 
     private var launchView: some View {

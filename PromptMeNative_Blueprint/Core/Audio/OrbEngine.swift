@@ -25,6 +25,10 @@ final class OrbEngine {
 
     private let speech: SpeechRecognizing
     private var lastDeliveredTranscript = ""
+    private var listeningStartedAt: Date?
+    private var hasDetectedSpeechContent = false
+    private let minimumListeningDuration: TimeInterval = 0.7
+    private let minimumTranscriptCharacterCount = 3
     // Combine is kept internally to bridge SpeechRecognizing's thread-safe publishers.
     private var cancellables: Set<AnyCancellable> = []
 
@@ -72,22 +76,28 @@ final class OrbEngine {
         transcript = ""
         finalTranscript = ""
         lastDeliveredTranscript = ""
+        hasDetectedSpeechContent = false
+        listeningStartedAt = Date()
         state = .listening
         speech.startRecording()
     }
 
-    func stopListening() {
-        guard isRecording else { return }
+    @discardableResult
+    func stopListening() -> Bool {
+        guard isRecording else { return false }
+        guard canStopListeningNow else { return false }
+
         state = .transcribing
         speech.stopRecording()
 
         Task { [weak self] in
             await self?.awaitFinalTranscriptAndFinalize()
         }
+        return true
     }
 
     func stopListeningAndFinalize() async -> String? {
-        stopListening()
+        guard stopListening() else { return nil }
         for _ in 0..<30 {
             let best = finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
             if !best.isEmpty {
@@ -103,10 +113,16 @@ final class OrbEngine {
             ? transcript
             : finalTranscript
         let trimmed = current.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard isMeaningfulTranscript(trimmed) else {
+            if !isRecording {
+                state = .idle
+            }
+            return
+        }
         guard trimmed != lastDeliveredTranscript else { return }
 
         lastDeliveredTranscript = trimmed
+        state = .ready(text: trimmed)
         onFinalTranscript?(trimmed)
     }
 
@@ -132,7 +148,6 @@ final class OrbEngine {
             if !best.isEmpty {
                 finalTranscript = best
                 transcript = best
-                state = .ready(text: best)
                 finalizeTranscript()
                 return
             }
@@ -140,15 +155,26 @@ final class OrbEngine {
         }
 
         let fallback = speech.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-        if fallback.isEmpty {
-            state = .failure("No speech detected.")
+        if !isMeaningfulTranscript(fallback) {
+            state = .idle
             return
         }
 
         finalTranscript = fallback
         transcript = fallback
-        state = .ready(text: fallback)
         finalizeTranscript()
+    }
+
+    private var canStopListeningNow: Bool {
+        guard let listeningStartedAt else { return false }
+        return Date().timeIntervalSince(listeningStartedAt) >= minimumListeningDuration
+    }
+
+    private func isMeaningfulTranscript(_ text: String) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= minimumTranscriptCharacterCount else { return false }
+        guard hasDetectedSpeechContent || !trimmed.isEmpty else { return false }
+        return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
     }
 
     private func bindSpeechState() {
@@ -166,6 +192,10 @@ final class OrbEngine {
             .sink { [weak self] value in
                 guard let self else { return }
                 self.transcript = value
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !trimmed.isEmpty {
+                    self.hasDetectedSpeechContent = true
+                }
             }
             .store(in: &cancellables)
 
@@ -175,7 +205,6 @@ final class OrbEngine {
                 self.finalTranscript = value
                 let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmed.isEmpty, self.state == .transcribing || self.state == .listening {
-                    self.state = .ready(text: trimmed)
                     self.finalizeTranscript()
                 }
             }
