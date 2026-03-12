@@ -213,10 +213,11 @@ final class OrbEngine {
     }
 
     private func isMeaningfulTranscript(_ text: String) -> Bool {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard trimmed.count >= minimumTranscriptCharacterCount else { return false }
-        guard hasDetectedSpeechContent || !trimmed.isEmpty else { return false }
-        return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
+        Self.isMeaningfulTranscriptCandidate(
+            text: text,
+            hasDetectedSpeechContent: hasDetectedSpeechContent,
+            minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
+        )
     }
 
     private func bindSpeechState() {
@@ -299,6 +300,18 @@ final class OrbEngine {
             return trimmedFinal
         }
         return transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    /// Pure helper for transcript meaningfulness checks.
+    nonisolated static func isMeaningfulTranscriptCandidate(
+        text: String,
+        hasDetectedSpeechContent: Bool,
+        minimumTranscriptCharacterCount: Int = 3
+    ) -> Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard trimmed.count >= minimumTranscriptCharacterCount else { return false }
+        guard hasDetectedSpeechContent || !trimmed.isEmpty else { return false }
+        return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
     }
 }
 

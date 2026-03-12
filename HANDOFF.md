@@ -811,6 +811,27 @@ Verification:
 - `get_errors` on touched files: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Pure transcript-candidate helper + tests
+
+Added a pure helper for transcript source selection to make this behavior testable without actor state coupling.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `finalizeTranscript()` now calls:
+        - `preferredTranscriptCandidate(finalTranscript:transcript:)`
+    - Added helper:
+        - `nonisolated static func preferredTranscriptCandidate(finalTranscript:transcript:) -> String`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Transcript Candidate` with coverage for:
+        - prefers non-empty final transcript
+        - falls back to live transcript when final is empty
+        - returns empty when both inputs are empty
+
+Verification:
+- `get_errors` on touched files: clean
+- Full simulator build passed (`iPhone 17` destination)
+- Prompt28Tests command last run in terminal exited `0`
+
 #### Phase 3 prep continuation — Removed remaining OrbEngine internal factory fallback
 
 Completed the same DI-tightening pattern inside OrbEngine construction so speech creation is fully explicit.
@@ -1297,6 +1318,28 @@ Removed direct `AppEnvironment` usage from `ProductCard` by resolving auth in pa
 Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 prep continuation — Pure transcript-meaning helper + tests
+
+Extracted transcript meaningfulness logic into a pure helper so actor-state migration can proceed with testable behavior boundaries.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `isMeaningfulTranscript(_:)` now delegates to:
+        - `nonisolated static func isMeaningfulTranscriptCandidate(text:hasDetectedSpeechContent:minimumTranscriptCharacterCount:) -> Bool`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Transcript Meaning` with coverage for:
+        - rejects too-short transcript text
+        - rejects non-alphanumeric transcript text
+        - accepts detected-speech alphanumeric text
+        - accepts alphanumeric fallback when speech-content flag is false
+
+Verification:
+- `get_errors` was not re-run in this slice.
+- Build command attempts were interrupted by terminal `^C` before completion:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build`
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; tail -n 60 build.log`
+- No test command was run in this slice.
 
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
