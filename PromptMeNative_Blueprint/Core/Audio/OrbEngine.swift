@@ -386,19 +386,6 @@ final class OrbEngine {
         !isRecording ? .idle : currentState
     }
 
-    /// Pure helper for fallback transcript acceptance during finalize polling.
-    nonisolated static func shouldAcceptFallbackTranscriptCandidate(
-        text: String,
-        hasDetectedSpeechContent: Bool,
-        minimumTranscriptCharacterCount: Int = 3
-    ) -> Bool {
-        isMeaningfulTranscriptCandidate(
-            text: text,
-            hasDetectedSpeechContent: hasDetectedSpeechContent,
-            minimumTranscriptCharacterCount: minimumTranscriptCharacterCount
-        )
-    }
-
     /// Pure helper for selecting fallback transcript after final-transcript polling.
     nonisolated static func fallbackTranscriptCandidateAfterPolling(
         transcript: String,
@@ -406,7 +393,7 @@ final class OrbEngine {
         minimumTranscriptCharacterCount: Int = 3
     ) -> String? {
         let trimmed = normalizedTranscript(transcript)
-        guard shouldAcceptFallbackTranscriptCandidate(
+        guard isMeaningfulTranscriptCandidate(
             text: trimmed,
             hasDetectedSpeechContent: hasDetectedSpeechContent,
             minimumTranscriptCharacterCount: minimumTranscriptCharacterCount

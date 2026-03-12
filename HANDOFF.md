@@ -959,6 +959,27 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline fallback-acceptance meaningfulness check
+
+Removed a pass-through fallback-acceptance helper and performed the meaningfulness check directly in fallback candidate selection.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `fallbackTranscriptCandidateAfterPolling(...)`, replaced:
+        - `shouldAcceptFallbackTranscriptCandidate(...)`
+      with:
+        - `isMeaningfulTranscriptCandidate(...)`
+    - Removed helper:
+        - `shouldAcceptFallbackTranscriptCandidate(text:hasDetectedSpeechContent:minimumTranscriptCharacterCount:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Fallback Transcript Acceptance`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 325)
+- No test command was run.
+
 #### Phase 3 prep continuation — Remove fallback transcript trimming wrapper
 
 Removed a redundant transcript-trimming wrapper and used `normalizedTranscript(_:)` directly in fallback candidate selection.
