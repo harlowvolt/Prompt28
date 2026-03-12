@@ -70,6 +70,7 @@ final class OrbEngine {
     private var listeningStartedAt: Date?
     private let finalTranscriptPollingAttempts = 30
     private let finalTranscriptPollingSleepNanoseconds: UInt64 = 50_000_000
+    private let transcriptTrimCharacterSet = CharacterSet.whitespacesAndNewlines
     // Combine is kept internally to bridge SpeechRecognizing's thread-safe publishers.
     private var cancellables: Set<AnyCancellable> = []
 
@@ -143,7 +144,7 @@ final class OrbEngine {
     func stopListeningAndFinalize() async -> String? {
         guard stopListening() else { return nil }
         for _ in 0..<finalTranscriptPollingAttempts {
-            let best = finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+            let best = finalTranscript.trimmingCharacters(in: transcriptTrimCharacterSet)
             if !best.isEmpty {
                 return best
             }
@@ -153,9 +154,9 @@ final class OrbEngine {
     }
 
     func finalizeTranscript() {
-        let trimmedFinal = finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmedFinal = finalTranscript.trimmingCharacters(in: transcriptTrimCharacterSet)
         let trimmed = trimmedFinal.isEmpty
-            ? transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+            ? transcript.trimmingCharacters(in: transcriptTrimCharacterSet)
             : trimmedFinal
         guard isMeaningfulTranscript(trimmed) else {
             state = isRecording ? state : .idle
@@ -186,7 +187,7 @@ final class OrbEngine {
 
     private func awaitFinalTranscriptAndFinalize() async {
         for _ in 0..<finalTranscriptPollingAttempts {
-            let best = speech.finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+            let best = speech.finalTranscript.trimmingCharacters(in: transcriptTrimCharacterSet)
             if !best.isEmpty {
                 (finalTranscript, transcript) = (best, best)
                 finalizeTranscript()
@@ -195,7 +196,7 @@ final class OrbEngine {
             try? await Task.sleep(nanoseconds: finalTranscriptPollingSleepNanoseconds)
         }
 
-        let fallbackCandidate = speech.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
+        let fallbackCandidate = speech.transcript.trimmingCharacters(in: transcriptTrimCharacterSet)
         guard isMeaningfulTranscript(fallbackCandidate) else {
             state = .idle
             return
@@ -206,7 +207,7 @@ final class OrbEngine {
     }
 
     private func isMeaningfulTranscript(_ text: String) -> Bool {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = text.trimmingCharacters(in: transcriptTrimCharacterSet)
         guard trimmed.count >= 3 else { return false }
         return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
     }
@@ -231,7 +232,7 @@ final class OrbEngine {
             .sink { [weak self] value in
                 guard let self else { return }
                 self.finalTranscript = value
-                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                let trimmed = value.trimmingCharacters(in: transcriptTrimCharacterSet)
                 if !trimmed.isEmpty
                     && (self.state == .transcribing || self.state == .listening) {
                     self.finalizeTranscript()

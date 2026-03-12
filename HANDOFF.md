@@ -959,6 +959,18 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 continuation — Centralized transcript trimming character set in OrbEngine
+
+Introduced a single private trim character set constant and replaced repeated inline `.whitespacesAndNewlines` usage across transcript normalization paths.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `transcriptTrimCharacterSet = CharacterSet.whitespacesAndNewlines`
+    - Updated transcript/final transcript trimming callsites to use the shared constant
+    - No logic changes; this is a consistency and maintainability cleanup
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
+
 #### Phase 3 continuation — Simplified final transcript promotion assignments in OrbEngine
 
 Replaced duplicated two-line assignments with tuple assignment when promoting finalized transcript text, preserving the same values and control flow.
