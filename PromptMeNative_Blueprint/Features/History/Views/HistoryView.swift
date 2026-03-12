@@ -35,9 +35,12 @@ struct HistoryView: View {
                         .ignoresSafeArea()
 
                     ScrollView(showsIndicators: false) {
+                        let tabClearance = max(0, AppHeights.tabBarClearance - proxy.safeAreaInsets.bottom)
+
                         VStack(alignment: .leading, spacing: 0) {
                             headerRow
                                 .padding(.top, proxy.safeAreaInsets.top + 2)
+                                .background(Color.red.opacity(0.16))
 
                             searchField
                                 .padding(.top, 14)
@@ -54,9 +57,11 @@ struct HistoryView: View {
                                 .padding(.top, 14)
                             }
 
-                            Color.clear.frame(height: AppHeights.tabBarClearance)
+                            Color.blue.opacity(0.16)
+                                .frame(height: tabClearance)
                         }
                         .padding(.horizontal, 24)
+                        .background(Color.green.opacity(0.12))
                     }
                 }
             }
@@ -205,7 +210,7 @@ struct HistoryView: View {
             }
             .buttonStyle(.plain)
 
-            Text("History")
+            Text("History • LIVE")
                 .font(.system(size: 28, weight: .bold, design: .rounded))
                 .foregroundStyle(PromptTheme.paleLilacWhite)
 
