@@ -16,7 +16,7 @@ struct HistoryView: View {
 
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var viewModel = HistoryViewModel()
+    @State private var viewModel = HistoryViewModel()
     @State private var activeSheet: ActiveSheet?
     @State private var renameText = ""
     @State private var showClearAllConfirm = false

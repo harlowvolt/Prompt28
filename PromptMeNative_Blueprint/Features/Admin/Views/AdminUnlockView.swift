@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AdminUnlockView: View {
-	@ObservedObject var viewModel: AdminViewModel
+	var viewModel: AdminViewModel
 
 	var body: some View {
 		VStack(spacing: 14) {

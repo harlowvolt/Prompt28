@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AdminTextSettingsView: View {
-	@ObservedObject var viewModel: AdminViewModel
+	var viewModel: AdminViewModel
 
 	var body: some View {
 		Form {

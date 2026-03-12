@@ -4,7 +4,7 @@ import UIKit
 struct FavoritesView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var viewModel = HistoryViewModel()
+    @State private var viewModel = HistoryViewModel()
     @State private var showCopiedToast = false
 
     var body: some View {

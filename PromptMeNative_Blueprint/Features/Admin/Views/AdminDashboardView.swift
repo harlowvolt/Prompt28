@@ -2,7 +2,7 @@ import SwiftUI
 
 struct AdminDashboardView: View {
 	@Environment(AppEnvironment.self) private var env
-	@StateObject private var viewModel = AdminViewModel()
+	@State private var viewModel = AdminViewModel()
 	@State private var selection = 0
 
 	var body: some View {

@@ -1,9 +1,9 @@
-import Combine
 import Foundation
 
+@Observable
 @MainActor
-final class PreferencesStore: ObservableObject {
-    @Published private(set) var preferences: AppPreferences
+final class PreferencesStore {
+    private(set) var preferences: AppPreferences
 
     private let defaults = UserDefaults.standard
     private let key = "promptme_prefs"

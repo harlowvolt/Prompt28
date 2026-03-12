@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TypePromptView: View {
-    @ObservedObject var viewModel: GenerateViewModel
+    var viewModel: GenerateViewModel
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {

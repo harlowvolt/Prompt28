@@ -2,7 +2,7 @@ import SwiftUI
 
 struct TrendingView: View {
     @Environment(AppEnvironment.self) private var env
-    @StateObject private var viewModel = TrendingViewModel()
+    @State private var viewModel = TrendingViewModel()
     @State private var searchQuery = ""
     @State private var showCopiedToast = false
     @State private var expandedItemIDs: Set<String> = []

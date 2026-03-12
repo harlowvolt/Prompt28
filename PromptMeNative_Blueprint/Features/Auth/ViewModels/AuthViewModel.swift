@@ -1,13 +1,13 @@
-import Combine
 import Foundation
 
+@Observable
 @MainActor
-final class AuthViewModel: ObservableObject {
-    @Published var email = ""
-    @Published var password = ""
-    @Published var name = ""
-    @Published var isSignup = false
-    @Published var googleCredential = ""
+final class AuthViewModel {
+    var email = ""
+    var password = ""
+    var name = ""
+    var isSignup = false
+    var googleCredential = ""
 
     private let authManager: AuthManager
 

@@ -1,13 +1,13 @@
 import StoreKit
 import Foundation
-import Combine
 
+@Observable
 @MainActor
-final class StoreManager: ObservableObject {
-    @Published private(set) var products: [Product] = []
-    @Published private(set) var purchasedProductIDs: Set<String> = []
-    @Published var errorMessage: String?
-    @Published private(set) var isPurchasing = false
+final class StoreManager {
+    private(set) var products: [Product] = []
+    private(set) var purchasedProductIDs: Set<String> = []
+    var errorMessage: String?
+    private(set) var isPurchasing = false
 
     private var updateListenerTask: Task<Void, Error>?
 

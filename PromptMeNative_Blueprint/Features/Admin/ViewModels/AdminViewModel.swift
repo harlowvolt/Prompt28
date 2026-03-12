@@ -1,22 +1,22 @@
-import Combine
 import Foundation
 
+@Observable
 @MainActor
-final class AdminViewModel: ObservableObject {
-	@Published var adminKeyInput = ""
-	@Published private(set) var isUnlocked = false
-	@Published private(set) var isLoading = false
-	@Published private(set) var isSaving = false
-	@Published var errorMessage: String?
+final class AdminViewModel {
+	var adminKeyInput = ""
+	private(set) var isUnlocked = false
+	private(set) var isLoading = false
+	private(set) var isSaving = false
+	var errorMessage: String?
 
-	@Published var settingsDraft: AppSettings = .default
-	@Published var promptsDraft = PromptCatalog(categories: [])
+	var settingsDraft: AppSettings = .default
+	var promptsDraft = PromptCatalog(categories: [])
 
-	private var apiClient: APIClient?
+	private var apiClient: (any APIClientProtocol)?
 	private var keychain: KeychainService?
 	private let adminKeyStorageKey = "promptme_admin_key"
 
-	func bind(apiClient: APIClient, keychain: KeychainService) {
+	func bind(apiClient: any APIClientProtocol, keychain: KeychainService) {
 		guard self.apiClient == nil else { return }
 		self.apiClient = apiClient
 		self.keychain = keychain

@@ -1,4 +1,3 @@
-import Combine
 import Foundation
 
 enum RootRoute {
@@ -15,8 +14,9 @@ enum MainTab: Hashable {
     case admin
 }
 
+@Observable
 @MainActor
-final class AppRouter: ObservableObject {
-    @Published var rootRoute: RootRoute = .launching
-    @Published var selectedTab: MainTab = .home
+final class AppRouter {
+    var rootRoute: RootRoute = .launching
+    var selectedTab: MainTab = .home
 }

@@ -1,12 +1,12 @@
-import Combine
 import Foundation
 
+@Observable
 @MainActor
-final class TrendingViewModel: ObservableObject {
-	@Published private(set) var catalog: PromptCatalog?
-	@Published private(set) var isLoading = false
-	@Published var errorMessage: String?
-	@Published var selectedCategoryKey: String?
+final class TrendingViewModel {
+	private(set) var catalog: PromptCatalog?
+	private(set) var isLoading = false
+	var errorMessage: String?
+	var selectedCategoryKey: String?
 
 	var categories: [PromptCategory] {
 		catalog?.categories ?? []
@@ -23,12 +23,29 @@ final class TrendingViewModel: ObservableObject {
 		selectedCategoryKey = key
 	}
 
-	func loadIfNeeded(apiClient: APIClient) async {
+	/// Loads content for display. On the first call:
+	///   1. Immediately populates the catalog from the bundled JSON (zero-latency).
+	///   2. Fires a background API refresh to pull the latest server-side prompts.
+	/// Subsequent calls are no-ops unless `refresh` is called explicitly.
+	func loadIfNeeded(apiClient: any APIClientProtocol) async {
 		guard catalog == nil else { return }
+
+		// Step 1 — instant bundle load so the view is never empty on first render.
+		if let bundled = BundleCatalogLoader.loadTrendingCatalog() {
+			catalog = bundled
+			if selectedCategoryKey == nil {
+				selectedCategoryKey = bundled.categories.first?.key
+			}
+		}
+
+		// Step 2 — background API refresh to pick up any server-side updates.
 		await refresh(apiClient: apiClient)
 	}
 
-	func refresh(apiClient: APIClient) async {
+	/// Fetches the latest trending catalog from the server.
+	/// Updates `catalog` on success; preserves the existing (bundled or cached)
+	/// catalog on failure so the view remains functional offline.
+	func refresh(apiClient: any APIClientProtocol) async {
 		isLoading = true
 		errorMessage = nil
 		defer { isLoading = false }
@@ -40,7 +57,11 @@ final class TrendingViewModel: ObservableObject {
 				selectedCategoryKey = data.categories.first?.key
 			}
 		} catch {
-			errorMessage = error.localizedDescription
+			// Only surface the error if we have nothing to show.
+			if catalog == nil {
+				errorMessage = error.localizedDescription
+			}
+			// If bundled/cached data is already showing, fail silently.
 		}
 	}
 }

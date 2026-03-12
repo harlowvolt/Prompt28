@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 struct OrbView: View {
-    @ObservedObject var engine: OrbEngine
+    var engine: OrbEngine
     let onTranscript: (String) -> Void
     @Environment(\.openURL) private var openURL
 

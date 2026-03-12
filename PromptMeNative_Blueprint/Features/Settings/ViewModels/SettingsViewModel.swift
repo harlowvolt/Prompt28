@@ -1,30 +1,30 @@
-import Combine
 import Foundation
 
+@Observable
 @MainActor
-final class SettingsViewModel: ObservableObject {
-	@Published private(set) var appSettings: AppSettings = .default
-	@Published private(set) var isLoading = false
-	@Published private(set) var isSaving = false
-	@Published var errorMessage: String?
+final class SettingsViewModel {
+	private(set) var appSettings: AppSettings = .default
+	private(set) var isLoading = false
+	private(set) var isSaving = false
+	var errorMessage: String?
 
-	@Published var saveHistory = true
-	@Published var selectedMode: PromptMode = .ai
-	@Published var selectedPlan: PlanType = .starter
-	@Published var devAdminKey = ""
+	var saveHistory = true
+	var selectedMode: PromptMode = .ai
+	var selectedPlan: PlanType = .starter
+	var devAdminKey = ""
 
-	private var apiClient: APIClient?
+	private var apiClient: (any APIClientProtocol)?
 	private var authManager: AuthManager?
-	private var preferencesStore: PreferencesStore?
-	private var historyStore: HistoryStore?
+	private var preferencesStore: (any PreferenceStoring)?
+	private var historyStore: (any HistoryStoring)?
 
 	init() {}
 
 	func bind(
-		apiClient: APIClient,
+		apiClient: any APIClientProtocol,
 		authManager: AuthManager,
-		preferencesStore: PreferencesStore,
-		historyStore: HistoryStore
+		preferencesStore: any PreferenceStoring,
+		historyStore: any HistoryStoring
 	) {
 		guard self.apiClient == nil else { return }
 		self.apiClient = apiClient

@@ -3,6 +3,7 @@ import UIKit
 
 struct RootView: View {
     @Environment(AppEnvironment.self) private var env
+    @AppStorage("hasAcceptedPrivacy") private var hasAcceptedPrivacy = false
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var didBootstrap = false
     @State private var selectedTab: MainTab = .home
@@ -45,7 +46,15 @@ struct RootView: View {
                 .ignoresSafeArea()
 
             Group {
-                if !didBootstrap || env.authManager.isBootstrapping {
+                if !hasAcceptedPrivacy {
+                    // Privacy consent modal — must be accepted before auth or data collection.
+                    // Satisfies App Store Review Guideline 5.1.2(i).
+                    PrivacyConsentView {
+                        withAnimation(.easeInOut(duration: 0.35)) {
+                            hasAcceptedPrivacy = true
+                        }
+                    }
+                } else if !didBootstrap || env.authManager.isBootstrapping {
                     launchView
                 } else if env.authManager.isAuthenticated {
                     if !hasSeenOnboarding {

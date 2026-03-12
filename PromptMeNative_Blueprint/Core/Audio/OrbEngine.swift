@@ -1,9 +1,10 @@
-import Foundation
 import Combine
 import CoreGraphics
+import Foundation
 
+@Observable
 @MainActor
-final class OrbEngine: ObservableObject {
+final class OrbEngine {
     enum State: Equatable {
         case idle
         case listening
@@ -14,14 +15,15 @@ final class OrbEngine: ObservableObject {
         case failure(String)
     }
 
-    @Published private(set) var state: State = .idle
-    @Published private(set) var isRecording = false
-    @Published private(set) var transcript = ""
-    @Published private(set) var finalTranscript = ""
-    @Published private(set) var permissionStatus: SpeechRecognizerService.PermissionStatus = .notDetermined
-    @Published private(set) var audioLevel: CGFloat = 0
+    private(set) var state: State = .idle
+    private(set) var isRecording = false
+    private(set) var transcript = ""
+    private(set) var finalTranscript = ""
+    private(set) var permissionStatus: SpeechRecognizerService.PermissionStatus = .notDetermined
+    private(set) var audioLevel: CGFloat = 0
 
     private let speech: SpeechRecognizing
+    // Combine is kept internally to bridge SpeechRecognizing's thread-safe publishers.
     private var cancellables: Set<AnyCancellable> = []
 
     init(speech: SpeechRecognizing) {

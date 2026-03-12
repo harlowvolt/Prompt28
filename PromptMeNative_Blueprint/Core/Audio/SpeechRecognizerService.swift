@@ -48,12 +48,27 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
     var permissionStatusPublisher: AnyPublisher<PermissionStatus, Never> { $permissionStatus.eraseToAnyPublisher() }
     var audioLevelPublisher: AnyPublisher<CGFloat, Never> { $audioLevel.eraseToAnyPublisher() }
 
+    /// Dedicated serial queue for all audio-buffer processing (RMS / future FFT).
+    /// AVAudioEngine's tap callback fires on this queue; the computed float is
+    /// dispatched to MainActor for the Orb — the main thread never touches raw buffers.
+    private static let audioProcessingQueue = DispatchQueue(
+        label: "app.promptme.audio.processing",
+        qos: .userInteractive
+    )
+
     private let audioEngine = AVAudioEngine()
     private let recognizer: SFSpeechRecognizer?
     private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
     private var recognitionTask: SFSpeechRecognitionTask?
     private var watchdogTask: Task<Void, Never>?
+    private var silenceTask: Task<Void, Never>?
+    private var hasDetectedSpeech = false
     private var isStoppingIntentionally = false
+
+    /// Audio level threshold below which silence is declared (0–1 normalised RMS).
+    private static let silenceThreshold: CGFloat = 0.04
+    /// Continuous silence duration in seconds before auto-stopping.
+    private static let silenceDuration: TimeInterval = 1.8
 
     init(locale: Locale = .current) {
         self.recognizer = SFSpeechRecognizer(locale: locale)
@@ -75,6 +90,7 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
 
             reset()
             isStoppingIntentionally = false
+            hasDetectedSpeech = false
 
             do {
                 try configureAudioSession()
@@ -92,6 +108,9 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
         guard isRecording else { return }
 
         isStoppingIntentionally = true
+
+        silenceTask?.cancel()
+        silenceTask = nil
 
         audioEngine.inputNode.removeTap(onBus: 0)
         audioEngine.stop()
@@ -127,6 +146,9 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
         recognitionRequest = nil
         watchdogTask?.cancel()
         watchdogTask = nil
+        silenceTask?.cancel()
+        silenceTask = nil
+        hasDetectedSpeech = false
         isStoppingIntentionally = false
 
         if audioEngine.isRunning {
@@ -212,15 +234,17 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
         inputNode.removeTap(onBus: 0)
 
         // Capture the request reference before entering the background audio thread closure.
-        // installTap runs on a private audio queue, so we must not access any
-        // @MainActor-isolated property (e.g. recognitionRequest) directly inside it.
+        // installTap fires on AVAudioEngine's internal audio thread; we hop to
+        // audioProcessingQueue so all RMS / future FFT math runs on a single,
+        // named queue. Only the normalised scalar reaches MainActor.
         let capturedRequest = recognitionRequest
         inputNode.installTap(onBus: 0, bufferSize: 1024, format: format) { buffer, _ in
             capturedRequest?.append(buffer)
-            // Compute RMS entirely on the audio thread — only dispatch the scalar to main
-            let level = SpeechRecognizerService.computeAudioLevel(from: buffer)
-            Task { @MainActor [weak self] in
-                self?.audioLevel = level
+            SpeechRecognizerService.audioProcessingQueue.async {
+                let level = SpeechRecognizerService.computeAudioLevel(from: buffer)
+                Task { @MainActor [weak self] in
+                    self?.handleAudioLevel(level)
+                }
             }
         }
 
@@ -276,6 +300,8 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
     }
 
     private func failAndStop(message: String) {
+        silenceTask?.cancel()
+        silenceTask = nil
         audioEngine.inputNode.removeTap(onBus: 0)
         audioEngine.stop()
         recognitionRequest?.endAudio()
@@ -285,9 +311,38 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
         watchdogTask = nil
         isRecording = false
         isStoppingIntentionally = false
+        hasDetectedSpeech = false
         audioLevel = 0
         deactivateAudioSessionIfNeeded()
         permissionStatus = .error(message)
+    }
+
+    /// Called on the MainActor for every audio buffer. Drives audioLevel and silence detection.
+    @MainActor
+    private func handleAudioLevel(_ level: CGFloat) {
+        audioLevel = level
+        guard isRecording else {
+            silenceTask?.cancel()
+            silenceTask = nil
+            return
+        }
+
+        if level > Self.silenceThreshold {
+            // Active audio — mark speech detected and reset any pending silence stop.
+            hasDetectedSpeech = true
+            silenceTask?.cancel()
+            silenceTask = nil
+        } else if hasDetectedSpeech && silenceTask == nil {
+            // Silence after speech — start the auto-stop countdown.
+            silenceTask = Task { [weak self] in
+                try? await Task.sleep(for: .seconds(Self.silenceDuration))
+                guard let self, !Task.isCancelled else { return }
+                await MainActor.run { [weak self] in
+                    guard let self, self.isRecording else { return }
+                    self.stopRecording()
+                }
+            }
+        }
     }
 
     private func cleanupRecognitionObjects() {

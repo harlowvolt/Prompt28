@@ -1,31 +1,23 @@
-import Combine
 import Foundation
 
+@Observable
 @MainActor
-final class HistoryViewModel: ObservableObject {
-	@Published var query = ""
-	@Published private(set) var items: [PromptHistoryItem] = []
+final class HistoryViewModel {
+	var query = ""
 
-	private var historyStore: HistoryStore?
-	private var cancellables: Set<AnyCancellable> = []
+	private var historyStore: (any HistoryStoring)?
 
 	init() {}
 
-	func bind(historyStore: HistoryStore) {
+	func bind(historyStore: any HistoryStoring) {
 		guard self.historyStore == nil else { return }
 		self.historyStore = historyStore
-		self.items = historyStore.items
-
-		historyStore.$items
-			.receive(on: DispatchQueue.main)
-			.sink { [weak self] value in
-				self?.items = value
-			}
-			.store(in: &cancellables)
 	}
 
+	/// Live, filtered view of history. Because historyStore is @Observable,
+	/// SwiftUI automatically tracks historyStore.items and re-renders on changes.
 	var filteredItems: [PromptHistoryItem] {
-		let newestFirst = items.sorted { $0.createdAt > $1.createdAt }
+		let newestFirst = (historyStore?.items ?? []).sorted { $0.createdAt > $1.createdAt }
 		let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
 		guard !trimmed.isEmpty else { return newestFirst }
 

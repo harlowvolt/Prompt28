@@ -1,74 +1,156 @@
-import Combine
 import Foundation
+import SwiftData
 
+/// Offline-first history store backed by SwiftData.
+///
+/// Phase 4.2: replaced JSON file persistence with a `ModelContext` that
+/// writes to the app's default SwiftData store. The public `HistoryStoring`
+/// API is unchanged; callers are unaffected.
+///
+/// On first launch after the update, `migrateLegacyJSONIfNeeded()` reads the
+/// old `history.json`, inserts every record into SwiftData, then deletes the
+/// JSON file so migration only runs once.
+@Observable
 @MainActor
-final class HistoryStore: ObservableObject {
-    @Published private(set) var items: [PromptHistoryItem] = []
+final class HistoryStore {
 
+    // MARK: - Public state
+
+    /// In-memory snapshot, newest-first. Refreshed after every mutation.
+    private(set) var items: [PromptHistoryItem] = []
+
+    // MARK: - Private state
+
+    private let modelContext: ModelContext
     private let maxItems = 200
-    private static let storageDirectoryURL: URL = {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = base.appendingPathComponent("Prompt28", isDirectory: true)
-        var isDirectory: ObjCBool = false
-        let exists = FileManager.default.fileExists(atPath: dir.path, isDirectory: &isDirectory)
-        if !exists || !isDirectory.boolValue {
-            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        }
-        return dir
-    }()
-    private let fileURL: URL
 
-    init() {
-        fileURL = Self.storageDirectoryURL.appendingPathComponent("history.json")
-        load()
+    // MARK: - Init
+
+    init(modelContext: ModelContext) {
+        self.modelContext = modelContext
+        migrateLegacyJSONIfNeeded()
+        refreshCache()
     }
+
+    // MARK: - HistoryStoring conformance
 
     var favorites: [PromptHistoryItem] {
         items.filter(\.favorite)
     }
 
     func add(_ item: PromptHistoryItem) {
-        items.insert(item, at: 0)
-        if items.count > maxItems {
-            items = Array(items.prefix(maxItems))
-        }
-        persist()
+        modelContext.insert(item)
+        save()
+        pruneIfNeeded()
+        refreshCache()
     }
 
     func remove(id: UUID) {
-        items.removeAll { $0.id == id }
-        persist()
+        guard let item = items.first(where: { $0.id == id }) else { return }
+        modelContext.delete(item)
+        save()
+        refreshCache()
     }
 
     func clearAll() {
-        items = []
-        persist()
+        items.forEach { modelContext.delete($0) }
+        save()
+        refreshCache()
     }
 
     func toggleFavorite(id: UUID) {
-        guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
-        items[idx].favorite.toggle()
-        persist()
+        guard let item = items.first(where: { $0.id == id }) else { return }
+        item.favorite.toggle()
+        save()
+        // Reassign so @Observable propagates the change to any view observing `items`.
+        refreshCache()
     }
 
     func rename(id: UUID, customName: String?) {
-        guard let idx = items.firstIndex(where: { $0.id == id }) else { return }
-        items[idx].customName = customName
-        persist()
+        guard let item = items.first(where: { $0.id == id }) else { return }
+        item.customName = customName
+        save()
+        refreshCache()
     }
 
-    private func load() {
-        guard let data = try? Data(contentsOf: fileURL),
-              let decoded = try? JSONDecoder().decode([PromptHistoryItem].self, from: data) else {
-            items = []
+    // MARK: - Private helpers
+
+    private func refreshCache() {
+        let descriptor = FetchDescriptor<PromptHistoryItem>(
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        items = (try? modelContext.fetch(descriptor)) ?? []
+    }
+
+    private func pruneIfNeeded() {
+        guard items.count > maxItems else { return }
+        let descriptor = FetchDescriptor<PromptHistoryItem>(
+            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
+        )
+        guard let all = try? modelContext.fetch(descriptor), all.count > maxItems else { return }
+        all.suffix(from: maxItems).forEach { modelContext.delete($0) }
+        save()
+    }
+
+    @discardableResult
+    private func save() -> Bool {
+        do {
+            try modelContext.save()
+            return true
+        } catch {
+            // Non-fatal in production; surface via analytics in Phase 6.
+            return false
+        }
+    }
+
+    // MARK: - Legacy JSON migration
+
+    /// Shape of records written by the old JSON-file `HistoryStore`.
+    private struct LegacyItem: Codable {
+        let id: UUID
+        let createdAt: Date
+        let mode: PromptMode
+        let input: String
+        let professional: String
+        let template: String
+        var favorite: Bool
+        var customName: String?
+    }
+
+    private static var legacyFileURL: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        return base.appendingPathComponent("Prompt28/history.json")
+    }
+
+    private func migrateLegacyJSONIfNeeded() {
+        let url = Self.legacyFileURL
+        guard FileManager.default.fileExists(atPath: url.path),
+              let data = try? Data(contentsOf: url),
+              let legacy = try? JSONDecoder().decode([LegacyItem].self, from: data) else { return }
+
+        // Skip if SwiftData already has data (i.e. migration already ran).
+        let existingCount = (try? modelContext.fetchCount(FetchDescriptor<PromptHistoryItem>())) ?? 0
+        guard existingCount == 0 else {
+            try? FileManager.default.removeItem(at: url)
             return
         }
 
-        items = decoded
-    }
+        for legacyItem in legacy {
+            let item = PromptHistoryItem(
+                id: legacyItem.id,
+                createdAt: legacyItem.createdAt,
+                mode: legacyItem.mode,
+                input: legacyItem.input,
+                professional: legacyItem.professional,
+                template: legacyItem.template,
+                favorite: legacyItem.favorite,
+                customName: legacyItem.customName
+            )
+            modelContext.insert(item)
+        }
+        save()
 
-    private func persist() {
-        guard let data = try? JSONEncoder().encode(items) else { return }
-        try? data.write(to: fileURL, options: .atomic)
+        // Remove the legacy file so this block never runs again.
+        try? FileManager.default.removeItem(at: url)
     }
 }

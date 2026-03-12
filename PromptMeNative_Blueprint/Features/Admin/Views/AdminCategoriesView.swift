@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AdminCategoriesView: View {
-	@ObservedObject var viewModel: AdminViewModel
+	var viewModel: AdminViewModel
 	@State private var newCategoryKey = ""
 	@State private var newCategoryName = ""
 

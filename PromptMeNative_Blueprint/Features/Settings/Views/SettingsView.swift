@@ -3,7 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(AppEnvironment.self) private var env
     @Environment(\.dismiss) private var dismiss
-    @StateObject private var viewModel = SettingsViewModel()
+    @State private var viewModel = SettingsViewModel()
     @State private var showUpgrade = false
     @State private var showDeleteConfirm = false
     var onDone: (() -> Void)? = nil

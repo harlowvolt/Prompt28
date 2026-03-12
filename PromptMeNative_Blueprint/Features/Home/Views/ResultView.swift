@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 struct ResultView: View {
-    @ObservedObject var viewModel: GenerateViewModel
+    var viewModel: GenerateViewModel
     @State private var copiedInput = false
     @State private var copiedPrompt = false
     @State private var shareImage: UIImage?
@@ -75,7 +75,7 @@ struct ResultView: View {
                     UIPasteboard.general.string = viewModel.latestInput
                     copiedInput = true
                     HapticService.impact(.light)
-                    NotificationCenter.default.post(name: .prompt28DidCopyPrompt, object: nil)
+                    viewModel.triggerCopiedToast()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { copiedInput = false }
                 } label: {
                     HStack(spacing: 5) {
@@ -151,7 +151,7 @@ struct ResultView: View {
                     UIPasteboard.general.string = result.professional
                     copiedPrompt = true
                     HapticService.impact(.light)
-                    NotificationCenter.default.post(name: .prompt28DidCopyPrompt, object: nil)
+                    viewModel.triggerCopiedToast()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { copiedPrompt = false }
                 }
                 .buttonStyle(.borderedProminent)

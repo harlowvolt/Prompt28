@@ -14,20 +14,20 @@ struct HomeView: View {
     }
 
     @Environment(AppEnvironment.self) private var env
-    @StateObject private var orbEngine = OrbEngine.makeDefault()
-    @StateObject private var generateViewModel: GenerateViewModel
-    @StateObject private var settingsViewModel = SettingsViewModel()
+    @State private var orbEngine = OrbEngine.makeDefault()
+    @State private var generateViewModel: GenerateViewModel
+    @State private var settingsViewModel = SettingsViewModel()
 
     @State private var activeSheet: ActiveSheet?
-    @State private var showCopiedToast = false
 
     init(appEnvironment: AppEnvironment) {
-        self._generateViewModel = StateObject(
+        self._generateViewModel = State(
             wrappedValue: GenerateViewModel(
                 apiClient: appEnvironment.apiClient,
                 authManager: appEnvironment.authManager,
                 historyStore: appEnvironment.historyStore,
-                preferencesStore: appEnvironment.preferencesStore
+                preferencesStore: appEnvironment.preferencesStore,
+                usageTracker: appEnvironment.usageTracker
             )
         )
     }
@@ -147,12 +147,6 @@ struct HomeView: View {
                     .presentationDragIndicator(.visible)
                     .presentationBackground(.regularMaterial)
                     .presentationCornerRadius(32)
-            }
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .prompt28DidCopyPrompt)) { _ in
-            withAnimation(.easeInOut(duration: 0.2)) { showCopiedToast = true }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) {
-                withAnimation(.easeInOut(duration: 0.2)) { showCopiedToast = false }
             }
         }
         .onChange(of: generateViewModel.showPaywall) { _, show in
@@ -294,7 +288,7 @@ struct HomeView: View {
 
     private var copiedToast: some View {
         Group {
-            if showCopiedToast {
+            if generateViewModel.showCopiedToast {
                 Text("Copied to clipboard")
                     .font(.footnote.weight(.semibold))
                     .padding(.horizontal, 16)
@@ -423,6 +417,3 @@ struct HomeView: View {
     }
 }
 
-extension Notification.Name {
-    static let prompt28DidCopyPrompt = Notification.Name("prompt28.didCopyPrompt")
-}

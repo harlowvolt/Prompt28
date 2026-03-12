@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AdminPromptsView: View {
-	@ObservedObject var viewModel: AdminViewModel
+	var viewModel: AdminViewModel
 
 	@State private var showCategories = false
 	@State private var selectedCategoryKey: String?

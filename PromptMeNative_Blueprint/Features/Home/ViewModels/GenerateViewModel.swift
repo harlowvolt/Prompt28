@@ -1,46 +1,39 @@
-import Combine
 import Foundation
 import UIKit
 
+@Observable
 @MainActor
-final class GenerateViewModel: ObservableObject {
-    @Published var inputText = ""
-    @Published var refinementText = ""
-    @Published var selectedMode: PromptMode = .ai
-    @Published private(set) var isGenerating = false
-    @Published private(set) var latestResult: GenerateResponse?
-    @Published private(set) var latestInput: String = ""
-    @Published private(set) var latestHistoryItemID: UUID?
-    @Published private(set) var isLatestFavorite = false
-    @Published var errorMessage: String?
-    @Published var showPaywall = false
+final class GenerateViewModel {
+    var inputText = ""
+    var refinementText = ""
+    var selectedMode: PromptMode = .ai
+    private(set) var isGenerating = false
+    private(set) var latestResult: GenerateResponse?
+    private(set) var latestInput: String = ""
+    private(set) var latestHistoryItemID: UUID?
+    var errorMessage: String?
+    var showPaywall = false
+    var showCopiedToast = false
 
-    private let apiClient: APIClient
+    private let apiClient: any APIClientProtocol
     private let authManager: AuthManager
-    private let historyStore: HistoryStore
-    private let preferencesStore: PreferencesStore
-    private var cancellables: Set<AnyCancellable> = []
+    private let historyStore: any HistoryStoring
+    private let preferencesStore: any PreferenceStoring
+    private let usageTracker: UsageTracker
 
     init(
-        apiClient: APIClient,
+        apiClient: any APIClientProtocol,
         authManager: AuthManager,
-        historyStore: HistoryStore,
-        preferencesStore: PreferencesStore
+        historyStore: any HistoryStoring,
+        preferencesStore: any PreferenceStoring,
+        usageTracker: UsageTracker
     ) {
         self.apiClient = apiClient
         self.authManager = authManager
         self.historyStore = historyStore
         self.preferencesStore = preferencesStore
+        self.usageTracker = usageTracker
         self.selectedMode = preferencesStore.preferences.selectedMode
-
-        historyStore.$items
-            .receive(on: DispatchQueue.main)
-            .sink { [weak self] items in
-                self?.syncLatestFavoriteState(items: items)
-            }
-            .store(in: &cancellables)
-
-        syncLatestFavoriteState(items: historyStore.items)
     }
 
     var canGenerate: Bool {
@@ -49,6 +42,13 @@ final class GenerateViewModel: ObservableObject {
 
     var latestPromptText: String {
         latestResult?.professional.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+    }
+
+    /// Live favorite state — reads directly from historyStore (also @Observable),
+    /// so any view reading this property re-renders automatically on store changes.
+    var isLatestFavorite: Bool {
+        guard let id = latestHistoryItemID else { return false }
+        return historyStore.items.first(where: { $0.id == id })?.favorite ?? false
     }
 
     func generate() async {
@@ -80,6 +80,14 @@ final class GenerateViewModel: ObservableObject {
             return
         }
 
+        // Client-side freemium gate — avoids a wasted API call when local count is exhausted.
+        let plan = authManager.currentUser?.plan ?? .starter
+        guard usageTracker.canGenerate(for: plan) else {
+            showPaywall = true
+            AnalyticsService.shared.track(.paywallShown)
+            return
+        }
+
         isGenerating = true
         errorMessage = nil
         defer { isGenerating = false }
@@ -106,7 +114,6 @@ final class GenerateViewModel: ObservableObject {
                 errorMessage = "The server returned an empty result. Please try again."
                 latestResult = nil
                 latestHistoryItemID = nil
-                isLatestFavorite = false
                 HapticService.notification(.error)
                 return
             }
@@ -120,6 +127,10 @@ final class GenerateViewModel: ObservableObject {
 
             // Haptics: success pulse
             HapticService.notification(.success)
+
+            // Usage tracking: record local generation + sync from server truth.
+            usageTracker.recordGeneration()
+            usageTracker.sync(promptsRemaining: response.prompts_remaining, plan: plan)
 
             // Paywall: show if user has run out of prompts
             if let remaining = response.prompts_remaining, remaining <= 0 {
@@ -141,7 +152,6 @@ final class GenerateViewModel: ObservableObject {
                 )
                 historyStore.add(item)
                 latestHistoryItemID = item.id
-                isLatestFavorite = item.favorite
 
                 // Notifications: request permission on first-ever successful save
                 if historyStore.items.count == 1 {
@@ -149,7 +159,6 @@ final class GenerateViewModel: ObservableObject {
                 }
             } else {
                 latestHistoryItemID = nil
-                isLatestFavorite = false
             }
 
             await authManager.refreshMe()
@@ -173,12 +182,18 @@ final class GenerateViewModel: ObservableObject {
         }
     }
 
+    func triggerCopiedToast() {
+        withAnimation(.easeInOut(duration: 0.2)) { showCopiedToast = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) { [weak self] in
+            withAnimation(.easeInOut(duration: 0.2)) { self?.showCopiedToast = false }
+        }
+    }
+
     func restoreFromHistory(_ item: PromptHistoryItem) {
         selectedMode = item.mode
         inputText = item.input
         latestInput = item.input
         latestHistoryItemID = item.id
-        isLatestFavorite = item.favorite
         latestResult = GenerateResponse(
             professional: item.professional,
             template: item.template,
@@ -209,20 +224,5 @@ final class GenerateViewModel: ObservableObject {
         )
         historyStore.add(item)
         latestHistoryItemID = item.id
-        isLatestFavorite = true
-    }
-
-    private func syncLatestFavoriteState(items: [PromptHistoryItem]) {
-        guard let id = latestHistoryItemID else {
-            isLatestFavorite = false
-            return
-        }
-
-        if let item = items.first(where: { $0.id == id }) {
-            isLatestFavorite = item.favorite
-        } else {
-            latestHistoryItemID = nil
-            isLatestFavorite = false
-        }
     }
 }
