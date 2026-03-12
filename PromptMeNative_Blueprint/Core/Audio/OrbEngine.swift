@@ -247,10 +247,9 @@ final class OrbEngine {
             .sink { [weak self] status in
                 guard let self else { return }
                 self.permissionStatus = status
-                self.state = Self.stateAfterPermissionStatusUpdate(
-                    currentState: self.state,
-                    status: status
-                )
+                if let message = Self.failureMessage(for: status) {
+                    self.state = .failure(message)
+                }
             }
             .store(in: &cancellables)
 
@@ -291,15 +290,6 @@ final class OrbEngine {
         case .granted, .notDetermined:
             return false
         }
-    }
-
-    /// Pure mapping for state updates after permission status changes.
-    nonisolated static func stateAfterPermissionStatusUpdate(
-        currentState: State,
-        status: SpeechRecognizerService.PermissionStatus
-    ) -> State {
-        guard let message = failureMessage(for: status) else { return currentState }
-        return .failure(message)
     }
 
     /// Pure helper for transcript selection so behavior can be unit-tested

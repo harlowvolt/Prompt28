@@ -959,6 +959,28 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline permission-status failure transition
+
+Removed a single-use permission-status state-mapping helper and handled failure-state transition directly in the permission-status publisher sink.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `speech.permissionStatusPublisher` sink, replaced helper call:
+        - `stateAfterPermissionStatusUpdate(currentState:status:)`
+      with direct mapping:
+        - if `failureMessage(for:)` exists, set `.failure(message)`
+        - otherwise preserve current state
+    - Removed helper:
+        - `stateAfterPermissionStatusUpdate(currentState:status:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Permission Status State Transition`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 325)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline recording-state transition mapping
 
 Removed a single-use recording-state transition helper and assigned the mapped state directly in the recording publisher sink.
