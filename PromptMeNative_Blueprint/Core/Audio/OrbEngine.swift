@@ -256,7 +256,7 @@ final class OrbEngine {
             .sink { [weak self] value in
                 guard let self else { return }
                 self.finalTranscript = value
-                let trimmed = value.trimmingCharacters(in: transcriptTrimCharacterSet)
+                let trimmed = self.trimmedTranscriptText(value)
                 if !trimmed.isEmpty
                     && (self.state == .transcribing || self.state == .listening) {
                     self.finalizeTranscript()

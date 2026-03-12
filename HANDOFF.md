@@ -3121,3 +3121,14 @@ Introduced a private trim helper and used it in finalize/polling transcript norm
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation — Reused transcript trim helper in finalTranscript publisher sink
+
+Replaced the last direct trim expression in `bindSpeechState()` with the shared `trimmedTranscriptText(_:)` helper for consistency.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Changed `let trimmed = value.trimmingCharacters(in: transcriptTrimCharacterSet)`
+    - To `let trimmed = self.trimmedTranscriptText(value)`
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
