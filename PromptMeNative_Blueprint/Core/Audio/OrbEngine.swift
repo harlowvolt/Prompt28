@@ -208,8 +208,11 @@ final class OrbEngine {
     }
 
     private var canStopListeningNow: Bool {
-        guard let listeningStartedAt else { return false }
-        return Date().timeIntervalSince(listeningStartedAt) >= minimumListeningDuration
+        Self.hasMetMinimumListeningDuration(
+            listeningStartedAt: listeningStartedAt,
+            now: Date(),
+            minimumListeningDuration: minimumListeningDuration
+        )
     }
 
     private func isMeaningfulTranscript(_ text: String) -> Bool {
@@ -312,6 +315,16 @@ final class OrbEngine {
         guard trimmed.count >= minimumTranscriptCharacterCount else { return false }
         guard hasDetectedSpeechContent || !trimmed.isEmpty else { return false }
         return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
+    }
+
+    /// Pure helper for minimum listen-duration gating before stop is allowed.
+    nonisolated static func hasMetMinimumListeningDuration(
+        listeningStartedAt: Date?,
+        now: Date,
+        minimumListeningDuration: TimeInterval
+    ) -> Bool {
+        guard let listeningStartedAt else { return false }
+        return now.timeIntervalSince(listeningStartedAt) >= minimumListeningDuration
     }
 }
 
