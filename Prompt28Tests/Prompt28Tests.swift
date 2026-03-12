@@ -304,6 +304,16 @@ struct OrbFinalTranscriptPollingLimitTests {
     }
 }
 
+@Suite("Orb Final Transcript Polling Sleep")
+struct OrbFinalTranscriptPollingSleepTests {
+
+    @Test("Polling sleep duration is positive and stable")
+    func pollingSleepDuration() {
+        #expect(OrbEngine.finalTranscriptPollingSleepNanoseconds() > 0)
+        #expect(OrbEngine.finalTranscriptPollingSleepNanoseconds() == 50_000_000)
+    }
+}
+
 @Suite("Orb Transcript Normalization")
 struct OrbTranscriptNormalizationTests {
 

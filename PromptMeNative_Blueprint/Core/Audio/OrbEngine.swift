@@ -131,7 +131,7 @@ final class OrbEngine {
             if let best = Self.polledFinalTranscriptCandidate(finalTranscript) {
                 return best
             }
-            try? await Task.sleep(nanoseconds: 50_000_000)
+            try? await Task.sleep(nanoseconds: Self.finalTranscriptPollingSleepNanoseconds())
         }
         return nil
     }
@@ -179,7 +179,7 @@ final class OrbEngine {
                 finalizeTranscript()
                 return
             }
-            try? await Task.sleep(nanoseconds: 50_000_000)
+            try? await Task.sleep(nanoseconds: Self.finalTranscriptPollingSleepNanoseconds())
         }
 
         guard let fallback = Self.fallbackTranscriptCandidateAfterPolling(
@@ -349,6 +349,11 @@ final class OrbEngine {
     /// Pure helper for final transcript polling iteration bounds.
     nonisolated static func finalTranscriptPollingIterationLimit() -> Int {
         30
+    }
+
+    /// Pure helper for final transcript polling sleep duration.
+    nonisolated static func finalTranscriptPollingSleepNanoseconds() -> UInt64 {
+        50_000_000
     }
 
     /// Pure helper for transcript whitespace normalization.

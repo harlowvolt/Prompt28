@@ -1836,6 +1836,28 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure final-transcript-polling-sleep helper + tests
+
+Extracted final transcript polling sleep duration into a pure helper so polling timing is explicit and testable.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - polling loops now use:
+        - `nonisolated static func finalTranscriptPollingSleepNanoseconds() -> UInt64`
+    - applied in:
+        - `stopListeningAndFinalize()` polling loop
+        - `awaitFinalTranscriptAndFinalize()` polling loop
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Final Transcript Polling Sleep` with coverage for:
+        - polling sleep is positive
+        - polling sleep equals expected value (`50_000_000`)
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.
