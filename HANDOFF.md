@@ -959,6 +959,29 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline transcript normalization helper
+
+Removed the final transcript-normalization helper and inlined trimming logic directly at all call sites.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Replaced `normalizedTranscript(...)` with direct `trimmingCharacters(in: .whitespacesAndNewlines)` in:
+        - `stopListeningAndFinalize()`
+        - `awaitFinalTranscriptAndFinalize()` (final transcript path)
+        - `awaitFinalTranscriptAndFinalize()` (fallback transcript path)
+        - transcript publisher sink
+        - final transcript publisher sink
+    - Removed helper:
+        - `normalizedTranscript(_:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Transcript Normalization`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 319)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline transcript meaningfulness helper
 
 Removed the static transcript-meaningfulness helper and applied the logic directly in the instance-level meaningfulness check.

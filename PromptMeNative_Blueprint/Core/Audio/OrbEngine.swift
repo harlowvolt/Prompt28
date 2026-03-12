@@ -143,7 +143,7 @@ final class OrbEngine {
     func stopListeningAndFinalize() async -> String? {
         guard stopListening() else { return nil }
         for _ in 0..<30 {
-            let best = Self.normalizedTranscript(finalTranscript)
+            let best = finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
             if !best.isEmpty {
                 return best
             }
@@ -186,7 +186,7 @@ final class OrbEngine {
 
     private func awaitFinalTranscriptAndFinalize() async {
         for _ in 0..<30 {
-            let best = Self.normalizedTranscript(speech.finalTranscript)
+            let best = speech.finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
             if !best.isEmpty {
                 finalTranscript = best
                 transcript = best
@@ -196,7 +196,7 @@ final class OrbEngine {
             try? await Task.sleep(nanoseconds: 50_000_000)
         }
 
-        let fallbackCandidate = Self.normalizedTranscript(speech.transcript)
+        let fallbackCandidate = speech.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         guard isMeaningfulTranscript(fallbackCandidate) else {
             state = .idle
             return
@@ -232,7 +232,7 @@ final class OrbEngine {
             .sink { [weak self] value in
                 guard let self else { return }
                 self.transcript = value
-                let trimmed = Self.normalizedTranscript(value)
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
                 self.hasDetectedSpeechContent = self.hasDetectedSpeechContent || !trimmed.isEmpty
             }
             .store(in: &cancellables)
@@ -241,7 +241,7 @@ final class OrbEngine {
             .sink { [weak self] value in
                 guard let self else { return }
                 self.finalTranscript = value
-                let trimmed = Self.normalizedTranscript(value)
+                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
                 if !trimmed.isEmpty
                     && (self.state == .transcribing || self.state == .listening) {
                     self.finalizeTranscript()
@@ -276,11 +276,6 @@ final class OrbEngine {
                 self?.audioLevel = value
             }
             .store(in: &cancellables)
-    }
-
-    /// Pure helper for transcript whitespace normalization.
-    nonisolated static func normalizedTranscript(_ text: String) -> String {
-        text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
 }
