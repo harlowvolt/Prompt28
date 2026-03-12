@@ -403,17 +403,12 @@ final class OrbEngine {
         .transcribing
     }
 
-    /// Pure helper for deciding whether a discarded transcript should reset state to idle.
-    nonisolated static func shouldResetToIdleAfterDiscardedTranscript(isRecording: Bool) -> Bool {
-        !isRecording
-    }
-
     /// Pure mapping for state outcome when a transcript candidate is discarded.
     nonisolated static func stateAfterDiscardingTranscriptCandidate(
         currentState: State,
         isRecording: Bool
     ) -> State {
-        shouldResetToIdleAfterDiscardedTranscript(isRecording: isRecording) ? .idle : currentState
+        !isRecording ? .idle : currentState
     }
 
     /// Pure helper for fallback transcript acceptance during finalize polling.

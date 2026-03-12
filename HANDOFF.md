@@ -959,6 +959,26 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline discarded-transcript idle-reset decision
+
+Removed a redundant boolean helper and kept the discard-state mapping logic in one pure function.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Removed helper:
+        - `shouldResetToIdleAfterDiscardedTranscript(isRecording:)`
+    - Simplified:
+        - `stateAfterDiscardingTranscriptCandidate(currentState:isRecording:)` now directly maps to `.idle` when not recording, otherwise preserves current state
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Idle Reset Decision`
+    - Existing suite `Orb Discarded Transcript State Mapping` remains and validates behavior
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 326)
+- No test command was run.
+
 #### Phase 3 prep continuation — Pure non-empty-normalized-transcript helper + tests
 
 Extracted a reusable pure helper for normalized transcript selection that only returns content when non-empty, and reused it across polling paths.
