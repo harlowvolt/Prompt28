@@ -217,9 +217,10 @@ final class OrbEngine {
             .sink { [weak self] value in
                 guard let self else { return }
                 self.isRecording = value
-                if let nextState = Self.recordingTransitionState(isRecording: value) {
-                    self.state = nextState
-                }
+                self.state = Self.stateAfterRecordingUpdate(
+                    currentState: self.state,
+                    isRecording: value
+                )
             }
             .store(in: &cancellables)
 
@@ -316,6 +317,14 @@ final class OrbEngine {
     /// Pure mapping from recording-flag updates to state transitions.
     nonisolated static func recordingTransitionState(isRecording: Bool) -> State? {
         isRecording ? .listening : nil
+    }
+
+    /// Pure mapping for state updates after recording flag changes.
+    nonisolated static func stateAfterRecordingUpdate(
+        currentState: State,
+        isRecording: Bool
+    ) -> State {
+        recordingTransitionState(isRecording: isRecording) ?? currentState
     }
 
     /// Pure helper for transcript selection so behavior can be unit-tested
