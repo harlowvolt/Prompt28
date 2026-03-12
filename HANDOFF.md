@@ -3132,3 +3132,14 @@ Replaced the last direct trim expression in `bindSpeechState()` with the shared 
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation — Extracted transcript-update finalization state helper in OrbEngine
+
+Moved the repeated final transcript state check behind a small helper to keep the publisher sink condition clearer.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `shouldFinalizeOnTranscriptUpdate` computed helper
+    - Updated final transcript publisher sink to use the helper
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)

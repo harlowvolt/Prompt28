@@ -236,6 +236,10 @@ final class OrbEngine {
         }
     }
 
+    private var shouldFinalizeOnTranscriptUpdate: Bool {
+        state == .transcribing || state == .listening
+    }
+
     private func bindSpeechState() {
         speech.isRecordingPublisher
             .sink { [weak self] value in
@@ -257,8 +261,7 @@ final class OrbEngine {
                 guard let self else { return }
                 self.finalTranscript = value
                 let trimmed = self.trimmedTranscriptText(value)
-                if !trimmed.isEmpty
-                    && (self.state == .transcribing || self.state == .listening) {
+                if !trimmed.isEmpty && self.shouldFinalizeOnTranscriptUpdate {
                     self.finalizeTranscript()
                 }
             }
