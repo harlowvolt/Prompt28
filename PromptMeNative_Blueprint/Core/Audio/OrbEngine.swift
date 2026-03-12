@@ -69,6 +69,7 @@ final class OrbEngine {
     private var lastDeliveredTranscript = ""
     private var listeningStartedAt: Date?
     private let minimumListeningDuration: TimeInterval = 0.7
+    private let minimumMeaningfulTranscriptLength = 3
     private let finalTranscriptPollingAttempts = 30
     private let finalTranscriptPollingSleepNanoseconds: UInt64 = 50_000_000
     private let transcriptTrimCharacterSet = CharacterSet.whitespacesAndNewlines
@@ -208,7 +209,7 @@ final class OrbEngine {
 
     private func isMeaningfulTranscript(_ text: String) -> Bool {
         let trimmed = text.trimmingCharacters(in: transcriptTrimCharacterSet)
-        guard trimmed.count >= 3 else { return false }
+        guard trimmed.count >= minimumMeaningfulTranscriptLength else { return false }
         return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
     }
 

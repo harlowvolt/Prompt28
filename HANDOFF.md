@@ -3077,3 +3077,14 @@ Replaced repeated permission-status failure assignments with a single helper tha
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation — Centralized minimum meaningful transcript length in OrbEngine
+
+Replaced the inline minimum transcript length literal with a private constant in the transcript quality gate.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `minimumMeaningfulTranscriptLength = 3`
+    - Updated `isMeaningfulTranscript(_:)` to guard against `minimumMeaningfulTranscriptLength`
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
