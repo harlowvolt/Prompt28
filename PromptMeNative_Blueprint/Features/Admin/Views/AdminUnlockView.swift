@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct AdminUnlockView: View {
-	var viewModel: AdminViewModel
+	@Bindable var viewModel: AdminViewModel
 
 	var body: some View {
 		VStack(spacing: 14) {

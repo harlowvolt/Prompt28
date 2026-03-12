@@ -376,7 +376,7 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
     }
 
     /// Pure function — safe to call from any thread. Returns a 0–1 normalised level.
-    private static func computeAudioLevel(from buffer: AVAudioPCMBuffer) -> CGFloat {
+    nonisolated private static func computeAudioLevel(from buffer: AVAudioPCMBuffer) -> CGFloat {
         guard let channelData = buffer.floatChannelData?[0] else { return 0 }
         let frameLength = Int(buffer.frameLength)
         guard frameLength > 0 else { return 0 }
