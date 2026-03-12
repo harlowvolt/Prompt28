@@ -302,18 +302,13 @@ final class OrbEngine {
         }
     }
 
-    /// Pure mapping from permission status to OrbEngine failure state.
-    nonisolated static func failureState(for status: SpeechRecognizerService.PermissionStatus) -> State? {
-        guard let message = failureMessage(for: status) else { return nil }
-        return .failure(message)
-    }
-
     /// Pure mapping for state updates after permission status changes.
     nonisolated static func stateAfterPermissionStatusUpdate(
         currentState: State,
         status: SpeechRecognizerService.PermissionStatus
     ) -> State {
-        failureState(for: status) ?? currentState
+        guard let message = failureMessage(for: status) else { return currentState }
+        return .failure(message)
     }
 
     /// Pure mapping for state updates after recording flag changes.

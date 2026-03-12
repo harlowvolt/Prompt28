@@ -959,6 +959,26 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline permission failure-state mapping
+
+Removed a redundant failure-state wrapper and kept permission-to-state mapping directly in `stateAfterPermissionStatusUpdate(...)`.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Removed helper:
+        - `failureState(for:)`
+    - Updated:
+        - `stateAfterPermissionStatusUpdate(currentState:status:)` now directly maps `failureMessage(for:)` to `.failure(message)` and otherwise preserves current state
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Failure State Mapping`
+    - Existing permission transition and failure-message suites continue to cover behavior
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 326)
+- No test command was run.
+
 #### Phase 3 prep continuation — Remove redundant polled-final-transcript wrapper
 
 Removed a pass-through helper and used `nonEmptyNormalizedTranscript(_:)` directly in the final-transcript polling loop.
