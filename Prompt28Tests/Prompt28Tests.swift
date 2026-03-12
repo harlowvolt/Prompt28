@@ -319,3 +319,38 @@ struct OrbTranscriptMeaningTests {
         ))
     }
 }
+
+@Suite("Orb Listening Duration")
+struct OrbListeningDurationTests {
+
+    @Test("Rejects stop when listening start timestamp is missing")
+    func rejectsMissingStartTime() {
+        #expect(!OrbEngine.hasMetMinimumListeningDuration(
+            listeningStartedAt: nil,
+            now: Date(),
+            minimumListeningDuration: 0.7
+        ))
+    }
+
+    @Test("Rejects stop when elapsed duration is below threshold")
+    func rejectsBelowThreshold() {
+        let start = Date(timeIntervalSinceReferenceDate: 1_000)
+        let now = Date(timeIntervalSinceReferenceDate: 1_000.6)
+        #expect(!OrbEngine.hasMetMinimumListeningDuration(
+            listeningStartedAt: start,
+            now: now,
+            minimumListeningDuration: 0.7
+        ))
+    }
+
+    @Test("Allows stop when elapsed duration meets threshold")
+    func allowsAtThreshold() {
+        let start = Date(timeIntervalSinceReferenceDate: 1_000)
+        let now = Date(timeIntervalSinceReferenceDate: 1_000.7)
+        #expect(OrbEngine.hasMetMinimumListeningDuration(
+            listeningStartedAt: start,
+            now: now,
+            minimumListeningDuration: 0.7
+        ))
+    }
+}
