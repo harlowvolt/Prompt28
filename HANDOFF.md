@@ -1499,6 +1499,25 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure stop-listening eligibility helper + tests
+
+Extracted stop-listening eligibility into a pure helper so the stop gate condition is explicitly testable without actor state setup.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `stopListening()` now delegates initial guard to:
+        - `nonisolated static func shouldBeginStopListening(isRecording:canStopListeningNow:) -> Bool`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Stop Listening Eligibility` with coverage for:
+        - true only when both conditions are true
+        - false for all other condition combinations
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.

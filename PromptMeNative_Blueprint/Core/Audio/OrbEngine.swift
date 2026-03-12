@@ -111,8 +111,10 @@ final class OrbEngine {
 
     @discardableResult
     func stopListening() -> Bool {
-        guard isRecording else { return false }
-        guard canStopListeningNow else { return false }
+        guard Self.shouldBeginStopListening(
+            isRecording: isRecording,
+            canStopListeningNow: canStopListeningNow
+        ) else { return false }
 
         state = .transcribing
         speech.stopRecording()
@@ -315,6 +317,14 @@ final class OrbEngine {
     /// Pure helper for deciding whether a discarded transcript should reset state to idle.
     nonisolated static func shouldResetToIdleAfterDiscardedTranscript(isRecording: Bool) -> Bool {
         !isRecording
+    }
+
+    /// Pure helper for stop-listening eligibility.
+    nonisolated static func shouldBeginStopListening(
+        isRecording: Bool,
+        canStopListeningNow: Bool
+    ) -> Bool {
+        isRecording && canStopListeningNow
     }
 
     /// Pure helper for transcript meaningfulness checks.
