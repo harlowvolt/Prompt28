@@ -127,7 +127,7 @@ final class OrbEngine {
 
     func stopListeningAndFinalize() async -> String? {
         guard stopListening() else { return nil }
-        for _ in 0..<30 {
+        for _ in 0..<Self.finalTranscriptPollingIterationLimit() {
             if let best = Self.polledFinalTranscriptCandidate(finalTranscript) {
                 return best
             }
@@ -344,6 +344,11 @@ final class OrbEngine {
     nonisolated static func polledFinalTranscriptCandidate(_ finalTranscript: String) -> String? {
         let trimmed = normalizedTranscript(finalTranscript)
         return hasNormalizedTranscriptContent(trimmed) ? trimmed : nil
+    }
+
+    /// Pure helper for final transcript polling iteration bounds.
+    nonisolated static func finalTranscriptPollingIterationLimit() -> Int {
+        30
     }
 
     /// Pure helper for transcript whitespace normalization.

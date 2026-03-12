@@ -294,6 +294,16 @@ struct OrbPolledFinalTranscriptCandidateTests {
     }
 }
 
+@Suite("Orb Final Transcript Polling Limit")
+struct OrbFinalTranscriptPollingLimitTests {
+
+    @Test("Polling limit is positive and stable")
+    func pollingLimit() {
+        #expect(OrbEngine.finalTranscriptPollingIterationLimit() > 0)
+        #expect(OrbEngine.finalTranscriptPollingIterationLimit() == 30)
+    }
+}
+
 @Suite("Orb Transcript Normalization")
 struct OrbTranscriptNormalizationTests {
 
