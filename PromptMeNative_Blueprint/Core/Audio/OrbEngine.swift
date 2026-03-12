@@ -68,6 +68,8 @@ final class OrbEngine {
     private let speech: SpeechRecognizing
     private var lastDeliveredTranscript = ""
     private var listeningStartedAt: Date?
+    private let finalTranscriptPollingAttempts = 30
+    private let finalTranscriptPollingSleepNanoseconds: UInt64 = 50_000_000
     // Combine is kept internally to bridge SpeechRecognizing's thread-safe publishers.
     private var cancellables: Set<AnyCancellable> = []
 
@@ -140,12 +142,12 @@ final class OrbEngine {
 
     func stopListeningAndFinalize() async -> String? {
         guard stopListening() else { return nil }
-        for _ in 0..<30 {
+        for _ in 0..<finalTranscriptPollingAttempts {
             let best = finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
             if !best.isEmpty {
                 return best
             }
-            try? await Task.sleep(nanoseconds: 50_000_000)
+            try? await Task.sleep(nanoseconds: finalTranscriptPollingSleepNanoseconds)
         }
         return nil
     }
@@ -183,7 +185,7 @@ final class OrbEngine {
     }
 
     private func awaitFinalTranscriptAndFinalize() async {
-        for _ in 0..<30 {
+        for _ in 0..<finalTranscriptPollingAttempts {
             let best = speech.finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
             if !best.isEmpty {
                 finalTranscript = best
@@ -191,7 +193,7 @@ final class OrbEngine {
                 finalizeTranscript()
                 return
             }
-            try? await Task.sleep(nanoseconds: 50_000_000)
+            try? await Task.sleep(nanoseconds: finalTranscriptPollingSleepNanoseconds)
         }
 
         let fallbackCandidate = speech.transcript.trimmingCharacters(in: .whitespacesAndNewlines)

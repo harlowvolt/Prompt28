@@ -959,6 +959,18 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 continuation — Centralized final transcript polling constants in OrbEngine
+
+Replaced duplicated final-transcript polling magic numbers with private constants to reduce drift risk while preserving behavior.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `finalTranscriptPollingAttempts = 30`
+    - Added `finalTranscriptPollingSleepNanoseconds: UInt64 = 50_000_000`
+    - Updated both final-transcript polling loops to use these constants
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
+
 #### Phase 3 prep continuation — Inline minimum listening-duration constant
 
 Removed a single-use listening-duration field and applied the stable threshold directly in the stop-listening guard.
