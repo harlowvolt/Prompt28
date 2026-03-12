@@ -128,7 +128,7 @@ final class OrbEngine {
     func stopListeningAndFinalize() async -> String? {
         guard stopListening() else { return nil }
         for _ in Self.finalTranscriptPollingAttemptRange() {
-            if let best = Self.polledFinalTranscriptCandidate(finalTranscript) {
+            if let best = Self.nonEmptyNormalizedTranscript(finalTranscript) {
                 return best
             }
             try? await Task.sleep(nanoseconds: Self.finalTranscriptPollingSleepNanoseconds())
@@ -335,11 +335,6 @@ final class OrbEngine {
             return trimmedFinal
         }
         return transcript.trimmingCharacters(in: .whitespacesAndNewlines)
-    }
-
-    /// Pure helper for polling-based final transcript extraction.
-    nonisolated static func polledFinalTranscriptCandidate(_ finalTranscript: String) -> String? {
-        nonEmptyNormalizedTranscript(finalTranscript)
     }
 
     /// Pure helper returning a normalized transcript only when it has content.

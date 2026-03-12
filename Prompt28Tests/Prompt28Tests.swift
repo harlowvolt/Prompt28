@@ -280,20 +280,6 @@ struct OrbTranscriptCandidateTests {
     }
 }
 
-@Suite("Orb Polled Final Transcript Candidate")
-struct OrbPolledFinalTranscriptCandidateTests {
-
-    @Test("Returns trimmed transcript when non-empty")
-    func returnsTrimmedCandidate() {
-        #expect(OrbEngine.polledFinalTranscriptCandidate("  result value  ") == "result value")
-    }
-
-    @Test("Returns nil when transcript is empty after trimming")
-    func returnsNilForEmptyCandidate() {
-        #expect(OrbEngine.polledFinalTranscriptCandidate(" \n\t ") == nil)
-    }
-}
-
 @Suite("Orb Non-Empty Normalized Transcript")
 struct OrbNonEmptyNormalizedTranscriptTests {
 

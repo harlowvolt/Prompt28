@@ -959,6 +959,28 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Remove redundant polled-final-transcript wrapper
+
+Removed a pass-through helper and used `nonEmptyNormalizedTranscript(_:)` directly in the final-transcript polling loop.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `stopListeningAndFinalize()`, replaced:
+        - `Self.polledFinalTranscriptCandidate(finalTranscript)`
+      with:
+        - `Self.nonEmptyNormalizedTranscript(finalTranscript)`
+    - Removed helper:
+        - `polledFinalTranscriptCandidate(_:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Polled Final Transcript Candidate`
+    - Existing suite `Orb Non-Empty Normalized Transcript` continues to cover the underlying behavior
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 324)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline stop-listening transcribing transition
 
 Removed a fixed-result stop-listening state helper and assigned `.transcribing` directly in `stopListening()` to reduce indirection while preserving behavior.
