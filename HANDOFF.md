@@ -959,6 +959,26 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Simplify recording-state transition mapping
+
+Removed an intermediate recording-transition helper and kept the state mapping in a single pure function to reduce indirection without changing behavior.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Removed helper:
+        - `recordingTransitionState(isRecording:)`
+    - Simplified:
+        - `stateAfterRecordingUpdate(currentState:isRecording:)` now directly returns `.listening` when recording, else preserves current state
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Recording Transition Mapping`
+    - Existing suite `Orb Recording State Transition` remains to verify behavior
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 325)
+- No test command was run.
+
 #### Phase 3 prep continuation — Remove no-op fallback-acceptance state mapping
 
 Removed an identity transition in the accepted-fallback path to reduce indirection while preserving behavior.

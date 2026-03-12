@@ -317,17 +317,12 @@ final class OrbEngine {
         failureState(for: status) ?? currentState
     }
 
-    /// Pure mapping from recording-flag updates to state transitions.
-    nonisolated static func recordingTransitionState(isRecording: Bool) -> State? {
-        isRecording ? .listening : nil
-    }
-
     /// Pure mapping for state updates after recording flag changes.
     nonisolated static func stateAfterRecordingUpdate(
         currentState: State,
         isRecording: Bool
     ) -> State {
-        recordingTransitionState(isRecording: isRecording) ?? currentState
+        isRecording ? .listening : currentState
     }
 
     /// Pure helper for transcript selection so behavior can be unit-tested
