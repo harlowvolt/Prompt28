@@ -96,7 +96,20 @@ final class OrbEngine {
     }
 
     var permissionMessage: String {
-        Self.permissionMessage(for: permissionStatus)
+        switch permissionStatus {
+        case .notDetermined, .granted:
+            return ""
+        case .speechDenied:
+            return "Speech recognition access is required to transcribe your voice."
+        case .microphoneDenied:
+            return "Microphone access is required to capture your voice."
+        case .restricted:
+            return "Speech recognition is restricted on this device."
+        case .unavailable:
+            return "Speech recognizer is temporarily unavailable."
+        case .error(let message):
+            return message
+        }
     }
 
     func reset() {
@@ -245,8 +258,19 @@ final class OrbEngine {
             .sink { [weak self] status in
                 guard let self else { return }
                 self.permissionStatus = status
-                if let message = Self.failureMessage(for: status) {
+                switch status {
+                case .speechDenied:
+                    self.state = .failure("Speech recognition permission denied.")
+                case .microphoneDenied:
+                    self.state = .failure("Microphone permission denied.")
+                case .restricted:
+                    self.state = .failure("Speech recognition is restricted on this device.")
+                case .unavailable:
+                    self.state = .failure("Speech recognition is unavailable.")
+                case .error(let message):
                     self.state = .failure(message)
+                case .granted, .notDetermined:
+                    break
                 }
             }
             .store(in: &cancellables)
@@ -257,24 +281,6 @@ final class OrbEngine {
                 self?.audioLevel = value
             }
             .store(in: &cancellables)
-    }
-
-    /// Pure mapping from permission status to user-facing failure text.
-    nonisolated static func failureMessage(for status: SpeechRecognizerService.PermissionStatus) -> String? {
-        switch status {
-        case .speechDenied:
-            return "Speech recognition permission denied."
-        case .microphoneDenied:
-            return "Microphone permission denied."
-        case .restricted:
-            return "Speech recognition is restricted on this device."
-        case .unavailable:
-            return "Speech recognition is unavailable."
-        case .error(let message):
-            return message
-        case .granted, .notDetermined:
-            return nil
-        }
     }
 
     /// Pure helper for transcript whitespace normalization.
@@ -292,24 +298,6 @@ final class OrbEngine {
         guard trimmed.count >= minimumTranscriptCharacterCount else { return false }
         guard hasDetectedSpeechContent || !trimmed.isEmpty else { return false }
         return trimmed.rangeOfCharacter(from: .alphanumerics) != nil
-    }
-
-    /// Pure mapping from permission status to user-facing permission helper text.
-    nonisolated static func permissionMessage(for status: SpeechRecognizerService.PermissionStatus) -> String {
-        switch status {
-        case .notDetermined, .granted:
-            return ""
-        case .speechDenied:
-            return "Speech recognition access is required to transcribe your voice."
-        case .microphoneDenied:
-            return "Microphone access is required to capture your voice."
-        case .restricted:
-            return "Speech recognition is restricted on this device."
-        case .unavailable:
-            return "Speech recognizer is temporarily unavailable."
-        case .error(let message):
-            return message
-        }
     }
 
 }

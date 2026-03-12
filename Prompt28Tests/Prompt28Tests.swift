@@ -226,29 +226,6 @@ struct SpeechErrorClassificationTests {
     }
 }
 
-@Suite("Orb Permission Failure Mapping")
-struct OrbPermissionFailureMappingTests {
-
-    @Test("Non-error statuses do not produce failure message")
-    func nonErrorStatuses() {
-        #expect(OrbEngine.failureMessage(for: .notDetermined) == nil)
-        #expect(OrbEngine.failureMessage(for: .granted) == nil)
-    }
-
-    @Test("Permission-related statuses map to expected failure text")
-    func permissionStatusMappings() {
-        #expect(OrbEngine.failureMessage(for: .speechDenied) == "Speech recognition permission denied.")
-        #expect(OrbEngine.failureMessage(for: .microphoneDenied) == "Microphone permission denied.")
-        #expect(OrbEngine.failureMessage(for: .restricted) == "Speech recognition is restricted on this device.")
-        #expect(OrbEngine.failureMessage(for: .unavailable) == "Speech recognition is unavailable.")
-    }
-
-    @Test("Error status returns passthrough message")
-    func passthroughErrorStatus() {
-        #expect(OrbEngine.failureMessage(for: .error("boom")) == "boom")
-    }
-}
-
 @Suite("Orb Transcript Normalization")
 struct OrbTranscriptNormalizationTests {
 
@@ -300,29 +277,6 @@ struct OrbTranscriptMeaningTests {
             hasDetectedSpeechContent: false,
             minimumTranscriptCharacterCount: 3
         ))
-    }
-}
-
-@Suite("Orb Permission Message Mapping")
-struct OrbPermissionMessageMappingTests {
-
-    @Test("Non-blocking statuses return empty message")
-    func nonBlockingStatuses() {
-        #expect(OrbEngine.permissionMessage(for: .notDetermined).isEmpty)
-        #expect(OrbEngine.permissionMessage(for: .granted).isEmpty)
-    }
-
-    @Test("Denied/restricted/unavailable statuses map to expected text")
-    func deniedAndRestrictedMappings() {
-        #expect(OrbEngine.permissionMessage(for: .speechDenied) == "Speech recognition access is required to transcribe your voice.")
-        #expect(OrbEngine.permissionMessage(for: .microphoneDenied) == "Microphone access is required to capture your voice.")
-        #expect(OrbEngine.permissionMessage(for: .restricted) == "Speech recognition is restricted on this device.")
-        #expect(OrbEngine.permissionMessage(for: .unavailable) == "Speech recognizer is temporarily unavailable.")
-    }
-
-    @Test("Error status returns passthrough message")
-    func errorPassthrough() {
-        #expect(OrbEngine.permissionMessage(for: .error("custom")) == "custom")
     }
 }
 

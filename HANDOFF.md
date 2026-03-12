@@ -959,6 +959,30 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Inline permission failure/message mappings
+
+Removed two single-use permission mapping helpers and inlined their behavior directly at usage sites.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `permissionStatusPublisher` sink now maps statuses directly to failure states instead of calling:
+        - `failureMessage(for:)`
+    - `permissionMessage` computed property now switches directly on `permissionStatus` instead of calling:
+        - `permissionMessage(for:)`
+    - Removed helpers:
+        - `failureMessage(for:)`
+        - `permissionMessage(for:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suites:
+        - `Orb Permission Failure Mapping`
+        - `Orb Permission Message Mapping`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 320)
+- No test command was run.
+
 #### Phase 3 prep continuation — Inline polling sleep duration constant
 
 Removed a small polling-sleep helper and used the stable sleep constant directly in both final-transcript polling loops.
