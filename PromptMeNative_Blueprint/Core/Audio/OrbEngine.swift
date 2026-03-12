@@ -120,25 +120,15 @@ final class OrbEngine {
     }
 
     func startListening() {
-        (transcript, finalTranscript, lastDeliveredTranscript) = ("", "", "")
-        listeningStartedAt = Date()
-        setState(.listening)
+        prepareForListeningStart()
         speech.startRecording()
     }
 
     @discardableResult
     func stopListening() -> Bool {
-        let listeningDuration = listeningStartedAt.map { Date().timeIntervalSince($0) }
-        guard isRecording,
-              let listeningDuration,
-              listeningDuration >= minimumListeningDuration else { return false }
+        guard isRecording, hasMetMinimumListeningDuration else { return false }
 
-        setState(.transcribing)
-        speech.stopRecording()
-
-        Task { [weak self] in
-            await self?.awaitFinalTranscriptAndFinalize()
-        }
+        beginTranscribingAndFinalize()
         return true
     }
 
@@ -200,6 +190,29 @@ final class OrbEngine {
             try? await Task.sleep(nanoseconds: finalTranscriptPollingSleepNanoseconds)
         }
         return nil
+    }
+
+    private func prepareForListeningStart() {
+        (transcript, finalTranscript, lastDeliveredTranscript) = ("", "", "")
+        listeningStartedAt = Date()
+        setState(.listening)
+    }
+
+    private var hasMetMinimumListeningDuration: Bool {
+        guard let listeningStartedAt else { return false }
+        return Date().timeIntervalSince(listeningStartedAt) >= minimumListeningDuration
+    }
+
+    private func beginTranscribingAndFinalize() {
+        setState(.transcribing)
+        speech.stopRecording()
+        startFinalizationAwaitTask()
+    }
+
+    private func startFinalizationAwaitTask() {
+        Task { [weak self] in
+            await self?.awaitFinalTranscriptAndFinalize()
+        }
     }
 
     private func updateCurrentTranscripts(with text: String) {

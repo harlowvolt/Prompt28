@@ -3228,3 +3228,16 @@ Refactored `bindSpeechState()` by moving inline sink logic into dedicated privat
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation (bundled) — Simplified OrbEngine listening lifecycle flow
+
+Applied a cohesive internal cleanup around listening start/stop orchestration with helper extraction, preserving existing behavior.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added `prepareForListeningStart()` and used it from `startListening()`
+    - Added `hasMetMinimumListeningDuration` and used it in `stopListening()` guard
+    - Added `beginTranscribingAndFinalize()` to group transcribing transition + recorder stop + finalize kickoff
+    - Added `startFinalizationAwaitTask()` to encapsulate async await-task launch
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
