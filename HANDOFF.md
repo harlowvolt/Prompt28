@@ -1537,6 +1537,25 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure polled-final-transcript helper + tests
+
+Extracted polling-based final-transcript normalization into a pure helper so poll-loop result behavior is directly testable.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - `stopListeningAndFinalize()` polling loop now delegates to:
+        - `nonisolated static func polledFinalTranscriptCandidate(_:) -> String?`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Polled Final Transcript Candidate` with coverage for:
+        - returns trimmed non-empty candidate
+        - returns `nil` for empty/whitespace candidate
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.
