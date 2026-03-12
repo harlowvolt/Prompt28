@@ -401,6 +401,20 @@ struct OrbFailureStateMappingTests {
     }
 }
 
+@Suite("Orb Recording Transition Mapping")
+struct OrbRecordingTransitionMappingTests {
+
+    @Test("Recording true maps to listening state")
+    func recordingTrueMapsToListening() {
+        #expect(OrbEngine.recordingTransitionState(isRecording: true) == .listening)
+    }
+
+    @Test("Recording false maps to no state transition")
+    func recordingFalseMapsToNil() {
+        #expect(OrbEngine.recordingTransitionState(isRecording: false) == nil)
+    }
+}
+
 @Suite("Orb Permission Settings Action Mapping")
 struct OrbPermissionSettingsActionMappingTests {
 

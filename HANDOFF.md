@@ -1441,6 +1441,26 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure recording-transition helper + tests
+
+Extracted recording-flag to state-transition mapping into a pure helper to isolate and test this publisher-driven transition behavior.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - recording publisher sink now delegates to:
+        - `nonisolated static func recordingTransitionState(isRecording:) -> State?`
+    - behavior remains: `true` -> `.listening`, `false` -> no transition
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Recording Transition Mapping` with coverage for:
+        - `isRecording == true` maps to `.listening`
+        - `isRecording == false` maps to `nil`
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.
