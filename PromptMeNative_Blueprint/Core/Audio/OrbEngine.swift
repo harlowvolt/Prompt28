@@ -193,7 +193,6 @@ final class OrbEngine {
             return
         }
 
-        state = Self.stateAfterAcceptingFallbackCandidate(currentState: state)
         let fallbackAssignment = Self.transcriptAssignment(for: fallback)
         finalTranscript = fallbackAssignment.finalTranscript
         transcript = fallbackAssignment.transcript
@@ -391,11 +390,6 @@ final class OrbEngine {
     /// Pure mapping for state transition when fallback transcript candidate is rejected.
     nonisolated static func stateAfterRejectingFallbackCandidate() -> State {
         .idle
-    }
-
-    /// Pure mapping for state transition when fallback transcript candidate is accepted.
-    nonisolated static func stateAfterAcceptingFallbackCandidate(currentState: State) -> State {
-        currentState
     }
 
     /// Pure helper for assigning finalized transcript values to engine fields.

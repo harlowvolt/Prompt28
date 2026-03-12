@@ -959,6 +959,25 @@ Verification:
 - `get_errors` on touched file: clean
 - Full simulator build passed (`iPhone 17` destination)
 
+#### Phase 3 prep continuation — Remove no-op fallback-acceptance state mapping
+
+Removed an identity transition in the accepted-fallback path to reduce indirection while preserving behavior.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - In `awaitFinalTranscriptAndFinalize()`, removed no-op assignment:
+        - `state = Self.stateAfterAcceptingFallbackCandidate(currentState: state)`
+    - Removed redundant helper:
+        - `stateAfterAcceptingFallbackCandidate(currentState:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Removed obsolete suite `Orb Fallback Acceptance State Mapping` that only verified identity behavior
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -n "\*\* BUILD SUCCEEDED \*\*" build.log | tail -1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **` (line 323)
+- No test command was run.
+
 #### Phase 3 prep continuation — Pure stop-listening-state helper signature cleanup + tests
 
 Removed the unused `currentState` parameter from stop-listening state mapping so the helper more accurately expresses its fixed transition behavior.
