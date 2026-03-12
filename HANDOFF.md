@@ -1636,6 +1636,30 @@ Verification:
     - output: `EXIT:0` and `** BUILD SUCCEEDED **`
 - No test command was run.
 
+#### Phase 3 prep continuation — Pure transcript-normalization helper + tests
+
+Extracted transcript edge-whitespace normalization into a pure helper and applied it to key transcript update paths to keep normalization behavior centralized and testable.
+
+- File: `Core/Audio/OrbEngine.swift`
+    - Added helper:
+        - `nonisolated static func normalizedTranscript(_:) -> String`
+    - Updated callsites to use this helper in:
+        - `awaitFinalTranscriptAndFinalize()` polling loop
+        - `speech.transcriptPublisher` sink
+        - `speech.finalTranscriptPublisher` sink
+        - `polledFinalTranscriptCandidate(_:)`
+
+- File: `Prompt28Tests/Prompt28Tests.swift`
+    - Added suite `Orb Transcript Normalization` with coverage for:
+        - trimming leading/trailing whitespace/newlines
+        - preserving internal spacing
+
+Verification:
+- Build succeeded:
+    - `xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination 'platform=iOS Simulator,name=iPhone 17' build > build.log 2>&1; echo EXIT:$?; grep -nE "\*\* BUILD (SUCCEEDED|FAILED|INTERRUPTED) \*\*" build.log | tail -n 1`
+    - output: `EXIT:0` and `** BUILD SUCCEEDED **`
+- No test command was run.
+
 #### Phase 2 continuation — Global background pilot expanded (Home)
 
 Added the same opt-in root-background experiment switch to `HomeView`.

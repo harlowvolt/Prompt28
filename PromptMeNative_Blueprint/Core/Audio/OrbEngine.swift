@@ -172,7 +172,7 @@ final class OrbEngine {
 
     private func awaitFinalTranscriptAndFinalize() async {
         for _ in 0..<30 {
-            let best = speech.finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+            let best = Self.normalizedTranscript(speech.finalTranscript)
             if !best.isEmpty {
                 finalTranscript = best
                 transcript = best
@@ -227,7 +227,7 @@ final class OrbEngine {
             .sink { [weak self] value in
                 guard let self else { return }
                 self.transcript = value
-                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                let trimmed = Self.normalizedTranscript(value)
                 self.hasDetectedSpeechContent = Self.updatedSpeechContentDetectionFlag(
                     currentValue: self.hasDetectedSpeechContent,
                     trimmedTranscript: trimmed
@@ -239,7 +239,7 @@ final class OrbEngine {
             .sink { [weak self] value in
                 guard let self else { return }
                 self.finalTranscript = value
-                let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
+                let trimmed = Self.normalizedTranscript(value)
                 if Self.shouldFinalizeOnFinalTranscriptUpdate(
                     trimmedFinalTranscript: trimmed,
                     state: self.state
@@ -320,8 +320,13 @@ final class OrbEngine {
 
     /// Pure helper for polling-based final transcript extraction.
     nonisolated static func polledFinalTranscriptCandidate(_ finalTranscript: String) -> String? {
-        let trimmed = finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+        let trimmed = normalizedTranscript(finalTranscript)
         return trimmed.isEmpty ? nil : trimmed
+    }
+
+    /// Pure helper for transcript whitespace normalization.
+    nonisolated static func normalizedTranscript(_ text: String) -> String {
+        text.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     /// Pure helper for transcript-delivery dedupe.

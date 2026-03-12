@@ -294,6 +294,20 @@ struct OrbPolledFinalTranscriptCandidateTests {
     }
 }
 
+@Suite("Orb Transcript Normalization")
+struct OrbTranscriptNormalizationTests {
+
+    @Test("Trims leading and trailing whitespace/newlines")
+    func trimsWhitespace() {
+        #expect(OrbEngine.normalizedTranscript("  hello world \n") == "hello world")
+    }
+
+    @Test("Preserves internal spacing while trimming edges")
+    func preservesInternalSpacing() {
+        #expect(OrbEngine.normalizedTranscript("  hello   world  ") == "hello   world")
+    }
+}
+
 @Suite("Orb Transcript Delivery Dedupe")
 struct OrbTranscriptDeliveryDedupeTests {
 
