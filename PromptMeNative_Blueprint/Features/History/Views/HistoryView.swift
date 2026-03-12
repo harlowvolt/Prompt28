@@ -42,7 +42,7 @@ struct HistoryView: View {
                             searchField
                                 .padding(.top, 14)
 
-                            if viewModel.items.isEmpty {
+                            if viewModel.filteredItems.isEmpty {
                                 emptyState
                                     .padding(.top, 42)
                             } else {
@@ -146,7 +146,7 @@ struct HistoryView: View {
 
                                     Button(item.favorite ? "Unfavorite" : "Favorite") {
                                         viewModel.toggleFavorite(item)
-                                        if let updated = viewModel.items.first(where: { $0.id == item.id }) {
+                                        if let updated = viewModel.filteredItems.first(where: { $0.id == item.id }) {
                                             activeSheet = .detail(updated)
                                         }
                                     }
@@ -233,7 +233,7 @@ struct HistoryView: View {
                     .overlay(RoundedRectangle(cornerRadius: 23, style: .continuous).stroke(Color.white.opacity(0.12), lineWidth: 0.5))
             )
 
-            ShareLink(item: viewModel.items.map { "[\($0.mode == .ai ? "AI" : "Human")] \($0.customName ?? $0.input)\n\($0.professional)" }.joined(separator: "\n\n---\n\n")) {
+            ShareLink(item: viewModel.filteredItems.map { "[\($0.mode == .ai ? "AI" : "Human")] \($0.customName ?? $0.input)\n\($0.professional)" }.joined(separator: "\n\n---\n\n")) {
                 Text("Export")
                     .font(.system(size: 16, weight: .medium, design: .rounded))
                     .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.84))

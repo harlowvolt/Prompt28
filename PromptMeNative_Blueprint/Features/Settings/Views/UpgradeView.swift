@@ -4,7 +4,7 @@ import StoreKit
 struct UpgradeView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(AppEnvironment.self) private var env
-    var viewModel: SettingsViewModel
+    @Bindable var viewModel: SettingsViewModel
 
     // MARK: - Body
 

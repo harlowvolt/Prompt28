@@ -29,16 +29,6 @@ final class TrendingViewModel {
 	/// Subsequent calls are no-ops unless `refresh` is called explicitly.
 	func loadIfNeeded(apiClient: any APIClientProtocol) async {
 		guard catalog == nil else { return }
-
-		// Step 1 — instant bundle load so the view is never empty on first render.
-		if let bundled = BundleCatalogLoader.loadTrendingCatalog() {
-			catalog = bundled
-			if selectedCategoryKey == nil {
-				selectedCategoryKey = bundled.categories.first?.key
-			}
-		}
-
-		// Step 2 — background API refresh to pick up any server-side updates.
 		await refresh(apiClient: apiClient)
 	}
 

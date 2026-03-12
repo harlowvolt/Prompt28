@@ -2,7 +2,7 @@ import SwiftUI
 import UIKit
 
 struct ResultView: View {
-    var viewModel: GenerateViewModel
+    @Bindable var viewModel: GenerateViewModel
     @State private var copiedInput = false
     @State private var copiedPrompt = false
     @State private var shareImage: UIImage?
