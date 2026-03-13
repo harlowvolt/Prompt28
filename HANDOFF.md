@@ -3386,3 +3386,33 @@ Outcome:
 - No editor diagnostics reported across stabilization passes
 - No source behavior changes introduced during stabilization
 - Repository is in release-readiness verification-complete state for this phase handoff
+
+#### Final release checklist — App Store submission execution
+
+Use this checklist for final ship execution after stabilization closeout.
+
+Build and archive readiness:
+- [ ] Confirm latest commit includes stabilization closeout entry
+- [ ] Select `Prompt28` scheme, `Release` configuration
+- [ ] Create archive from Xcode (`Any iOS Device` target)
+- [ ] Validate archive in Organizer with no blocking issues
+
+Privacy and permissions:
+- [ ] Verify microphone and speech usage text matches shipped behavior
+- [ ] Confirm privacy manifests are present and included in archive
+- [ ] Confirm data collection/disclosure answers in App Store Connect align with app behavior
+
+Store metadata and compliance:
+- [ ] Confirm app description, subtitle, keywords, and support URL are final
+- [ ] Confirm screenshots for required device classes are up to date
+- [ ] Confirm age rating, content rights, export compliance, and encryption responses
+
+Release controls:
+- [ ] Upload build to App Store Connect and wait for processing
+- [ ] Attach build to target version and complete submission questionnaire
+- [ ] Choose release strategy (`manual` or `automatic`) and submit for review
+
+Post-submit:
+- [ ] Monitor review status and be ready with review notes/credentials if requested
+- [ ] After approval, verify phased rollout/manual release settings
+- [ ] Smoke-check production build from App Store after go-live
