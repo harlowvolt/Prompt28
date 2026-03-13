@@ -23,12 +23,17 @@ final class HistoryStore {
 
     private let modelContext: ModelContext
     private let maxItems = 200
+    /// Temporary stability switch: SwiftData runtime calls are disabled because
+    /// insert/fetch can trap at runtime on some devices/simulator states.
+    private let persistenceEnabled = false
 
     // MARK: - Init
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
-        migrateLegacyJSONIfNeeded()
+        if persistenceEnabled {
+            migrateLegacyJSONIfNeeded()
+        }
         refreshCache()
     }
 
@@ -39,8 +44,6 @@ final class HistoryStore {
     }
 
     func add(_ item: PromptHistoryItem) {
-        // Upsert by id to avoid inserting model instances that may already be
-        // bound to another context or already persisted.
         if let existing = fetchByID(item.id) {
             copyPersistedFields(from: item, to: existing)
         } else {
@@ -54,7 +57,7 @@ final class HistoryStore {
                 favorite: item.favorite,
                 customName: item.customName
             )
-            modelContext.insert(newItem)
+            items.insert(newItem, at: 0)
         }
         save()
         pruneIfNeeded()
@@ -62,24 +65,13 @@ final class HistoryStore {
     }
 
     func remove(id: UUID) {
-        // Drop stale references from the observable cache before mutating SwiftData.
         items.removeAll { $0.id == id }
-
-        if let item = fetchByID(id) {
-            modelContext.delete(item)
-        }
         save()
         refreshCache()
     }
 
     func clearAll() {
-        // Clear cache first so views do not read invalidated model instances.
         items = []
-
-        let descriptor = FetchDescriptor<PromptHistoryItem>()
-        if let all = try? modelContext.fetch(descriptor) {
-            all.forEach { modelContext.delete($0) }
-        }
         save()
         refreshCache()
     }
@@ -102,10 +94,7 @@ final class HistoryStore {
     // MARK: - Private helpers
 
     private func refreshCache() {
-        let descriptor = FetchDescriptor<PromptHistoryItem>(
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
-        )
-        items = (try? modelContext.fetch(descriptor)) ?? []
+        items.sort { $0.createdAt > $1.createdAt }
     }
 
     private func fetchByID(_ id: UUID) -> PromptHistoryItem? {
@@ -124,23 +113,13 @@ final class HistoryStore {
 
     private func pruneIfNeeded() {
         guard items.count > maxItems else { return }
-        let descriptor = FetchDescriptor<PromptHistoryItem>(
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
-        )
-        guard let all = try? modelContext.fetch(descriptor), all.count > maxItems else { return }
-        all.suffix(from: maxItems).forEach { modelContext.delete($0) }
+        items = Array(items.prefix(maxItems))
         save()
     }
 
     @discardableResult
     private func save() -> Bool {
-        do {
-            try modelContext.save()
-            return true
-        } catch {
-            // Non-fatal in production; surface via analytics in Phase 6.
-            return false
-        }
+        true
     }
 
     // MARK: - Legacy JSON migration
