@@ -3498,3 +3498,24 @@ Remaining manual owner actions (outside agent scope):
 - Decide final release strategy (manual vs automatic/phased rollout)
 
 Closeout timestamp: 2026-03-12
+
+#### Post-closeout incident update — HistoryStore SwiftData runtime trap hotfix
+
+Incident summary:
+- During Orb-driven generation/save flow, app paused with runtime breakpoints inside `HistoryStore` on SwiftData fetch/insert operations.
+- Symptom reproduced at `modelContext.fetch(...)` and `modelContext.insert(...)` callsites.
+
+Hotfix applied:
+- `HistoryStore` was switched to a stability-first in-memory mode for runtime operations.
+- SwiftData runtime insert/fetch/delete calls were removed from active mutation paths.
+- History mutations now operate on in-memory `items` collection only, with existing observable API unchanged.
+
+Verification:
+- Build passed after hotfix (`iPhone 17` simulator)
+- No compile diagnostics introduced
+
+Tradeoff (explicit):
+- History persistence across app restarts is temporarily disabled until persistent storage is reintroduced via a stable path.
+
+Next recommended follow-up:
+- Reintroduce persistence using a known-stable fallback (JSON-file storage) before release if persistence is required in this milestone.
