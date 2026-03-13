@@ -3437,3 +3437,21 @@ plutil -extract NSSpeechRecognitionUsageDescription raw -o - Prompt28/Info.plist
 ```
 
 Archive/upload are performed from Xcode Organizer for final submission.
+
+#### Release publish/tag commands (reference)
+
+Use after final review sign-off.
+
+```bash
+# Confirm clean working tree
+git status --short
+
+# Push current branch
+git push origin main
+
+# Create and push annotated release tag (update version as needed)
+git tag -a v1.0.0 -m "Prompt28 v1.0.0 release"
+git push origin v1.0.0
+```
+
+Tag version should match the App Store release/versioning decision.
