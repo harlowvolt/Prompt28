@@ -208,11 +208,11 @@ final class OrbEngine {
     }
 
     private func currentFinalTranscriptSnapshot() -> String {
-        finalTranscript
+        trimmedCurrentFinalTranscript()
     }
 
     private func speechFinalTranscriptSnapshot() -> String {
-        speech.finalTranscript
+        trimmedSpeechFinalTranscript()
     }
 
     private func finalizeUsingTranscriptCandidate(_ text: String) {
@@ -221,7 +221,7 @@ final class OrbEngine {
     }
 
     private func finalizeWithFallbackTranscriptIfMeaningful() {
-        let fallbackCandidate = trimmedTranscriptText(speech.transcript)
+        let fallbackCandidate = trimmedSpeechTranscript()
         guard isMeaningfulTranscript(fallbackCandidate) else {
             setState(.idle)
             return
@@ -243,6 +243,18 @@ final class OrbEngine {
         lastDeliveredTranscript = text
         setState(.ready(text: text))
         onFinalTranscript?(text)
+    }
+
+    private func trimmedCurrentFinalTranscript() -> String {
+        trimmedTranscriptText(finalTranscript)
+    }
+
+    private func trimmedSpeechFinalTranscript() -> String {
+        trimmedTranscriptText(speech.finalTranscript)
+    }
+
+    private func trimmedSpeechTranscript() -> String {
+        trimmedTranscriptText(speech.transcript)
     }
 
     private func trimmedTranscriptText(_ text: String) -> String {

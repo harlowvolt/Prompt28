@@ -3284,3 +3284,20 @@ Refactored `bindSpeechState()` into a small orchestrator and extracted each Comb
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation (bundled) — Added source-specific transcript trim helpers in OrbEngine
+
+Applied a cohesive utility cleanup by adding source-specific transcript trim helpers and wiring polling/fallback paths through them.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Added:
+        - `trimmedCurrentFinalTranscript()`
+        - `trimmedSpeechFinalTranscript()`
+        - `trimmedSpeechTranscript()`
+    - Updated polling providers:
+        - `currentFinalTranscriptSnapshot()` now returns `trimmedCurrentFinalTranscript()`
+        - `speechFinalTranscriptSnapshot()` now returns `trimmedSpeechFinalTranscript()`
+    - Updated fallback path to use `trimmedSpeechTranscript()`
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
