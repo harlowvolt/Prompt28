@@ -3481,3 +3481,20 @@ Verification after hotfix approval:
 - Perform production smoke checks on core flows (auth, home generate, speech path, settings)
 - Monitor crash/error telemetry and user feedback for 24-48 hours
 - Close incident with final timeline and preventive follow-ups
+
+#### Final stabilization closeout sign-off
+
+Status: GO for release handoff execution.
+
+Closed verification scope:
+- Phase 3 refactor stream completed and documented
+- Stabilization passes 1-3 completed and documented
+- Release execution checklist, preflight commands, publish/tag commands, and rollback/hotfix playbook documented
+- Repository state verified clean at closeout checkpoints
+
+Remaining manual owner actions (outside agent scope):
+- Execute Xcode Organizer archive/upload flow
+- Complete App Store Connect version metadata/review submission
+- Decide final release strategy (manual vs automatic/phased rollout)
+
+Closeout timestamp: 2026-03-12
