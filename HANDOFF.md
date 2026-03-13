@@ -3341,3 +3341,19 @@ Verification:
 Notes:
 - No behavior or source changes made in this pass
 - Focus was verification-only stabilization
+
+#### Stabilization pass 2 — Clean Release build and metadata sanity checks
+
+Executed stricter release-readiness verification focused on clean Release output and required metadata presence.
+
+Verification:
+- `get_errors`: clean (no reported diagnostics)
+- Clean + build passed (`iPhone 17` simulator, Release config)
+- Required release metadata files present:
+  - `Prompt28/Info.plist`
+  - `Prompt28/PrivacyInfo.xcprivacy`
+  - `PromptMeNative_Blueprint/Resources/PrivacyInfo.xcprivacy`
+
+Notes:
+- No source behavior changes made in this pass
+- Focus was verification-only stabilization
