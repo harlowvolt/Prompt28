@@ -3316,3 +3316,15 @@ Cleaned transcript polling normalization so trimming happens in one place per po
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 completion — OrbEngine actor-readiness cleanup complete
+
+Phase 3 cleanup is complete. OrbEngine refactor goals for state-transition consistency, transcript finalization flow, polling normalization, and Combine binding readability are now fully landed.
+
+Stabilization / release-readiness checkpoint:
+- Verified no editor diagnostics across workspace (`get_errors`: clean)
+- Full simulator build passed (`iPhone 17` destination)
+
+Current handoff direction:
+- Move from refactor slices to stabilization/release-readiness tasks only
+- Keep behavior fixed while preparing final release verification/push steps
