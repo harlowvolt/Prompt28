@@ -109,10 +109,13 @@ final class HistoryStore {
     }
 
     private func fetchByID(_ id: UUID) -> PromptHistoryItem? {
-        let descriptor = FetchDescriptor<PromptHistoryItem>(
-            predicate: #Predicate { $0.id == id }
-        )
-        return try? modelContext.fetch(descriptor).first
+        if let cached = items.first(where: { $0.id == id }) {
+            return cached
+        }
+
+        let descriptor = FetchDescriptor<PromptHistoryItem>()
+        guard let all = try? modelContext.fetch(descriptor) else { return nil }
+        return all.first(where: { $0.id == id })
     }
 
     private func copyPersistedFields(from source: PromptHistoryItem, to destination: PromptHistoryItem) {

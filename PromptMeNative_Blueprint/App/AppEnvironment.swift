@@ -36,10 +36,14 @@ final class AppEnvironment {
         do {
             container = try ModelContainer(for: PromptHistoryItem.self)
         } catch {
-            container = try! ModelContainer(
+            if let inMemoryContainer = try? ModelContainer(
                 for: PromptHistoryItem.self,
                 configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-            )
+            ) {
+                container = inMemoryContainer
+            } else {
+                fatalError("Failed to initialize SwiftData ModelContainer")
+            }
         }
         self.historyStore = HistoryStore(modelContext: container.mainContext)
 
