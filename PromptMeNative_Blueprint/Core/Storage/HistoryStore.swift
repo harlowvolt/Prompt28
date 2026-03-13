@@ -39,7 +39,23 @@ final class HistoryStore {
     }
 
     func add(_ item: PromptHistoryItem) {
-        modelContext.insert(item)
+        // Upsert by id to avoid inserting model instances that may already be
+        // bound to another context or already persisted.
+        if let existing = fetchByID(item.id) {
+            copyPersistedFields(from: item, to: existing)
+        } else {
+            let newItem = PromptHistoryItem(
+                id: item.id,
+                createdAt: item.createdAt,
+                mode: item.mode,
+                input: item.input,
+                professional: item.professional,
+                template: item.template,
+                favorite: item.favorite,
+                customName: item.customName
+            )
+            modelContext.insert(newItem)
+        }
         save()
         pruneIfNeeded()
         refreshCache()
@@ -97,6 +113,16 @@ final class HistoryStore {
             predicate: #Predicate { $0.id == id }
         )
         return try? modelContext.fetch(descriptor).first
+    }
+
+    private func copyPersistedFields(from source: PromptHistoryItem, to destination: PromptHistoryItem) {
+        destination.createdAt = source.createdAt
+        destination.mode = source.mode
+        destination.input = source.input
+        destination.professional = source.professional
+        destination.template = source.template
+        destination.favorite = source.favorite
+        destination.customName = source.customName
     }
 
     private func pruneIfNeeded() {
