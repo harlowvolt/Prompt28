@@ -3301,3 +3301,18 @@ Applied a cohesive utility cleanup by adding source-specific transcript trim hel
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation (bundled) — Removed redundant polling trim wrappers in OrbEngine
+
+Cleaned transcript polling normalization so trimming happens in one place per poll iteration.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Updated `currentFinalTranscriptSnapshot()` to return raw `finalTranscript`
+    - Updated `speechFinalTranscriptSnapshot()` to return raw `speech.finalTranscript`
+    - Removed now-redundant wrappers:
+        - `trimmedCurrentFinalTranscript()`
+        - `trimmedSpeechFinalTranscript()`
+    - Polling normalization remains centralized in `pollForFinalTranscript(_:)`
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
