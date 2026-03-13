@@ -315,34 +315,50 @@ final class OrbEngine {
     }
 
     private func bindSpeechState() {
+        bindRecordingPublisher()
+        bindTranscriptPublisher()
+        bindFinalTranscriptPublisher()
+        bindPermissionStatusPublisher()
+        bindAudioLevelPublisher()
+    }
+
+    private func bindRecordingPublisher() {
         speech.isRecordingPublisher
             .sink { [weak self] value in
                 guard let self else { return }
                 self.handleRecordingChange(value)
             }
             .store(in: &cancellables)
+    }
 
+    private func bindTranscriptPublisher() {
         speech.transcriptPublisher
             .sink { [weak self] value in
                 guard let self else { return }
                 self.handleTranscriptChange(value)
             }
             .store(in: &cancellables)
+    }
 
+    private func bindFinalTranscriptPublisher() {
         speech.finalTranscriptPublisher
             .sink { [weak self] value in
                 guard let self else { return }
                 self.handleFinalTranscriptChange(value)
             }
             .store(in: &cancellables)
+    }
 
+    private func bindPermissionStatusPublisher() {
         speech.permissionStatusPublisher
             .sink { [weak self] status in
                 guard let self else { return }
                 self.handlePermissionStatusChange(status)
             }
             .store(in: &cancellables)
+    }
 
+    private func bindAudioLevelPublisher() {
         speech.audioLevelPublisher
             .receive(on: RunLoop.main)
             .sink { [weak self] value in

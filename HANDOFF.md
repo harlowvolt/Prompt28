@@ -3268,3 +3268,19 @@ Applied a small internal cleanup to transcript polling/fallback plumbing for rea
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation (bundled) — Split OrbEngine publisher bindings into focused bind helpers
+
+Refactored `bindSpeechState()` into a small orchestrator and extracted each Combine subscription into a dedicated private binding method.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - `bindSpeechState()` now delegates to:
+        - `bindRecordingPublisher()`
+        - `bindTranscriptPublisher()`
+        - `bindFinalTranscriptPublisher()`
+        - `bindPermissionStatusPublisher()`
+        - `bindAudioLevelPublisher()`
+    - Existing sink behavior and handler usage unchanged
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)
