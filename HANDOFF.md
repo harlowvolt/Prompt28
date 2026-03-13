@@ -3416,3 +3416,24 @@ Post-submit:
 - [ ] Monitor review status and be ready with review notes/credentials if requested
 - [ ] After approval, verify phased rollout/manual release settings
 - [ ] Smoke-check production build from App Store after go-live
+
+#### Release preflight command pack (reference)
+
+Use these commands as a repeatable preflight sequence before archive/upload.
+
+```bash
+# 1) Quick diagnostics gate
+xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -configuration Debug -destination 'platform=iOS Simulator,name=iPhone 17' build
+
+# 2) Clean release simulator gate
+xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -configuration Release -destination 'platform=iOS Simulator,name=iPhone 17' clean build
+
+# 3) Device-target release compile gate (signing disabled for CI/local verification)
+xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -configuration Release -destination 'generic/platform=iOS' CODE_SIGNING_ALLOWED=NO build
+
+# 4) Privacy key sanity checks
+plutil -extract NSMicrophoneUsageDescription raw -o - Prompt28/Info.plist
+plutil -extract NSSpeechRecognitionUsageDescription raw -o - Prompt28/Info.plist
+```
+
+Archive/upload are performed from Xcode Organizer for final submission.
