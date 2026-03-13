@@ -3357,3 +3357,18 @@ Verification:
 Notes:
 - No source behavior changes made in this pass
 - Focus was verification-only stabilization
+
+#### Stabilization pass 3 — Device-target Release compile and privacy-key checks
+
+Extended release-readiness verification beyond simulator-only gates.
+
+Verification:
+- `get_errors`: clean (no reported diagnostics)
+- Required privacy keys present in `Prompt28/Info.plist`:
+  - `NSMicrophoneUsageDescription`
+  - `NSSpeechRecognitionUsageDescription`
+- Generic iOS device Release build passed with signing disabled (`CODE_SIGNING_ALLOWED=NO`)
+
+Notes:
+- No source behavior changes made in this pass
+- Focus was verification-only stabilization
