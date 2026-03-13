@@ -3455,3 +3455,29 @@ git push origin v1.0.0
 ```
 
 Tag version should match the App Store release/versioning decision.
+
+#### Post-release rollback and hotfix playbook
+
+Use this sequence if an issue is discovered after submission or go-live.
+
+Immediate response:
+- Pause phased rollout or stop manual promotion in App Store Connect (if not fully rolled out)
+- Capture issue scope: affected devices, OS versions, reproducibility, severity
+- Triage owner posts incident note with timestamp and current mitigation status
+
+Code-level hotfix flow:
+- Branch from latest release commit/tag
+- Implement minimal-risk fix only (no opportunistic refactors)
+- Run the full preflight command pack from this document
+- Update release notes with explicit "hotfix" summary and impacted scope
+
+Submission flow for hotfix:
+- Archive and upload patched build via Organizer
+- Attach build to new patch version in App Store Connect
+- Add concise reviewer notes describing regression and remediation
+- Prefer manual release control for the hotfix build
+
+Verification after hotfix approval:
+- Perform production smoke checks on core flows (auth, home generate, speech path, settings)
+- Monitor crash/error telemetry and user feedback for 24-48 hours
+- Close incident with final timeline and preventive follow-ups
