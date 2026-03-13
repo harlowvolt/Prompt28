@@ -3253,3 +3253,18 @@ Refined finalization internals by extracting shared transcript-candidate promoti
 
 Verification:
 - Full simulator build passed (`iPhone 17` destination)
+
+#### Phase 3 continuation (bundled) — Cleaned transcript polling providers and fallback helper signature
+
+Applied a small internal cleanup to transcript polling/fallback plumbing for readability and intent clarity.
+
+- File: `PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift`
+    - Replaced inline polling provider closures with named provider helpers:
+        - `currentFinalTranscriptSnapshot()`
+        - `speechFinalTranscriptSnapshot()`
+    - Updated polling callsites to use those helpers
+    - Removed unused `Bool` return from `finalizeWithFallbackTranscriptIfMeaningful()`
+    - Updated await path to call fallback helper directly
+
+Verification:
+- Full simulator build passed (`iPhone 17` destination)

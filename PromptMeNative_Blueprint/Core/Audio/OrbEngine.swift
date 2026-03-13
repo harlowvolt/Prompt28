@@ -134,7 +134,7 @@ final class OrbEngine {
 
     func stopListeningAndFinalize() async -> String? {
         guard stopListening() else { return nil }
-        return await pollForFinalTranscript { self.finalTranscript }
+        return await pollForFinalTranscript(currentFinalTranscriptSnapshot)
     }
 
     func finalizeTranscript() {
@@ -165,12 +165,12 @@ final class OrbEngine {
     }
 
     private func awaitFinalTranscriptAndFinalize() async {
-        if let best = await pollForFinalTranscript({ self.speech.finalTranscript }) {
+        if let best = await pollForFinalTranscript(speechFinalTranscriptSnapshot) {
             finalizeUsingTranscriptCandidate(best)
             return
         }
 
-        _ = finalizeWithFallbackTranscriptIfMeaningful()
+        finalizeWithFallbackTranscriptIfMeaningful()
     }
 
     private func pollForFinalTranscript(_ provider: () -> String) async -> String? {
@@ -207,20 +207,27 @@ final class OrbEngine {
         }
     }
 
+    private func currentFinalTranscriptSnapshot() -> String {
+        finalTranscript
+    }
+
+    private func speechFinalTranscriptSnapshot() -> String {
+        speech.finalTranscript
+    }
+
     private func finalizeUsingTranscriptCandidate(_ text: String) {
         updateCurrentTranscripts(with: text)
         finalizeTranscript()
     }
 
-    private func finalizeWithFallbackTranscriptIfMeaningful() -> Bool {
+    private func finalizeWithFallbackTranscriptIfMeaningful() {
         let fallbackCandidate = trimmedTranscriptText(speech.transcript)
         guard isMeaningfulTranscript(fallbackCandidate) else {
             setState(.idle)
-            return false
+            return
         }
 
         finalizeUsingTranscriptCandidate(fallbackCandidate)
-        return true
     }
 
     private func updateCurrentTranscripts(with text: String) {
