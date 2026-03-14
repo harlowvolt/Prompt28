@@ -4397,3 +4397,8 @@ SwiftEmitModule normal x86_64 Emitting\ module\ for\ Prompt28 (in target 'Prompt
 EmitSwiftModule normal x86_64 (in target 'Prompt28' from project 'Prompt28')
     cd /Users/nataliewhipps/Desktop/Prompt28
     
+
+SwiftCompile normal x86_64 Compiling\ AppPreferences.swift,\ ResultView.swift,\ TrendingViewModel.swift,\ OrbEngine.swift,\ OrbView.swift,\ AdminCategoriesView.swift,\ KeychainService.swift,\ PromptHistoryItem.swift /Users/nataliewhipps/Desktop/Prompt28/PromptMeNative_Blueprint/Models/Local/AppPreferences.swift /Users/nataliewhipps/Desktop/Prompt28/PromptMeNative_Blueprint/Features/Home/Views/ResultView.swift /Users/nataliewhipps/Desktop/Prompt28/PromptMeNative_Blueprint/Features/Trending/ViewModels/TrendingViewModel.swift /Users/nataliewhipps/Desktop/Prompt28/PromptMeNative_Blueprint/Core/Audio/OrbEngine.swift /Users/nataliewhipps/Desktop/Prompt28/PromptMeNative_Blueprint/Features/Home/Views/OrbView.swift /Users/nataliewhipps/Desktop/Prompt28/PromptMeNative_Blueprint/Features/Admin/Views/AdminCategoriesView.swift /Users/nataliewhipps/Desktop/Prompt28/PromptMeNative_Blueprint/Core/Auth/KeychainService.swift /Users/nataliewhipps/Desktop/Prompt28/PromptMeNative_Blueprint/Models/Local/PromptHistoryItem.swift (in target 'Prompt28' from project 'Prompt28')
+SwiftCompile normal x86_64 /Users/nataliewhipps/Desktop/Prompt28/PromptMeNative_Blueprint/Models/Local/AppPreferences.swift (in target 'Prompt28' from project 'Prompt28')
+    cd /Users/nataliewhipps/Desktop/Prompt28
+    
