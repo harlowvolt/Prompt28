@@ -175,33 +175,3 @@ final class APIClient {
     }
 }
 
-// MARK: - APIClientProtocol
-// Defined here (rather than a separate Protocols/ file) so it is always compiled
-// as part of the Networking group — no manual Xcode target membership required.
-
-protocol APIClientProtocol: AnyObject {
-    // Auth
-    func register(_ request: RegisterRequest) async throws -> AuthResponse
-    func login(_ request: LoginRequest) async throws -> AuthResponse
-    func googleAuth(_ request: GoogleAuthRequest) async throws -> AuthResponse
-    func appleAuth(_ request: AppleAuthRequest) async throws -> AuthResponse
-    // User
-    func me(token: String) async throws -> User
-    func updatePlan(_ request: UpdatePlanRequest, token: String) async throws -> UpdatePlanResponse
-    func deleteUser(token: String) async throws -> SuccessResponse
-    func resetUsage(token: String) async throws -> SuccessResponse
-    // Generation
-    func generate(_ request: GenerateRequest, token: String) async throws -> GenerateResponse
-    // Config
-    func config() async throws -> AppConfigResponse
-    func settings() async throws -> AppSettings
-    func promptsTrending() async throws -> PromptCatalog
-    // Admin
-    func adminVerify(key: String) async throws -> AdminVerifyResponse
-    func adminSettings(key: String) async throws -> AppSettings
-    func adminUpdateSettings(key: String, payload: [String: Any]) async throws -> SuccessResponse
-    func adminPrompts(key: String) async throws -> PromptCatalog
-    func adminUpdatePrompts(key: String, catalog: PromptCatalog) async throws -> SuccessResponse
-}
-
-extension APIClient: APIClientProtocol {}

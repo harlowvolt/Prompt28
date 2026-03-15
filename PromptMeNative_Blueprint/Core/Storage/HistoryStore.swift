@@ -312,17 +312,3 @@ final class HistoryStore {
     }
 }
 
-// MARK: - HistoryStoring Protocol
-
-@MainActor
-protocol HistoryStoring: AnyObject {
-    var items: [PromptHistoryItem] { get }
-    var favorites: [PromptHistoryItem] { get }
-    func add(_ item: PromptHistoryItem)
-    func remove(id: UUID)
-    func clearAll()
-    func toggleFavorite(id: UUID)
-    func rename(id: UUID, customName: String?)
-}
-
-extension HistoryStore: HistoryStoring {}

@@ -17,7 +17,7 @@ struct OrionOrbApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            OrionMainContainer()
                 .environment(env)
                 .environment(\.historyStore, env.historyStore)
                 .environment(\.authManager, env.authManager)
