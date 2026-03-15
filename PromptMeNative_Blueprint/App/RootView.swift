@@ -219,7 +219,7 @@ struct RootView: View {
         VStack(spacing: 14) {
             ProgressView()
                 .tint(PromptTheme.softLilac)
-            Text("Loading Prompt28")
+            Text("Loading Orion Orb")
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.9))
         }

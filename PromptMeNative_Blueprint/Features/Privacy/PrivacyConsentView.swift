@@ -28,7 +28,7 @@ struct PrivacyConsentView: View {
                     .foregroundStyle(PromptTheme.paleLilacWhite)
                     .padding(.bottom, 10)
 
-                Text("Prompt28 uses the following to deliver its service.\nYour privacy matters to us.")
+                Text("Orion Orb uses the following to deliver its service.\nYour privacy matters to us.")
                     .font(.system(size: 15, weight: .regular, design: .rounded))
                     .foregroundStyle(.white.opacity(0.52))
                     .multilineTextAlignment(.center)

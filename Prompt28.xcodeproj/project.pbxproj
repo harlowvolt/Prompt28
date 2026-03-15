@@ -70,8 +70,8 @@
 		CCDE00000000000000000008 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000007 /* PrivacyInfo.xcprivacy */; };
 		CCDE00000000000000000011 /* StoreConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000010 /* StoreConfig.swift */; };
 		CCDE00000000000000000013 /* StoreManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000012 /* StoreManager.swift */; };
-		CCDE00000000000000000019 /* UsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000018 /* UsageTracker.swift */; };
 		CCDE00000000000000000016 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000015 /* NotificationService.swift */; };
+		CCDE00000000000000000019 /* UsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000018 /* UsageTracker.swift */; };
 		CCDE0000000000000000001C /* PrivacyConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE0000000000000000001B /* PrivacyConsentView.swift */; };
 /* End PBXBuildFile section */
 
@@ -149,17 +149,17 @@
 		CCAB0BA12F5D780200C29A7E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		CCAB0BAB2F5D780200C29A7E /* PromptMeNativeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptMeNativeApp.swift; sourceTree = "<group>"; };
 		CCAB0BF02F5D780200C29A7E /* AppUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUI.swift; sourceTree = "<group>"; };
-		CCD1CDF92F5C55F700566BCF /* Prompt28.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Prompt28.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		CCD1CE082F5C55FC00566BCF /* Prompt28Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Prompt28Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		CCD1CE122F5C55FC00566BCF /* Prompt28UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Prompt28UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CCD1CDF92F5C55F700566BCF /* OrionOrb.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OrionOrb.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		CCD1CE082F5C55FC00566BCF /* OrionOrbTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OrionOrbTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		CCD1CE122F5C55FC00566BCF /* OrionOrbUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OrionOrbUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CCDE00000000000000000001 /* HapticService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticService.swift; sourceTree = "<group>"; };
 		CCDE00000000000000000003 /* AnalyticsService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnalyticsService.swift; sourceTree = "<group>"; };
 		CCDE00000000000000000005 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		CCDE00000000000000000007 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = file.xcprivacy; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		CCDE00000000000000000010 /* StoreConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreConfig.swift; sourceTree = "<group>"; };
 		CCDE00000000000000000012 /* StoreManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StoreManager.swift; sourceTree = "<group>"; };
-		CCDE00000000000000000018 /* UsageTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageTracker.swift; sourceTree = "<group>"; };
 		CCDE00000000000000000015 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
+		CCDE00000000000000000018 /* UsageTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageTracker.swift; sourceTree = "<group>"; };
 		CCDE0000000000000000001B /* PrivacyConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyConsentView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -566,9 +566,9 @@
 		CCD1CDFA2F5C55F700566BCF /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				CCD1CDF92F5C55F700566BCF /* Prompt28.app */,
-				CCD1CE082F5C55FC00566BCF /* Prompt28Tests.xctest */,
-				CCD1CE122F5C55FC00566BCF /* Prompt28UITests.xctest */,
+				CCD1CDF92F5C55F700566BCF /* OrionOrb.app */,
+				CCD1CE082F5C55FC00566BCF /* OrionOrbTests.xctest */,
+				CCD1CE122F5C55FC00566BCF /* OrionOrbUITests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -589,14 +589,6 @@
 			path = Views;
 			sourceTree = "<group>";
 		};
-		CCDE0000000000000000001A /* Privacy */ = {
-			isa = PBXGroup;
-			children = (
-				CCDE0000000000000000001B /* PrivacyConsentView.swift */,
-			);
-			path = Privacy;
-			sourceTree = "<group>";
-		};
 		CCDE00000000000000000014 /* Store */ = {
 			isa = PBXGroup;
 			children = (
@@ -615,12 +607,20 @@
 			path = Notifications;
 			sourceTree = "<group>";
 		};
+		CCDE0000000000000000001A /* Privacy */ = {
+			isa = PBXGroup;
+			children = (
+				CCDE0000000000000000001B /* PrivacyConsentView.swift */,
+			);
+			path = Privacy;
+			sourceTree = "<group>";
+		};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		CCD1CDF82F5C55F700566BCF /* Prompt28 */ = {
+		CCD1CDF82F5C55F700566BCF /* OrionOrb */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CCD1CE1C2F5C55FC00566BCF /* Build configuration list for PBXNativeTarget "Prompt28" */;
+			buildConfigurationList = CCD1CE1C2F5C55FC00566BCF /* Build configuration list for PBXNativeTarget "OrionOrb" */;
 			buildPhases = (
 				CCD1CDF52F5C55F700566BCF /* Sources */,
 				CCD1CDF62F5C55F700566BCF /* Frameworks */,
@@ -630,18 +630,18 @@
 			);
 			dependencies = (
 			);
-			name = Prompt28;
+			name = OrionOrb;
 			packageProductDependencies = (
 				CC564D072F5FD40F008BE78E /* GoogleSignIn */,
 				CC564D092F5FD416008BE78E /* GoogleSignInSwift */,
 			);
-			productName = Prompt28;
-			productReference = CCD1CDF92F5C55F700566BCF /* Prompt28.app */;
+			productName = OrionOrb;
+			productReference = CCD1CDF92F5C55F700566BCF /* OrionOrb.app */;
 			productType = "com.apple.product-type.application";
 		};
-		CCD1CE072F5C55FC00566BCF /* Prompt28Tests */ = {
+		CCD1CE072F5C55FC00566BCF /* OrionOrbTests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CCD1CE1F2F5C55FC00566BCF /* Build configuration list for PBXNativeTarget "Prompt28Tests" */;
+			buildConfigurationList = CCD1CE1F2F5C55FC00566BCF /* Build configuration list for PBXNativeTarget "OrionOrbTests" */;
 			buildPhases = (
 				CCD1CE042F5C55FC00566BCF /* Sources */,
 				CCD1CE052F5C55FC00566BCF /* Frameworks */,
@@ -655,16 +655,16 @@
 			fileSystemSynchronizedGroups = (
 				CCD1CE0B2F5C55FC00566BCF /* Prompt28Tests */,
 			);
-			name = Prompt28Tests;
+			name = OrionOrbTests;
 			packageProductDependencies = (
 			);
-			productName = Prompt28Tests;
-			productReference = CCD1CE082F5C55FC00566BCF /* Prompt28Tests.xctest */;
+			productName = OrionOrbTests;
+			productReference = CCD1CE082F5C55FC00566BCF /* OrionOrbTests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
 		};
-		CCD1CE112F5C55FC00566BCF /* Prompt28UITests */ = {
+		CCD1CE112F5C55FC00566BCF /* OrionOrbUITests */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = CCD1CE222F5C55FC00566BCF /* Build configuration list for PBXNativeTarget "Prompt28UITests" */;
+			buildConfigurationList = CCD1CE222F5C55FC00566BCF /* Build configuration list for PBXNativeTarget "OrionOrbUITests" */;
 			buildPhases = (
 				CCD1CE0E2F5C55FC00566BCF /* Sources */,
 				CCD1CE0F2F5C55FC00566BCF /* Frameworks */,
@@ -678,11 +678,11 @@
 			fileSystemSynchronizedGroups = (
 				CCD1CE152F5C55FC00566BCF /* Prompt28UITests */,
 			);
-			name = Prompt28UITests;
+			name = OrionOrbUITests;
 			packageProductDependencies = (
 			);
-			productName = Prompt28UITests;
-			productReference = CCD1CE122F5C55FC00566BCF /* Prompt28UITests.xctest */;
+			productName = OrionOrbUITests;
+			productReference = CCD1CE122F5C55FC00566BCF /* OrionOrbUITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
 		};
 /* End PBXNativeTarget section */
@@ -725,9 +725,9 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				CCD1CDF82F5C55F700566BCF /* Prompt28 */,
-				CCD1CE072F5C55FC00566BCF /* Prompt28Tests */,
-				CCD1CE112F5C55FC00566BCF /* Prompt28UITests */,
+				CCD1CDF82F5C55F700566BCF /* OrionOrb */,
+				CCD1CE072F5C55FC00566BCF /* OrionOrbTests */,
+				CCD1CE112F5C55FC00566BCF /* OrionOrbUITests */,
 			);
 		};
 /* End PBXProject section */
@@ -847,12 +847,12 @@
 /* Begin PBXTargetDependency section */
 		CCD1CE0A2F5C55FC00566BCF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = CCD1CDF82F5C55F700566BCF /* Prompt28 */;
+			target = CCD1CDF82F5C55F700566BCF /* OrionOrb */;
 			targetProxy = CCD1CE092F5C55FC00566BCF /* PBXContainerItemProxy */;
 		};
 		CCD1CE142F5C55FC00566BCF /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = CCD1CDF82F5C55F700566BCF /* Prompt28 */;
+			target = CCD1CDF82F5C55F700566BCF /* OrionOrb */;
 			targetProxy = CCD1CE132F5C55FC00566BCF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -979,7 +979,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Prompt28/Prompt28.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Prompt28/OrionOrb.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = A2295U45FN;
@@ -1004,7 +1004,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.prompt28.prompt28;
+				OTHER_SWIFT_FLAGS = "-suppress-warnings";
+				PRODUCT_BUNDLE_IDENTIFIER = com.harlowvolt.orionorb;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -1025,7 +1026,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = Prompt28/Prompt28.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Prompt28/OrionOrb.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = A2295U45FN;
@@ -1050,7 +1051,8 @@
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.prompt28.prompt28;
+				OTHER_SWIFT_FLAGS = "-suppress-warnings";
+				PRODUCT_BUNDLE_IDENTIFIER = com.harlowvolt.orionorb;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = auto;
@@ -1077,7 +1079,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.prompt28.prompt28.Prompt28Tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.harlowvolt.orionorb.OrionOrbTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1087,7 +1089,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Prompt28.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Prompt28";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OrionOrb.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/OrionOrb";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Debug;
@@ -1103,7 +1105,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.prompt28.prompt28.Prompt28Tests;
+				PRODUCT_BUNDLE_IDENTIFIER = com.harlowvolt.orionorb.OrionOrbTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1113,7 +1115,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Prompt28.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Prompt28";
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/OrionOrb.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/OrionOrb";
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Release;
@@ -1128,7 +1130,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nataliewhipps.prompt28;
+				PRODUCT_BUNDLE_IDENTIFIER = com.harlowvolt.orionorb.OrionOrbUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1138,7 +1140,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = Prompt28;
+				TEST_TARGET_NAME = OrionOrb;
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Debug;
@@ -1153,7 +1155,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
 				MACOSX_DEPLOYMENT_TARGET = 15.7;
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nataliewhipps.prompt28;
+				PRODUCT_BUNDLE_IDENTIFIER = com.harlowvolt.orionorb.OrionOrbUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
@@ -1163,7 +1165,7 @@
 				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2,7";
-				TEST_TARGET_NAME = Prompt28;
+				TEST_TARGET_NAME = OrionOrb;
 				XROS_DEPLOYMENT_TARGET = 26.2;
 			};
 			name = Release;
@@ -1180,7 +1182,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CCD1CE1C2F5C55FC00566BCF /* Build configuration list for PBXNativeTarget "Prompt28" */ = {
+		CCD1CE1C2F5C55FC00566BCF /* Build configuration list for PBXNativeTarget "OrionOrb" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CCD1CE1D2F5C55FC00566BCF /* Debug */,
@@ -1189,7 +1191,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CCD1CE1F2F5C55FC00566BCF /* Build configuration list for PBXNativeTarget "Prompt28Tests" */ = {
+		CCD1CE1F2F5C55FC00566BCF /* Build configuration list for PBXNativeTarget "OrionOrbTests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CCD1CE202F5C55FC00566BCF /* Debug */,
@@ -1198,7 +1200,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		CCD1CE222F5C55FC00566BCF /* Build configuration list for PBXNativeTarget "Prompt28UITests" */ = {
+		CCD1CE222F5C55FC00566BCF /* Build configuration list for PBXNativeTarget "OrionOrbUITests" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				CCD1CE232F5C55FC00566BCF /* Debug */,

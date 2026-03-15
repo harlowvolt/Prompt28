@@ -138,7 +138,7 @@ final class HistoryStore {
 
     private static var legacyFileURL: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return base.appendingPathComponent("Prompt28/history.json")
+        return base.appendingPathComponent("OrionOrb/history.json")
     }
 
     private func migrateLegacyJSONIfNeeded() {

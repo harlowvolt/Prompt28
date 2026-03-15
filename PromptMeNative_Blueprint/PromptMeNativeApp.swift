@@ -3,7 +3,7 @@ import UIKit
 import GoogleSignIn
 
 @main
-struct PromptMeNativeApp: App {
+struct OrionOrbApp: App {
     @State private var env = AppEnvironment()
     @State private var errorState = ErrorState()
 

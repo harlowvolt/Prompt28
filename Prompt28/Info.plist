@@ -33,10 +33,12 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>CFBundleDisplayName</key>
+	<string>Orion Orb</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Prompt28 uses the microphone to capture your voice for prompt generation.</string>
+	<string>Orion Orb uses the microphone to capture your voice for prompt generation.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Prompt28 uses speech recognition to transcribe your voice into prompts.</string>
+	<string>Orion Orb uses speech recognition to transcribe your voice into prompts.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

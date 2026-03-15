@@ -50,7 +50,7 @@ struct ResultView: View {
                 Text("Generating Prompt")
                     .font(PromptTheme.Typography.rounded(15, .semibold))
                     .foregroundStyle(PromptTheme.paleLilacWhite)
-                Text("Sending your transcript to Prompt28...")
+                Text("Sending your transcript to Orion Orb...")
                     .font(PromptTheme.Typography.rounded(13, .medium))
                     .foregroundStyle(PromptTheme.softLilac.opacity(0.76))
             }
