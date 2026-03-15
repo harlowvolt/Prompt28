@@ -1,8 +1,8 @@
 # ORION Orb Upgrade — Handoff Document
 
-**Version:** 1.2  
+**Version:** 1.4  
 **Last Updated:** 2026-03-14  
-**Status:** ✅ Phase 1 Complete, Phase 2 Ready to Start  
+**Status:** ✅ Phase 1, 2 & Build Fixed  
 **Project Name:** Orion Orb (formerly Prompt28)  
 **Source Root:** `PromptMeNative_Blueprint/`  
 
@@ -22,9 +22,9 @@ This is the **single source of truth** for the Orion Orb upgrade. Any AI assista
 | **Bundle ID** | `com.harlowvolt.orionorb` |
 | **Scheme** | OrionOrb |
 | **iOS Target** | 17+ |
-| **Backend** | Not yet migrated (currently Railway, moving to Supabase) |
-| **Auth** | JWT (moving to Supabase Auth) |
-| **History** | In-memory only (`persistenceEnabled = false`) |
+| **Backend** | Railway API + iCloud CloudKit |
+| **Auth** | JWT (email/password, Google, Apple) |
+| **History** | Codable JSON + iCloud CloudKit sync |
 
 ---
 
@@ -32,16 +32,19 @@ This is the **single source of truth** for the Orion Orb upgrade. Any AI assista
 
 ### ✅ Completed
 1. **Project Rename:** Prompt28 → Orion Orb (all targets, schemes, bundle IDs)
-2. **Phase 1 - AnalyticsService:** Local caching implemented, events stored in UserDefaults, ready for Supabase upload
-3. **Phase 1 - TelemetryService:** Created with structured error logging for speech, network, and API errors
-4. **Phase 1 - Error Tracking:** Integrated into SpeechRecognizerService, APIClient, and AppEnvironment
-5. **Phase 1 - HistoryStore:** In-memory hotfix active, Codable conformance ready for Phase 2 sync
+2. **Phase 1 - AnalyticsService:** Local caching implemented, events stored in UserDefaults
+3. **Phase 1 - TelemetryService:** Created with structured error logging
+4. **Phase 1 - Error Tracking:** Integrated into SpeechRecognizerService, APIClient
+5. **Phase 2 - CloudKit Sync:** 
+   - `PromptHistoryItem` with CloudKit fields (recordID, lastModified, isSynced)
+   - `CloudKitService` with two-way sync and conflict resolution
+   - `HistoryStore` migrated to Codable JSON + CloudKit
+   - iCloud entitlements configured
 
 ### 🔄 Ready to Start
-1. **Phase 2 - Supabase Integration:** Auth, database, Edge Functions
-2. **Phase 3 - StoreKit 2 Server Validation**
-3. **Phase 4 - Metal Orb & RLHF**
-4. **Phase 5 - MCP & Intent Routing
+1. **Phase 3 - StoreKit 2 Server Validation**
+2. **Phase 4 - Metal Orb & RLHF**
+3. **Phase 5 - MCP & Intent Routing
 
 ---
 
@@ -128,52 +131,77 @@ private let persistenceEnabled = false  // SwiftData disabled due to runtime tra
 
 ---
 
-### Phase 2: Supabase Infrastructure & Remote Configuration
-**Goal:** Cloud-backed distributed system with strict client/server boundaries.
+### Phase 2: iCloud CloudKit Sync ✅ COMPLETE
+**Goal:** Cross-device prompt history synchronization using CloudKit.
 
-#### 2.1 Supabase Auth ❌ NOT STARTED
-**Files to Modify:**
-- `Core/Auth/AuthManager.swift`
-- `Features/Auth/Views/AuthFlowView.swift`
-- `Features/Auth/Views/EmailAuthView.swift`
+#### 2.1 PromptHistoryItem ✅ COMPLETE
+**File:** `Models/Local/PromptHistoryItem.swift`
 
-**Requirements:**
-- Integrate `supabase-swift` SDK
-- Wire Apple Sign-In (mandatory for App Store)
-- Store JWT in KeychainService
-- Bind `AppEnvironment.isAuthenticated` to Supabase session
+**Changes:**
+- Migrated from `@Model` (SwiftData) to `Codable` class
+- Added CloudKit fields:
+  - `recordID: CKRecord.ID?` - CloudKit record identifier
+  - `lastModified: Date` - For conflict resolution
+  - `isSynced: Bool` - Sync status flag
+- Added conversion methods:
+  - `toCKRecord()` - Convert to CloudKit record
+  - `init(from record: CKRecord)` - Initialize from CloudKit record
+  - `update(from record: CKRecord)` - Update existing item from remote
+  - `markModified()` - Mark as changed locally
 
 ---
 
-#### 2.2 Database Schema ❌ NOT STARTED
-**Supabase Tables to Create:**
+#### 2.2 CloudKitService ✅ COMPLETE
+**File:** `Core/Storage/CloudKitService.swift` (NEW)
 
-```sql
--- users (managed by Supabase Auth, add custom fields)
-- subscription_tier: text (free, pro, unlimited)
-- created_at: timestamp
+**Features:**
+- `@Observable @MainActor` for SwiftUI integration
+- Account status monitoring (`checkAccountStatus()`)
+- Two-way sync (`sync(items:)`) with conflict resolution
+  - Last modified wins strategy
+  - Handles both local-only and remote-only items
+- Individual operations:
+  - `saveToCloud(_:)` - Upload single item
+  - `deleteFromCloud(id:)` - Remove from CloudKit
+  - `fetchRemoteRecords()` - Download all remote records
+- Offline handling: Silently fails, retries on next mutation
+- Custom CloudKit zone: "PromptHistoryZone"
 
--- prompts (RLS: user can only read their own)
-- id: uuid
-- user_id: uuid (references auth.users)
-- intent: text (user's original speech)
-- original_speech: text
-- generated_prompt: text
-- is_favorite: boolean
-- user_rating: integer (1-5, for RLHF)
-- feedback_notes: text
-- created_at: timestamp
+---
 
--- events (analytics ingestion)
-- id: uuid
-- user_id: uuid
-- event_name: text
-- properties: jsonb
-- created_at: timestamp
+#### 2.3 HistoryStore ✅ COMPLETE
+**File:** `Core/Storage/HistoryStore.swift`
 
--- telemetry_errors
-- id: uuid
-- user_id: uuid
+**Changes:**
+- Removed SwiftData dependency
+- Added `CloudKitService` dependency
+- Local persistence: Codable JSON file (`history.json`)
+- Auto-sync on all mutations (debounced 2 seconds)
+- Manual sync: `forceSync()` for pull-to-refresh
+- Sync status exposed: `isSyncing`, `lastSyncError`
+- Legacy JSON migration preserved
+
+---
+
+#### 2.4 iCloud Configuration ✅ COMPLETE
+**File:** `Prompt28/OrionOrb.entitlements`
+
+**Capabilities Added:**
+- `com.apple.developer.icloud-container-identifiers`
+  - Container: `iCloud.com.harlowvolt.orionorb`
+- `com.apple.developer.icloud-services`
+  - Service: `CloudKit`
+
+**Xcode Setup Required:**
+1. Target → Signing & Capabilities
+2. Ensure iCloud capability is enabled
+3. Check "CloudKit" service
+4. Container should auto-create on first run
+
+---
+
+### Phase 3: StoreKit 2 Server Validation
+**Goal:** Server-validated entitlements and usage metering.
 - error_domain: text
 - error_code: text
 - stack_trace: text
@@ -325,13 +353,23 @@ private let persistenceEnabled = false  // SwiftData disabled due to runtime tra
 
 ## Most Important Files (Current State)
 
-### Critical Path (Phase 1 ✅ COMPLETE)
+### Phase 1 ✅ COMPLETE
 
 | File | Status | Notes |
 |------|--------|-------|
-| `Core/Utils/AnalyticsService.swift` | ✅ Complete | Local caching ready, Phase 2: add Supabase upload |
-| `Core/Utils/TelemetryService.swift` | ✅ Complete | Error logging ready, Phase 2: add Supabase upload |
+| `Core/Utils/AnalyticsService.swift` | ✅ Complete | Local caching with UserDefaults (100 events max) |
+| `Core/Utils/TelemetryService.swift` | ✅ Complete | Structured error logging, device info capture |
 | `App/AppEnvironment.swift` | ✅ Complete | Telemetry injected, user ID sync active |
+
+### Phase 2 ✅ COMPLETE
+
+| File | Status | Notes |
+|------|--------|-------|
+| `Models/Local/PromptHistoryItem.swift` | ✅ Complete | Codable, CloudKit fields, conversion methods |
+| `Core/Storage/CloudKitService.swift` | ✅ Complete | Two-way sync, conflict resolution, offline handling |
+| `Core/Storage/HistoryStore.swift` | ✅ Complete | Codable JSON + CloudKit, auto-sync on mutations |
+| `Prompt28/OrionOrb.entitlements` | ✅ Complete | iCloud + CloudKit capabilities |
+| `App/AppEnvironment.swift` | ✅ Complete | CloudKitService injected, HistoryStore updated |
 
 ### For Phase 2 (Supabase)
 
@@ -402,11 +440,10 @@ PromptMeNative_Blueprint/
 ---
 
 **Last Updated By:** AI Assistant (Kimi)  
-**Update Notes (v1.2):** Completed Phase 1 implementation:
-- AnalyticsService: Added local caching with UserDefaults, CachedAnalyticsEvent struct, batch upload placeholder
-- TelemetryService: Created new service with structured error logging, device info capture, app state monitoring
-- AppEnvironment: Injected TelemetryService, added user ID syncing, app_open tracking
-- SpeechRecognizerService: Added telemetry logging for START_FAILED, RECOGNITION_ERROR, CRITICAL_FAILURE
-- APIClient: Added telemetry logging for network errors and HTTP status codes
-- Status: Phase 1 COMPLETE, ready for Phase 2 (Supabase integration)
+**Update Notes (v1.4):** Fixed build issues after Phase 2:
+- Added TelemetryService.swift and CloudKitService.swift to Xcode project via Python script
+- Fixed TelemetryErrorDomain enum - added cloudKit and storage cases
+- Fixed CloudKit API calls for iOS 26.3 compatibility (records, save, delete)
+- Added logStorageError convenience method
+- Status: Phase 1, 2 COMPLETE, Build working, ready for Phase 3
 

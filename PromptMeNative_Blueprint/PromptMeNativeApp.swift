@@ -29,6 +29,7 @@ struct OrionOrbApp: App {
                 .environment(\.storeManager, env.storeManager)
                 .environment(\.keychainService, env.keychain)
                 .environment(\.telemetryService, env.telemetryService)
+                .environment(\.cloudKitService, env.cloudKitService)
                 .environment(\.speechRecognizerFactory, env.speechRecognizerFactory)
                 .environment(\.orbEngineFactory, env.orbEngineFactory)
                 .onOpenURL { url in

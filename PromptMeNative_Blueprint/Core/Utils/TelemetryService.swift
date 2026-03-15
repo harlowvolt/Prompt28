@@ -10,6 +10,8 @@ enum TelemetryErrorDomain: String, Codable {
     case orb = "orb"
     case auth = "auth"
     case store = "store"
+    case cloudKit = "cloudkit"
+    case storage = "storage"
     case unknown = "unknown"
 }
 
@@ -163,6 +165,10 @@ final class TelemetryService {
     
     func logStoreError(code: String, message: String) {
         logError(domain: .store, code: code, message: message)
+    }
+    
+    func logStorageError(code: String, message: String) {
+        logError(domain: .storage, code: code, message: message)
     }
     
     /// Get all pending records for upload

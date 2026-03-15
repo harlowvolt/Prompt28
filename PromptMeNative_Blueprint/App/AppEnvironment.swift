@@ -1,5 +1,4 @@
 import Foundation
-import SwiftData
 import SwiftUI
 
 @Observable
@@ -16,6 +15,8 @@ final class AppEnvironment {
     let usageTracker: UsageTracker
     /// Production error telemetry service (Phase 1)
     let telemetryService: TelemetryService
+    /// CloudKit sync service for cross-device history (Phase 2)
+    let cloudKitService: CloudKitService
     /// Factory seam for speech recognizer construction.
     let speechRecognizerFactory: any SpeechRecognizerFactoryProtocol
     /// Factory seam for orb engine construction.
@@ -31,24 +32,14 @@ final class AppEnvironment {
         self.authManager = AuthManager(apiClient: apiClient, keychain: keychain)
         self.usageTracker = UsageTracker(keychain: keychain)
         self.telemetryService = TelemetryService.shared
-
-        // SwiftData: create a persistent ModelContainer for prompt history.
-        // A lightweight in-memory fallback is used on catastrophic schema errors
-        // (should not occur once the schema is stable).
-        let container: ModelContainer
-        do {
-            container = try ModelContainer(for: PromptHistoryItem.self)
-        } catch {
-            if let inMemoryContainer = try? ModelContainer(
-                for: PromptHistoryItem.self,
-                configurations: ModelConfiguration(isStoredInMemoryOnly: true)
-            ) {
-                container = inMemoryContainer
-            } else {
-                fatalError("Failed to initialize SwiftData ModelContainer")
-            }
-        }
-        self.historyStore = HistoryStore(modelContext: container.mainContext)
+        
+        // Phase 2: Initialize CloudKit service
+        // Uses default container (no identifier needed for standard iCloud container)
+        self.cloudKitService = CloudKitService()
+        
+        // Phase 2: HistoryStore now uses CloudKitService for sync
+        // Falls back to Codable JSON local persistence
+        self.historyStore = HistoryStore(cloudKitService: cloudKitService)
 
         self.preferencesStore = PreferencesStore()
         self.router = AppRouter()
@@ -141,6 +132,10 @@ private struct TelemetryServiceKey: EnvironmentKey {
     static var defaultValue: TelemetryService? = nil
 }
 
+private struct CloudKitServiceKey: EnvironmentKey {
+    static var defaultValue: CloudKitService? = nil
+}
+
 private struct OrbEngineFactoryKey: EnvironmentKey {
     static var defaultValue: (any OrbEngineFactoryProtocol)? = nil
 }
@@ -198,6 +193,11 @@ extension EnvironmentValues {
     var telemetryService: TelemetryService? {
         get { self[TelemetryServiceKey.self] }
         set { self[TelemetryServiceKey.self] = newValue }
+    }
+
+    var cloudKitService: CloudKitService? {
+        get { self[CloudKitServiceKey.self] }
+        set { self[CloudKitServiceKey.self] = newValue }
     }
 
     var orbEngineFactory: (any OrbEngineFactoryProtocol)? {
