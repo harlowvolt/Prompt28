@@ -40,6 +40,9 @@ This is the **single source of truth** for the Orion Orb upgrade. Any AI assista
    - `CloudKitService` with two-way sync and conflict resolution
    - `HistoryStore` migrated to Codable JSON + CloudKit
    - iCloud entitlements configured
+6. **Phase 4 - Glassmorphism UI:**
+   - `Glassmorphism.swift` component library
+   - Enhanced HomeView and SettingsView with glassmorphic styling
 
 ### 🔄 Ready to Start
 1. **Phase 3 - StoreKit 2 Server Validation**
@@ -282,7 +285,22 @@ private let persistenceEnabled = false  // SwiftData disabled due to runtime tra
 ### Phase 4: Core Experience & Data Flywheel
 **Goal:** Visual polish + feedback loop for AI improvement.
 
-#### 4.1 Metal Orb ❌ NOT STARTED
+#### 4.1 Glassmorphism UI Components ✅ COMPLETE
+**Files:** 
+- `Components/Glassmorphism.swift` (NEW)
+- `Features/Home/Views/HomeView.swift` (Updated)
+- `Features/Settings/Views/SettingsView.swift` (Updated)
+
+**Changes:**
+- Created reusable glassmorphism components:
+  - `GlassContainer` - Blur container with gradient overlay
+  - `GlassButton` - Glassmorphic button with tap feedback
+  - `GlassCard` - Card component with material background
+  - `GlassOrb` - Decorative floating orb
+- Integrated into existing HomeView and SettingsView
+- Uses `.ultraThinMaterial` with white stroke overlays
+
+#### 4.2 Metal Orb ❌ NOT STARTED
 **Files:** `OrbEngine.swift`, `OrbView.swift`
 
 **Requirements:**
