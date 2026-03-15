@@ -14,6 +14,8 @@ final class AppEnvironment {
     let storeManager: StoreManager
     /// Keychain-backed client-side freemium usage counter.
     let usageTracker: UsageTracker
+    /// Production error telemetry service (Phase 1)
+    let telemetryService: TelemetryService
     /// Factory seam for speech recognizer construction.
     let speechRecognizerFactory: any SpeechRecognizerFactoryProtocol
     /// Factory seam for orb engine construction.
@@ -28,6 +30,7 @@ final class AppEnvironment {
         self.apiClient = apiClient
         self.authManager = AuthManager(apiClient: apiClient, keychain: keychain)
         self.usageTracker = UsageTracker(keychain: keychain)
+        self.telemetryService = TelemetryService.shared
 
         // SwiftData: create a persistent ModelContainer for prompt history.
         // A lightweight in-memory fallback is used on catastrophic schema errors
@@ -52,7 +55,27 @@ final class AppEnvironment {
         self.storeManager = StoreManager()
         self.speechRecognizerFactory = LiveSpeechRecognizerFactory()
         self.orbEngineFactory = LiveOrbEngineFactory(speechFactory: speechRecognizerFactory)
-        // Combine forwarding removed — @Observable on AuthManager propagates changes automatically
+        
+        // Phase 1: Setup analytics and telemetry user ID syncing
+        setupAnalyticsAndTelemetry()
+    }
+    
+    private func setupAnalyticsAndTelemetry() {
+        // Track app open event
+        AnalyticsService.shared.track(.appOpen)
+        
+        // Sync user ID when auth state changes
+        Task {
+            await syncAnalyticsUserId()
+        }
+    }
+    
+    private func syncAnalyticsUserId() async {
+        // Set initial user ID if already authenticated
+        if let user = authManager.currentUser {
+            AnalyticsService.shared.setUserId(user.id)
+            TelemetryService.shared.setUserId(user.id)
+        }
     }
 }
 
@@ -114,6 +137,10 @@ private struct KeychainServiceKey: EnvironmentKey {
     static var defaultValue: KeychainService? = nil
 }
 
+private struct TelemetryServiceKey: EnvironmentKey {
+    static var defaultValue: TelemetryService? = nil
+}
+
 private struct OrbEngineFactoryKey: EnvironmentKey {
     static var defaultValue: (any OrbEngineFactoryProtocol)? = nil
 }
@@ -166,6 +193,11 @@ extension EnvironmentValues {
     var keychainService: KeychainService? {
         get { self[KeychainServiceKey.self] }
         set { self[KeychainServiceKey.self] = newValue }
+    }
+
+    var telemetryService: TelemetryService? {
+        get { self[TelemetryServiceKey.self] }
+        set { self[TelemetryServiceKey.self] = newValue }
     }
 
     var orbEngineFactory: (any OrbEngineFactoryProtocol)? {

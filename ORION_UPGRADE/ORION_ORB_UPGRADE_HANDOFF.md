@@ -1,641 +1,412 @@
 # ORION Orb Upgrade — Handoff Document
 
-**Version:** 1.0  
-**Created:** 2026-03-14  
-**Status:** Architecture audit complete, ready for upgrade planning  
+**Version:** 1.2  
+**Last Updated:** 2026-03-14  
+**Status:** ✅ Phase 1 Complete, Phase 2 Ready to Start  
+**Project Name:** Orion Orb (formerly Prompt28)  
 **Source Root:** `PromptMeNative_Blueprint/`  
 
 ---
 
-## 1. Current Architecture Summary
+## Document Purpose
 
-Prompt28 is an AI-powered prompt generation iOS app built with SwiftUI and the Observation framework (`@Observable`).
-
-**Platform Requirements:**
-- iOS 17+ (required for SwiftData `@Model` on `PromptHistoryItem`)
-- Swift 5.0+
-- Bundle ID: `com.prompt28.prompt28`
-
-**Architecture Pattern:** MVVM with centralized dependency injection via `AppEnvironment`
-
-**Key Characteristics:**
-- Single-window SwiftUI app with `WindowGroup`
-- Tab-based navigation on iPhone, sidebar navigation on iPad
-- Freemium subscription model with usage tracking
-- Voice-first input via custom "Orb" UI component
-- Local-only prompt history (current state)
+This is the **single source of truth** for the Orion Orb upgrade. Any AI assistant working on this project must read this document first and update it after making changes.
 
 ---
 
-## 2. Confirmed Entry Point
+## Quick Reference
 
-**File:** `PromptMeNative_Blueprint/PromptMeNativeApp.swift`
+| Attribute | Value |
+|-----------|-------|
+| **App Name** | Orion Orb |
+| **Bundle ID** | `com.harlowvolt.orionorb` |
+| **Scheme** | OrionOrb |
+| **iOS Target** | 17+ |
+| **Backend** | Not yet migrated (currently Railway, moving to Supabase) |
+| **Auth** | JWT (moving to Supabase Auth) |
+| **History** | In-memory only (`persistenceEnabled = false`) |
 
+---
+
+## Current Status Summary
+
+### ✅ Completed
+1. **Project Rename:** Prompt28 → Orion Orb (all targets, schemes, bundle IDs)
+2. **Phase 1 - AnalyticsService:** Local caching implemented, events stored in UserDefaults, ready for Supabase upload
+3. **Phase 1 - TelemetryService:** Created with structured error logging for speech, network, and API errors
+4. **Phase 1 - Error Tracking:** Integrated into SpeechRecognizerService, APIClient, and AppEnvironment
+5. **Phase 1 - HistoryStore:** In-memory hotfix active, Codable conformance ready for Phase 2 sync
+
+### 🔄 Ready to Start
+1. **Phase 2 - Supabase Integration:** Auth, database, Edge Functions
+2. **Phase 3 - StoreKit 2 Server Validation**
+3. **Phase 4 - Metal Orb & RLHF**
+4. **Phase 5 - MCP & Intent Routing
+
+---
+
+## Upgrade Roadmap
+
+### Phase 1: Stabilization, Analytics, & Observability
+**Goal:** Fix history, establish conversion funnel, gain visibility before backend changes.
+
+#### 1.1 Analytics Service ✅ COMPLETE
+**File:** `Core/Utils/AnalyticsService.swift`
+
+**Current State:**
+- ✅ Event enum defined with 15+ events (including `app_open`)
+- ✅ Tracking calls integrated in ViewModels
+- ✅ Local caching implemented (UserDefaults, max 100 events)
+- ✅ `CachedAnalyticsEvent` struct for serialization
+- ✅ `setUserId()` for attribution
+- ✅ `uploadToSupabase()` placeholder for Phase 2
+- ❌ Supabase upload not yet implemented (Phase 2)
+
+**Events Currently Tracked:**
+| Event | Location |
+|-------|----------|
+| `app_open` | Not yet implemented |
+| `generate_tapped` | GenerateViewModel.swift:61 |
+| `generate_success` | GenerateViewModel.swift:127 |
+| `generate_error` | GenerateViewModel.swift:182 |
+| `generate_rate_limited` | GenerateViewModel.swift:175 |
+| `copy_prompt` | Not yet implemented |
+| `share_prompt` | Not yet implemented |
+| `favorite_tapped` | GenerateViewModel.swift:211 |
+| `refine_prompt` | GenerateViewModel.swift:67 |
+| `plan_upgrade_tapped` | StoreManager.swift:45 |
+| `plan_upgrade_success` | StoreManager.swift:54 |
+| `auth_success` | Not yet implemented |
+| `paywall_shown` | GenerateViewModel.swift:88, 139, 176 |
+| `onboarding_completed` | OnboardingView.swift:80 |
+| `mode_switched` | HomeView.swift:246 |
+
+**TODO:**
+- Add local caching (UserDefaults or small SQLite)
+- Add batch upload to Supabase
+- Add `app_open` tracking in App init
+
+---
+
+#### 1.2 Telemetry Service ✅ COMPLETE
+**File:** `Core/Utils/TelemetryService.swift`
+
+**Current State:**
+- ✅ Created with `TelemetryRecord` struct
+- ✅ Captures: `error_domain`, `error_code`, `error_message`, `stack_trace`, `device_model`, `ios_version`, `app_version`, `app_state`, `timestamp`, `user_id`, `session_id`
+- ✅ Local caching (UserDefaults, max 50 records, FIFO)
+- ✅ App state monitoring (active, inactive, background, foreground)
+- ✅ `uploadToSupabase()` placeholder for Phase 2
+- ✅ Auto-upload attempt on app background
+
+**Integration Points:**
+- ✅ `SpeechRecognizerService` - logs START_FAILED, RECOGNITION_ERROR, CRITICAL_FAILURE
+- ✅ `APIClient` - logs network errors and HTTP status codes
+- ✅ `AppEnvironment` - injected and initialized with user ID sync
+
+---
+
+#### 1.3 History Store ✅ HOTFIX ACTIVE (Phase 1 Complete)
+**File:** `Core/Storage/HistoryStore.swift`
+
+**Current State:**
 ```swift
-@main
-struct PromptMeNativeApp: App {
-    @State private var env = AppEnvironment()
-    @State private var errorState = ErrorState()
-
-    var body: some Scene {
-        WindowGroup {
-            RootView()
-                .environment(env)
-                .environment(\.historyStore, env.historyStore)
-                .environment(\.authManager, env.authManager)
-                .environment(\.appRouter, env.router)
-                .environment(\.errorState, errorState)
-                .environment(\.apiClient, env.apiClient)
-                .environment(\.preferencesStore, env.preferencesStore)
-                .environment(\.usageTracker, env.usageTracker)
-                .environment(\.storeManager, env.storeManager)
-                .environment(\.keychainService, env.keychain)
-                .environment(\.speechRecognizerFactory, env.speechRecognizerFactory)
-                .environment(\.orbEngineFactory, env.orbEngineFactory)
-        }
-    }
-}
+private let persistenceEnabled = false  // SwiftData disabled due to runtime traps
 ```
 
-**Window Background Setup (Critical):**
-```swift
-init() {
-    UIWindow.appearance().backgroundColor = UIColor(red: 14/255, green: 12/255, blue: 22/255, alpha: 1)
-    UIView.appearance(whenContainedInInstancesOf: [UIHostingController<AnyView>.self]).backgroundColor = .clear
-}
+**Status:**
+- ✅ In-memory storage working (data survives during app lifecycle)
+- ✅ `PromptHistoryItem` is Codable-ready
+- ❌ Data lost on app restart (acceptable for Phase 1, will fix in Phase 2)
+- ❌ No cloud sync (Phase 2)
+- ❌ No Supabase integration (Phase 2)
+
+**Phase 2 TODO:**
+- Replace SwiftData with Supabase `prompts` table
+- Implement offline queue for failed syncs
+- Add sync status indicators
+
+---
+
+### Phase 2: Supabase Infrastructure & Remote Configuration
+**Goal:** Cloud-backed distributed system with strict client/server boundaries.
+
+#### 2.1 Supabase Auth ❌ NOT STARTED
+**Files to Modify:**
+- `Core/Auth/AuthManager.swift`
+- `Features/Auth/Views/AuthFlowView.swift`
+- `Features/Auth/Views/EmailAuthView.swift`
+
+**Requirements:**
+- Integrate `supabase-swift` SDK
+- Wire Apple Sign-In (mandatory for App Store)
+- Store JWT in KeychainService
+- Bind `AppEnvironment.isAuthenticated` to Supabase session
+
+---
+
+#### 2.2 Database Schema ❌ NOT STARTED
+**Supabase Tables to Create:**
+
+```sql
+-- users (managed by Supabase Auth, add custom fields)
+- subscription_tier: text (free, pro, unlimited)
+- created_at: timestamp
+
+-- prompts (RLS: user can only read their own)
+- id: uuid
+- user_id: uuid (references auth.users)
+- intent: text (user's original speech)
+- original_speech: text
+- generated_prompt: text
+- is_favorite: boolean
+- user_rating: integer (1-5, for RLHF)
+- feedback_notes: text
+- created_at: timestamp
+
+-- events (analytics ingestion)
+- id: uuid
+- user_id: uuid
+- event_name: text
+- properties: jsonb
+- created_at: timestamp
+
+-- telemetry_errors
+- id: uuid
+- user_id: uuid
+- error_domain: text
+- error_code: text
+- stack_trace: text
+- device_model: text
+- ios_version: text
+- app_state: text
+- created_at: timestamp
+
+-- feature_flags (for remote config)
+- key: text (unique)
+- is_enabled: boolean
+- required_tier: text
+- rollout_percentage: integer
 ```
 
 ---
 
-## 3. Confirmed Root Navigation
+#### 2.3 Edge Functions (AI Gateway) ❌ NOT STARTED
+**Purpose:** iOS client never holds LLM API keys.
 
-**File:** `PromptMeNative_Blueprint/App/RootView.swift`
+**Functions to Deploy:**
+1. `generate-prompt` - Replaces current `/api/generate`
+2. `validate-subscription` - Check usage limits server-side
+3. `sync-history` - Bidirectional history sync
+4. `app-store-webhook` - Handle subscription events
 
-### State Machine Flow
-
-```
-App Launch
-    │
-    ├── hasAcceptedPrivacy = false ──→ PrivacyConsentView
-    │                                      (blocks all UI, bootstrap runs in background)
-    │
-    └── hasAcceptedPrivacy = true
-            │
-            ├── didBootstrap = false ──→ launchView (spinner with "Loading Prompt28")
-            │
-            └── bootstrap() completes ──→ didBootstrap = true
-                    │
-                    ├── isAuthenticated = false ──→ AuthFlowView
-                    │
-                    ├── isAuthenticated = true, hasSeenOnboarding = false ──→ OnboardingView
-                    │
-                    └── isAuthenticated = true, hasSeenOnboarding = true
-                            │
-                            ├── horizontalSizeClass == .regular (iPad) ──→ iPadSidebar (NavigationSplitView)
-                            │
-                            └── horizontalSizeClass == .compact (iPhone) ──→ mainTabs (TabView)
-```
-
-### Tab Structure (iPhone)
-
-**File:** `PromptMeNative_Blueprint/App/Routing/AppRouter.swift`
-
-```swift
-enum MainTab: Hashable {
-    case home
-    case trending
-    case history
-    case favorites
-    case admin
-}
-```
-
-**Tab Order in UI:**
-1. Home (house.fill)
-2. Favorites (star.fill)
-3. History (clock.arrow.circlepath)
-4. Trending (flame.fill)
-
-**Admin tab:** Phone-only, redirects to Home on iPad
-
-### Navigation Rules (Critical)
-
-1. **Background Layer:** Every view with `NavigationStack` must place `PromptPremiumBackground().ignoresSafeArea()` as the FIRST child in its outermost ZStack
-2. **Screens with their own backgrounds:**
-   - HomeView
-   - HistoryView
-   - FavoritesView
-   - TrendingView
-
-3. **Toolbar visibility:** Main tab screens use `.toolbar(.hidden, for: .navigationBar)`
+**iOS Changes:**
+- Update `APIEndpoint.swift` to route to Edge Functions
+- Remove direct Railway API calls
 
 ---
 
-## 4. Confirmed Dependency Injection
+#### 2.4 Feature Flag Service ❌ NOT STARTED
+**File to Create:** `Core/Utils/FeatureFlagService.swift`
 
-**File:** `PromptMeNative_Blueprint/App/AppEnvironment.swift`
+**Purpose:** Remote toggle for features without app updates.
 
-### Container Definition
-
-```swift
-@Observable
-@MainActor
-final class AppEnvironment {
-    let apiClient: APIClient
-    let keychain: KeychainService
-    let authManager: AuthManager
-    let historyStore: HistoryStore
-    let preferencesStore: PreferencesStore
-    let router: AppRouter
-    let storeManager: StoreManager
-    let usageTracker: UsageTracker
-    let speechRecognizerFactory: any SpeechRecognizerFactoryProtocol
-    let orbEngineFactory: any OrbEngineFactoryProtocol
-}
-```
-
-### Service Initialization Order
-
-```swift
-init() {
-    // 1. Base infrastructure
-    let baseURL = URL(string: "https://promptme-app-production.up.railway.app")!
-    let keychain = KeychainService()
-    let apiClient = APIClient(baseURL: baseURL)
-
-    // 2. Auth (depends on keychain, apiClient)
-    self.authManager = AuthManager(apiClient: apiClient, keychain: keychain)
-    
-    // 3. Usage tracking (depends on keychain)
-    self.usageTracker = UsageTracker(keychain: keychain)
-
-    // 4. SwiftData container for history
-    let container = try? ModelContainer(for: PromptHistoryItem.self)
-    self.historyStore = HistoryStore(modelContext: container.mainContext)
-
-    // 5. Other stores
-    self.preferencesStore = PreferencesStore()
-    self.router = AppRouter()
-    self.storeManager = StoreManager()
-    
-    // 6. Factory seams for testing
-    self.speechRecognizerFactory = LiveSpeechRecognizerFactory()
-    self.orbEngineFactory = LiveOrbEngineFactory(speechFactory: speechRecognizerFactory)
-}
-```
-
-### Environment Key Injection
-
-All services are injected via custom `EnvironmentKey` implementations:
-
-```swift
-// Access patterns in views:
-@Environment(AppEnvironment.self) private var env
-@Environment(\.historyStore) private var historyStore
-@Environment(\.authManager) private var authManager
-@Environment(\.appRouter) private var appRouter
-```
-
-**Rule:** Never instantiate stores directly in views. Always use environment injection.
+**Flags to Support:**
+- `is_metal_orb_enabled` (Phase 4)
+- `new_ai_model` (Phase 5)
+- `experimental_ui` (Phase 4)
 
 ---
 
-## 5. Confirmed AI/Prompt Pipeline
+### Phase 3: Business Logic & Monetization
+**Goal:** Server-validated entitlements and usage metering.
 
-### Generation Flow
+#### 3.1 StoreKit 2 Integration ⚠️ PARTIAL
+**File:** `Core/Store/StoreManager.swift`
 
-**Files:**
-- `Features/Home/ViewModels/GenerateViewModel.swift`
-- `Features/Home/ViewModels/HomeViewModel.swift`
-- `Core/Audio/OrbEngine.swift`
-- `Core/Networking/APIClient.swift`
+**Current State:**
+- StoreKit 2 integrated for product fetching
+- On-device purchase flow working
+- ❌ No server-side receipt validation
+- ❌ No webhook sync with Supabase
 
-```
-┌─────────────────┐     ┌──────────────────┐     ┌─────────────────┐
-│   Voice Input   │     │   Text Input     │     │  History Item   │
-│   (OrbEngine)   │     │ (TypePromptView) │     │  (Restore)      │
-└────────┬────────┘     └────────┬─────────┘     └────────┬────────┘
-         │                       │                        │
-         └───────────────────────┼────────────────────────┘
-                                 ▼
-                    ┌─────────────────────────┐
-                    │  GenerateViewModel      │
-                    │  - inputText            │
-                    │  - selectedMode (.ai/   │
-                    │    .human)              │
-                    └───────────┬─────────────┘
-                                │
-                                ▼
-                    ┌─────────────────────────┐
-                    │  Build GenerateRequest  │
-                    │  - input: String        │
-                    │  - refinement: String?  │
-                    │  - mode: PromptMode     │
-                    │  - systemPrompt: String │
-                    │    (hardcoded)          │
-                    └───────────┬─────────────┘
-                                │
-                                ▼
-                    ┌─────────────────────────┐
-                    │  APIClient.generate()   │
-                    │  POST /api/generate     │
-                    │  Authorization: Bearer  │
-                    └───────────┬─────────────┘
-                                │
-                                ▼
-                    ┌─────────────────────────┐
-                    │  GenerateResponse       │
-                    │  - professional: String │
-                    │  - template: String     │
-                    │  - prompts_used: Int    │
-                    │  - prompts_remaining:   │
-                    │    Int?                 │
-                    └───────────┬─────────────┘
-                                │
-                ┌───────────────┼───────────────┐
-                ▼               ▼               ▼
-        ┌───────────┐   ┌───────────┐   ┌───────────────┐
-        │  Display  │   │  History  │   │ UsageTracker  │
-        │  Result   │   │  Store    │   │  (sync count) │
-        └───────────┘   └───────────┘   └───────────────┘
-```
-
-### System Prompts (Hardcoded)
-
-**Location:** `GenerateViewModel.swift` lines 97-103
-
-```swift
-switch selectedMode {
-case .ai:
-    systemPrompt = "You are an expert AI prompt engineer. Transform the user's raw spoken idea into a precise, structured prompt optimised for AI language models. Maximise clarity, specificity, and instructional detail."
-case .human:
-    systemPrompt = "You are an expert communicator and copywriter. Transform the user's raw spoken idea into clear, compelling, human-centred communication. Use natural language, conversational tone, and emotional clarity."
-}
-```
-
-### Voice Input State Machine
-
-**File:** `Core/Audio/OrbEngine.swift`
-
-```swift
-enum State: Equatable {
-    case idle
-    case listening
-    case transcribing
-    case ready(text: String)
-    case generating
-    case success
-    case failure(String)
-}
-```
-
-**Minimum Requirements:**
-- Listening duration: 0.7 seconds minimum
-- Meaningful transcript: 3+ characters with alphanumeric content
-- Polling: 30 attempts × 50ms = 1.5s max for final transcript
+**TODO:**
+- Implement App Store Server Notifications webhook
+- Sync `users.subscription_tier` with purchases/cancellations
+- Add server-side subscription status check
 
 ---
 
-## 6. Confirmed HistoryStore State
+#### 3.2 Usage Metering ❌ NOT STARTED
+**File:** `Core/Store/UsageTracker.swift`
 
-**File:** `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift`
+**Current State:**
+- Client-side counting only
+- ❌ Easily bypassed
 
-### Current Implementation Status
-
-```swift
-@Observable
-@MainActor
-final class HistoryStore {
-    private(set) var items: [PromptHistoryItem] = []
-    private let persistenceEnabled = false  // ← DISABLED
-    // ...
-}
-```
-
-**CRITICAL:** Persistence is currently **DISABLED**. All history exists only in memory.
-
-### Data Model
-
-**File:** `PromptMeNative_Blueprint/Models/Local/PromptHistoryItem.swift`
-
-```swift
-@Model
-final class PromptHistoryItem {
-    @Attribute(.unique) var id: UUID = UUID()
-    var createdAt: Date = Date()
-    var mode: PromptMode = .ai          // .ai or .human
-    var input: String = ""              // User's raw input
-    var professional: String = ""       // AI-generated prompt
-    var template: String = ""           // Template version
-    var favorite: Bool = false
-    var customName: String? = nil
-}
-```
-
-### HistoryStore Protocol
-
-**File:** `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift` (lines 177-193)
-
-```swift
-@MainActor
-protocol HistoryStoring: AnyObject {
-    var items: [PromptHistoryItem] { get }
-    var favorites: [PromptHistoryItem] { get }
-    
-    func add(_ item: PromptHistoryItem)
-    func remove(id: UUID)
-    func clearAll()
-    func toggleFavorite(id: UUID)
-    func rename(id: UUID, customName: String?)
-}
-```
-
-### Current Behavior
-
-1. **Add:** Inserts at index 0, prunes to max 200 items
-2. **Favorites:** Computed property filtering `favorite == true`
-3. **Save:** Returns `true` immediately (no-op)
-4. **Persistence:** None - data lost on app termination
-5. **Legacy Migration:** Code exists but never runs due to `persistenceEnabled = false`
+**TODO:**
+- Enforce limits in Edge Function (Free: 5/month, Pro: Unlimited)
+- Return 429 or 402 status from Edge Function
+- iOS triggers UpgradeView on these statuses
 
 ---
 
-## 7. Current Backend/API Observations
+### Phase 4: Core Experience & Data Flywheel
+**Goal:** Visual polish + feedback loop for AI improvement.
 
-### Base URL
-```
-https://promptme-app-production.up.railway.app
-```
+#### 4.1 Metal Orb ❌ NOT STARTED
+**Files:** `OrbEngine.swift`, `OrbView.swift`
 
-### Existing Endpoints
-
-**File:** `PromptMeNative_Blueprint/Core/Networking/APIEndpoint.swift`
-
-| Method | Path | Auth | Purpose |
-|--------|------|------|---------|
-| POST | `/api/auth/register` | None | Email registration |
-| POST | `/api/auth/login` | None | Email login |
-| POST | `/api/auth/google` | None | Google OAuth |
-| POST | `/api/auth/apple` | None | Apple Sign-In |
-| GET | `/api/me` | Bearer | Get current user |
-| POST | `/api/update-plan` | Bearer | Update subscription |
-| DELETE | `/api/user` | Bearer | Delete account |
-| POST | `/api/reset-usage` | Bearer | Reset usage (admin) |
-| POST | `/api/generate` | Bearer | Generate prompt |
-| GET | `/api/config` | None | App configuration |
-| GET | `/api/settings` | None | App settings |
-| GET | `/prompts_trending.json` | None | Trending prompts |
-| POST | `/api/admin/verify` | Admin | Verify admin key |
-| GET | `/api/admin/settings` | Admin | Get settings |
-| POST | `/api/admin/settings` | Admin | Update settings |
-| GET | `/api/admin/prompts` | Admin | Get prompts |
-| POST | `/api/admin/prompts` | Admin | Update prompts |
-
-### Auth Patterns
-
-```swift
-enum APIAuthRequirement {
-    case none
-    case bearer      // JWT from Keychain
-    case admin       // Admin API key
-}
-```
-
-### User Model
-
-**File:** `PromptMeNative_Blueprint/Models/API/User.swift`
-
-```swift
-struct User: Decodable {
-    let id: String
-    let email: String
-    let name: String
-    let provider: String
-    let plan: PlanType          // starter, pro, unlimited, dev
-    let prompts_used: Int
-    let prompts_remaining: Int?
-    let period_end: String
-}
-```
-
-### Plan Types
-
-```swift
-enum PlanType: String, Codable {
-    case starter      // Free: 10 generations/month
-    case pro          // Paid tier
-    case unlimited    // Paid tier
-    case dev          // Developer/admin
-}
-```
-
-### Current Limitations
-
-1. **No history endpoints** - History is purely local (and currently non-persistent)
-2. **No real-time sync** - All data is device-local
-3. **No offline queue** - Failed generations are lost
-4. **System prompts are hardcoded** - Not configurable from server
+**Requirements:**
+- GPU-accelerated Metal shader
+- Feature flag controlled (`is_metal_orb_enabled`)
+- States: Idle breathing, Listening mic-reactivity, Processing spin, Success flash
 
 ---
 
-## 8. Risks and Technical Debt
+#### 4.2 Prompt Feedback System (RLHF) ❌ NOT STARTED
+**File:** `Features/Home/Views/ResultView.swift`
 
-### 🔴 Critical (P0)
-
-| Issue | Location | Impact |
-|-------|----------|--------|
-| **History persistence disabled** | `HistoryStore.swift:28` | All prompt history lost on app restart |
-| **SwiftData schema migration** | `AppEnvironment.swift:36-47` | Fallback to in-memory on schema errors |
-
-### 🟡 High (P1)
-
-| Issue | Location | Impact |
-|-------|----------|--------|
-| No cloud sync for history | Entire storage layer | No cross-device support, data siloed per device |
-| Hardcoded system prompts | `GenerateViewModel:98-102` | Cannot A/B test or modify without app update |
-| No offline generation queue | `GenerateViewModel` | Network failures = lost user input |
-| No pagination in history | `HistoryStore` | Performance degradation at scale |
-
-### 🟢 Medium (P2)
-
-| Issue | Location | Impact |
-|-------|----------|--------|
-| Combine usage in OrbEngine | `OrbEngine.swift:77` | Could use Observation framework directly |
-| Duplicate protocol definitions | `HistoryStore.swift` vs `StorageProtocols.swift` | Maintenance overhead |
-| Factory pattern inconsistencies | `AppEnvironment.swift` | Some factories use `any`, others concrete types |
-
-### Architecture Constraints
-
-1. **Minimum iOS 17** - Cannot lower deployment target due to SwiftData
-2. **Observation framework** - Do not use `@StateObject` or `@ObservedObject`
-3. **NavigationStack backgrounds** - Critical visual requirement, see AGENTS.md
-4. **Keychain for auth** - Never store tokens in UserDefaults
+**Requirements:**
+- Thumbs Up / Thumbs Down buttons
+- "Regenerate" button
+- Send feedback to `prompts.user_rating` and `prompts.feedback_notes`
+- Build dataset for fine-tuning
 
 ---
 
-## 9. Recommended Upgrade Order
+#### 4.3 Shareable Prompt Cards ❌ NOT STARTED
+**File:** `Features/Home/Views/ShareCardView.swift`
 
-### Phase 1: Foundation (Week 1)
-
-**Goal:** Fix critical data loss issue and establish sync infrastructure
-
-1. **Fix History Persistence**
-   - Enable SwiftData persistence (`persistenceEnabled = true`)
-   - OR implement UserDefaults fallback if SwiftData issues persist
-   - Add migration test for legacy JSON data
-
-2. **Extend Data Model for Sync**
-   - Add `syncStatus` field to `PromptHistoryItem`
-   - Add `cloudID` field for server-side identifiers
-   - Add `lastModified` timestamp for conflict resolution
-
-### Phase 2: Cloud API (Week 2)
-
-**Goal:** Add backend endpoints for history sync
-
-1. **Extend APIClient**
-   - Add `GET /api/history` endpoint
-   - Add `POST /api/history` endpoint
-   - Add `PUT /api/history/:id` endpoint
-   - Add `DELETE /api/history/:id` endpoint
-
-2. **Create CloudHistoryService**
-   - New file: `Core/Storage/CloudHistoryService.swift`
-   - Handle network operations
-   - Manage sync state transitions
-
-### Phase 3: Sync Logic (Week 3)
-
-**Goal:** Implement bidirectional sync
-
-1. **Sync Engine**
-   - Two-way sync on app launch
-   - Push on local changes
-   - Background sync when app enters foreground
-
-2. **Conflict Resolution**
-   - Last-write-wins strategy
-   - Or server-wins with client notification
-
-### Phase 4: UI/UX (Week 4)
-
-**Goal:** Sync status visibility and offline support
-
-1. **Sync Indicators**
-   - Add sync status to history list
-   - Show pending uploads
-   - Error retry UI
-
-2. **Offline Queue**
-   - Queue failed generations
-   - Retry when connectivity restored
+**Requirements:**
+- Connect to `ResultView`
+- Use `ImageRenderer` for watermarked social cards
+- Viral growth loop
 
 ---
 
-## 10. Most Important Files (Priority Order)
+#### 4.4 Real-Time Trending ❌ NOT STARTED
+**File:** `Features/Trending/ViewModels/TrendingViewModel.swift`
 
-### Tier 1: Core Infrastructure (Modify First)
-
-| File | Lines | Why |
-|------|-------|-----|
-| `Core/Storage/HistoryStore.swift` | 193 | **CRITICAL:** Data persistence disabled here. Fix first. |
-| `Models/Local/PromptHistoryItem.swift` | 41 | May need sync metadata fields (syncStatus, cloudID) |
-| `Core/Networking/APIClient.swift` | 188 | Add history sync endpoints here |
-| `Core/Networking/APIEndpoint.swift` | 118 | Define new endpoint cases |
-
-### Tier 2: Cloud Integration (Modify Second)
-
-| File | Lines | Why |
-|------|-------|-----|
-| `App/AppEnvironment.swift` | 180 | Add CloudHistoryService dependency |
-| `Core/Storage/CloudHistoryService.swift` | **NEW** | Create this file for cloud sync logic |
-| `Core/Protocols/StorageProtocols.swift` | 34 | Extend with cloud-related protocols |
-| `Features/History/ViewModels/HistoryViewModel.swift` | ~100 | Add sync triggers |
-
-### Tier 3: Pipeline Integration (Modify Third)
-
-| File | Lines | Why |
-|------|-------|-----|
-| `Features/Home/ViewModels/GenerateViewModel.swift` | 229 | Save to cloud after local save |
-| `Features/History/Views/HistoryView.swift` | ~200 | Add sync status UI |
-| `Features/History/Views/FavoritesView.swift` | ~150 | Add sync status UI |
-
-### Tier 4: Polish (Modify Last)
-
-| File | Lines | Why |
-|------|-------|-----|
-| `Core/Audio/OrbEngine.swift` | 377 | Modernize (remove Combine) if needed |
-| `App/RootView.swift` | 416 | Global sync status indicators |
-| `Core/Utils/AnalyticsService.swift` | ~100 | Track sync events |
+**Requirements:**
+- Supabase Realtime via Postgres CDC
+- Opt-in highly rated prompts to `trending_prompts` table
+- Push live updates without refresh
 
 ---
 
-## Appendix A: File Structure Reference
+### Phase 5: Future Architecture
+**Goal:** Sophisticated context-aware reasoning engine.
+
+#### 5.1 Intent Routing ❌ NOT STARTED
+**Backend Edge Function**
+
+- Fast classifier model (Haiku/Flash) → Intent Category
+- Fetch optimized prompt template from DB
+- Call heavy reasoning model with template
+
+---
+
+#### 5.2 Result Metadata ("Prompt DNA") ❌ NOT STARTED
+**File:** `Features/Home/Views/ResultView.swift`
+
+- Display confidence score, intent category, model latency
+- Pro users only
+
+---
+
+#### 5.3 MCP (Model Context Protocol) ❌ NOT STARTED
+**Architecture:** iOS stays "dumb", Edge Functions use MCP.
+
+- Edge Functions use MCP tools for external context (web scraping, etc.)
+- No iOS updates needed to add MCP capabilities
+
+---
+
+## Most Important Files (Current State)
+
+### Critical Path (Phase 1 ✅ COMPLETE)
+
+| File | Status | Notes |
+|------|--------|-------|
+| `Core/Utils/AnalyticsService.swift` | ✅ Complete | Local caching ready, Phase 2: add Supabase upload |
+| `Core/Utils/TelemetryService.swift` | ✅ Complete | Error logging ready, Phase 2: add Supabase upload |
+| `App/AppEnvironment.swift` | ✅ Complete | Telemetry injected, user ID sync active |
+
+### For Phase 2 (Supabase)
+
+| File | Status | Notes |
+|------|--------|-------|
+| `Core/Auth/AuthManager.swift` | 🔴 Needs Rewrite | Replace JWT with Supabase Auth |
+| `Core/Storage/HistoryStore.swift` | 🔴 Needs Rewrite | Replace SwiftData with Supabase |
+| `Core/Networking/APIClient.swift` | 🔴 Needs Rewrite | Route to Edge Functions |
+| `Core/Networking/APIEndpoint.swift` | 🟡 Stable | Add Edge Function endpoints |
+
+---
+
+## Working with This Document
+
+### For AI Assistants:
+
+1. **Read this first** before making any changes
+2. **Check the Phase status** - don't skip ahead without confirming prerequisites
+3. **Update this document** after completing work:
+   - Change status emojis (🔴 → 🟡 → ✅)
+   - Add implementation details
+   - Update the "Current Status Summary" section
+4. **Never remove sections** - only mark as complete
+
+### Status Emoji Key:
+- 🔴 **Not Started** / Missing
+- 🟡 **Partial** / In Progress
+- ✅ **Complete**
+- ⚠️ **Has Issues** / Needs Attention
+
+---
+
+## Appendix: Project Structure Reference
 
 ```
 PromptMeNative_Blueprint/
 ├── App/
 │   ├── AppEnvironment.swift          # Dependency container
 │   ├── AppUI.swift                   # Design tokens
-│   ├── PremiumTabScreen.swift        # Tab wrapper
 │   ├── RootView.swift                # Root state machine
-│   └── Routing/
-│       └── AppRouter.swift           # Navigation enums
+│   └── Routing/AppRouter.swift
 ├── Core/
 │   ├── Auth/
-│   │   ├── AuthManager.swift         # JWT session management
-│   │   ├── KeychainService.swift     # Secure storage
-│   │   └── OAuthCoordinator.swift    # Google/Apple OAuth
+│   │   └── AuthManager.swift         # 🔴 Replace with Supabase
 │   ├── Networking/
-│   │   ├── APIClient.swift           # HTTP client
-│   │   ├── APIEndpoint.swift         # Endpoint definitions
-│   │   ├── NetworkError.swift        # Error types
-│   │   └── RequestBuilder.swift      # Request construction
+│   │   ├── APIClient.swift           # 🔴 Route to Edge Functions
+│   │   └── APIEndpoint.swift
 │   ├── Storage/
-│   │   ├── HistoryStore.swift        # ⚠️ PERSISTENCE DISABLED
-│   │   ├── PreferencesStore.swift    # UserDefaults prefs
-│   │   └── SecureStore.swift         # Generic secure storage
+│   │   └── HistoryStore.swift        # 🔴 Replace with Supabase
 │   ├── Store/
-│   │   ├── StoreConfig.swift         # IAP product IDs
-│   │   ├── StoreManager.swift        # StoreKit 2 wrapper
-│   │   └── UsageTracker.swift        # Freemium counter
-│   ├── Audio/
-│   │   ├── OrbEngine.swift           # Voice input state machine
-│   │   └── SpeechRecognizerService.swift
+│   │   ├── StoreManager.swift        # 🟡 Add server validation
+│   │   └── UsageTracker.swift        # 🟡 Client-side only
 │   └── Utils/
-│       ├── AnalyticsService.swift
-│       └── HapticService.swift
+│       ├── AnalyticsService.swift    # 🟡 Add caching
+│       └── TelemetryService.swift    # 🔴 CREATE THIS
 ├── Features/
-│   ├── Auth/                         # Login/signup flows
-│   ├── History/                      # History + Favorites views
+│   ├── Auth/                         # Login flows
+│   ├── History/                      # History + Favorites
 │   ├── Home/                         # Main generation UI
+│   ├── Onboarding/                   # First-time experience
 │   ├── Settings/                     # Settings + Upgrade
 │   └── Trending/                     # Prompt catalog
-├── Models/
-│   ├── API/                          # Server response models
-│   └── Local/                        # SwiftData models
-└── PromptMeNativeApp.swift           # @main entry point
+└── Models/
+    ├── API/                          # Server response models
+    └── Local/                        # PromptHistoryItem, etc.
 ```
 
 ---
 
-## Appendix B: External Dependencies
+**Last Updated By:** AI Assistant (Kimi)  
+**Update Notes (v1.2):** Completed Phase 1 implementation:
+- AnalyticsService: Added local caching with UserDefaults, CachedAnalyticsEvent struct, batch upload placeholder
+- TelemetryService: Created new service with structured error logging, device info capture, app state monitoring
+- AppEnvironment: Injected TelemetryService, added user ID syncing, app_open tracking
+- SpeechRecognizerService: Added telemetry logging for START_FAILED, RECOGNITION_ERROR, CRITICAL_FAILURE
+- APIClient: Added telemetry logging for network errors and HTTP status codes
+- Status: Phase 1 COMPLETE, ready for Phase 2 (Supabase integration)
 
-**Swift Package Manager:**
-- GoogleSignIn (9.1.0)
-- AppAuth (2.0.0)
-- GTMAppAuth (5.0.0)
-- GTMSessionFetcher (3.5.0)
-
-**Frameworks:**
-- SwiftUI (primary UI)
-- SwiftData (persistence - currently disabled)
-- Observation (@Observable)
-- Speech (SFSpeechRecognizer)
-- AVFoundation
-- StoreKit 2
-
----
-
-**Document History:**
-- v1.0 (2026-03-14) - Initial architecture audit and handoff document

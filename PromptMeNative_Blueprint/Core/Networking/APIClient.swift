@@ -26,6 +26,12 @@ final class APIClient {
             (data, response) = try await session.data(for: request)
         } catch {
             let nsError = error as NSError
+            // Phase 1: Log network errors
+            TelemetryService.shared.logNetworkError(
+                code: "\(nsError.code)",
+                message: error.localizedDescription,
+                url: request.url?.absoluteString
+            )
             if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorTimedOut {
                 throw NetworkError.transport(message: "The server took too long to respond. Please try again.")
             }
@@ -40,6 +46,12 @@ final class APIClient {
             do {
                 return try decoder.decode(type, from: data)
             } catch {
+                // Phase 1: Log decoding errors
+                TelemetryService.shared.logAPIError(
+                    code: "DECODE_ERROR",
+                    message: "Failed to decode response: \(error.localizedDescription)",
+                    endpoint: request.url?.path
+                )
                 throw NetworkError.decoding
             }
         }
@@ -47,6 +59,13 @@ final class APIClient {
         let apiError = try? decoder.decode(APIErrorResponse.self, from: data)
         let fallbackMessage = HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)
         let message = apiError?.error ?? fallbackMessage
+
+        // Phase 1: Log API errors by status code
+        TelemetryService.shared.logAPIError(
+            code: "HTTP_\(httpResponse.statusCode)",
+            message: message,
+            endpoint: request.url?.path
+        )
 
         switch httpResponse.statusCode {
         case 401:
