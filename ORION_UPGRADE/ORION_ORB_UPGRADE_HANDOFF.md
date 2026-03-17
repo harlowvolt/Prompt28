@@ -1,16 +1,39 @@
 # ORION Orb Upgrade — Handoff Document
 
-**Version:** 1.4  
-**Last Updated:** 2026-03-14  
-**Status:** ✅ Phase 1, 2 & Build Fixed  
-**Project Name:** Orion Orb (formerly Prompt28)  
-**Source Root:** `PromptMeNative_Blueprint/`  
+**Version:** 1.5
+**Last Updated:** 2026-03-17
+**Status:** ✅ Phase 1 & 2 Complete | Architecture Decision Locked | Task 1 Fixes Applied
+**Project Name:** Orion Orb (formerly Prompt28)
+**Source Root:** `PromptMeNative_Blueprint/`
 
 ---
 
 ## Document Purpose
 
 This is the **single source of truth** for the Orion Orb upgrade. Any AI assistant working on this project must read this document first and update it after making changes.
+
+---
+
+## 🔒 Architecture Decision — CloudKit vs. Supabase (Locked 2026-03-17)
+
+**Decision: Option A — Keep CloudKit + Add Supabase**
+
+| Layer | System | Responsibility |
+|-------|--------|----------------|
+| History sync | CloudKit | Cross-device `PromptHistoryItem` sync (Apple ecosystem) |
+| Analytics pipeline | Supabase | `events` table — upload from `AnalyticsService` |
+| Error telemetry | Supabase | `telemetry_errors` table — upload from `TelemetryService` |
+| Feature flags | Supabase | `feature_flags` table — fetched by `FeatureFlagService` at launch |
+| RLHF / prompt ratings | Supabase | `prompts` table — `user_rating`, `feedback_notes` |
+| Real-time trending | Supabase | `trending_prompts` table — Supabase Realtime CDC |
+| Server-side usage metering | Supabase Edge Function | Enforced in `generate-prompt` function |
+| Subscription tier sync | Supabase | `users.subscription_tier` via App Store Server Notifications webhook |
+
+**Rules that follow from this decision:**
+- `HistoryStore.swift` and `CloudKitService.swift` are **NOT to be rewritten** for Supabase
+- When a prompt is generated, write to local JSON (CloudKit syncs it) AND send a record to Supabase `prompts` table for the data flywheel — two destinations, same event
+- Auth **will** migrate to Supabase Auth (Task 2) — this does not affect CloudKit, which uses iCloud credentials independently
+- The `HistoryStore` in `AppEnvironment` should **not** receive a Supabase dependency
 
 ---
 
@@ -35,19 +58,35 @@ This is the **single source of truth** for the Orion Orb upgrade. Any AI assista
 2. **Phase 1 - AnalyticsService:** Local caching implemented, events stored in UserDefaults
 3. **Phase 1 - TelemetryService:** Created with structured error logging
 4. **Phase 1 - Error Tracking:** Integrated into SpeechRecognizerService, APIClient
-5. **Phase 2 - CloudKit Sync:** 
+5. **Phase 2 - CloudKit Sync:**
    - `PromptHistoryItem` with CloudKit fields (recordID, lastModified, isSynced)
    - `CloudKitService` with two-way sync and conflict resolution
    - `HistoryStore` migrated to Codable JSON + CloudKit
    - iCloud entitlements configured
-6. **Phase 4 - Glassmorphism UI:**
-   - `Glassmorphism.swift` component library
-   - Enhanced HomeView and SettingsView with glassmorphic styling
+6. **Architecture Decision (v1.5) — Option A LOCKED:**
+   - CloudKit stays for Apple-ecosystem history sync across devices
+   - Supabase added for all data pipeline needs (analytics, RLHF, feature flags, server-side metering)
+   - `HistoryStore` / `CloudKitService` are NOT to be rewritten
+   - See: Architecture Decision section below
+7. **Task 1 Fix - StoreKit Plan Sync Bug (v1.5):**
+   - `StoreManager` now accepts `AuthManager` via initializer injection
+   - `purchase()` calls `await authManager.refreshMe()` after `transaction.finish()`
+   - `listenForTransactions()` also calls `refreshMe()` for renewals/Family Sharing
+   - `AppEnvironment` updated: `StoreManager(authManager: authManager)`
+8. **Task 1 Fix - ShareCard Branding (v1.5):**
+   - `ShareCardView.swift` footer text updated to "ORION ORB" and "Refined by Orion Orb"
+9. **Task 1 Cleanup - Glassmorphism Dead Code Removed (v1.5):**
+   - `Components/Glassmorphism.swift` DELETED — was never used in production
+   - Production glass system remains `PromptTheme.glassCard` / `.appGlassCard()` in `AppUI.swift`
+10. **Phase 4 - ShareCard System:**
+    - `ShareCardView`, `ShareCardRenderer`, `ShareCardFileStore` complete and wired into `ResultView`
+    - `ShareLink` functional. Branding now correct (fixed in v1.5)
 
-### 🔄 Ready to Start
-1. **Phase 3 - StoreKit 2 Server Validation**
-2. **Phase 4 - Metal Orb & RLHF**
-3. **Phase 5 - MCP & Intent Routing
+### 🔄 Next Up (Task 2 → Task 5)
+1. **Task 2 — Supabase SDK + Auth Migration** (`AuthManager.swift`)
+2. **Task 3 — Supabase Schema + Wire Analytics/Telemetry Upload**
+3. **Task 4 — FeatureFlagService + Edge Function (generate-prompt)**
+4. **Task 5 — StoreKit Server Validation + App Store Webhook**
 
 ---
 
@@ -256,15 +295,19 @@ private let persistenceEnabled = false  // SwiftData disabled due to runtime tra
 **File:** `Core/Store/StoreManager.swift`
 
 **Current State:**
-- StoreKit 2 integrated for product fetching
-- On-device purchase flow working
-- ❌ No server-side receipt validation
-- ❌ No webhook sync with Supabase
+- ✅ StoreKit 2 integrated for product fetching
+- ✅ On-device purchase flow working
+- ✅ `StoreManager` now injects `AuthManager` via `init(authManager:)` (v1.5)
+- ✅ `purchase()` calls `await authManager.refreshMe()` after `transaction.finish()` — clears paywall immediately (v1.5)
+- ✅ `listenForTransactions()` also calls `refreshMe()` — handles renewals and Family Sharing (v1.5)
+- ❌ No server-side receipt validation (Task 5)
+- ❌ No App Store Server Notifications webhook (Task 5)
+- ❌ `users.subscription_tier` not yet synced with Supabase (Task 5)
 
-**TODO:**
-- Implement App Store Server Notifications webhook
-- Sync `users.subscription_tier` with purchases/cancellations
-- Add server-side subscription status check
+**TODO (Task 5):**
+- Implement App Store Server Notifications webhook → Supabase Edge Function
+- Sync `users.subscription_tier` with purchases/cancellations/renewals
+- Add server-side subscription status check on app launch
 
 ---
 
@@ -285,20 +328,19 @@ private let persistenceEnabled = false  // SwiftData disabled due to runtime tra
 ### Phase 4: Core Experience & Data Flywheel
 **Goal:** Visual polish + feedback loop for AI improvement.
 
-#### 4.1 Glassmorphism UI Components ✅ COMPLETE
-**Files:** 
-- `Components/Glassmorphism.swift` (NEW)
-- `Features/Home/Views/HomeView.swift` (Updated)
-- `Features/Settings/Views/SettingsView.swift` (Updated)
+#### 4.1 Glassmorphism UI Components 🗑️ DELETED (v1.5)
+**File:** `Components/Glassmorphism.swift` — **FILE DELETED**
 
-**Changes:**
-- Created reusable glassmorphism components:
-  - `GlassContainer` - Blur container with gradient overlay
-  - `GlassButton` - Glassmorphic button with tap feedback
-  - `GlassCard` - Card component with material background
-  - `GlassOrb` - Decorative floating orb
-- Integrated into existing HomeView and SettingsView
-- Uses `.ultraThinMaterial` with white stroke overlays
+**Why deleted:**
+- `GlassContainer`, `GlassButton`, `GlassCard`, `GlassOrb` were never used in any production screen
+- All production screens use `PromptTheme.glassCard` / `.appGlassCard()` defined in `App/AppUI.swift`
+- The file was a parallel dead glass system that would cause future UI divergence
+- The claim in v1.4 that it was "integrated into HomeView and SettingsView" was incorrect
+
+**Authoritative glass system:**
+- `App/AppUI.swift` — `.appGlassCard(radius:)` view modifier
+- `App/AppUI.swift` — `PromptTheme.glassCard` style token
+- Do NOT recreate `Glassmorphism.swift`. Build new glass components as extensions in `AppUI.swift`
 
 #### 4.2 Metal Orb ❌ NOT STARTED
 **Files:** `OrbEngine.swift`, `OrbView.swift`
@@ -321,13 +363,21 @@ private let persistenceEnabled = false  // SwiftData disabled due to runtime tra
 
 ---
 
-#### 4.3 Shareable Prompt Cards ❌ NOT STARTED
-**File:** `Features/Home/Views/ShareCardView.swift`
+#### 4.3 Shareable Prompt Cards ✅ COMPLETE (v1.5 branding fixed)
+**Files:**
+- `Features/Home/Views/ShareCardView.swift`
+- `Features/Home/Views/ShareCardRenderer.swift`
+- `Features/Home/Views/ShareCardFileStore.swift`
 
-**Requirements:**
-- Connect to `ResultView`
-- Use `ImageRenderer` for watermarked social cards
-- Viral growth loop
+**Current State:**
+- ✅ `ShareCardView` — card layout with BEFORE/AFTER sections, gradient background
+- ✅ `ShareCardRenderer` — `ImageRenderer`-based PNG rendering
+- ✅ `ShareCardFileStore` — temp file management for `ShareLink`
+- ✅ Wired into `ResultView` — share button renders and exports card
+- ✅ Branding updated to "ORION ORB" / "Refined by Orion Orb" (v1.5, was "PROMPT²⁸")
+- ❌ No watermark enforcement yet (low priority)
+
+**Do not re-implement** — this feature is complete. Next work here is RLHF buttons (4.2).
 
 ---
 
@@ -389,14 +439,19 @@ private let persistenceEnabled = false  // SwiftData disabled due to runtime tra
 | `Prompt28/OrionOrb.entitlements` | ✅ Complete | iCloud + CloudKit capabilities |
 | `App/AppEnvironment.swift` | ✅ Complete | CloudKitService injected, HistoryStore updated |
 
-### For Phase 2 (Supabase)
+### For Phase 2 → 5 (Supabase tasks)
 
 | File | Status | Notes |
 |------|--------|-------|
-| `Core/Auth/AuthManager.swift` | 🔴 Needs Rewrite | Replace JWT with Supabase Auth |
-| `Core/Storage/HistoryStore.swift` | 🔴 Needs Rewrite | Replace SwiftData with Supabase |
-| `Core/Networking/APIClient.swift` | 🔴 Needs Rewrite | Route to Edge Functions |
-| `Core/Networking/APIEndpoint.swift` | 🟡 Stable | Add Edge Function endpoints |
+| `Core/Auth/AuthManager.swift` | 🔴 Task 2 | Migrate JWT to Supabase Auth — do NOT touch CloudKit |
+| `Core/Storage/HistoryStore.swift` | ✅ DO NOT TOUCH | CloudKit sync is correct and complete. Not replaced by Supabase. |
+| `Core/Storage/CloudKitService.swift` | ✅ DO NOT TOUCH | Works correctly. Architecture decision locks this in. |
+| `Core/Networking/APIClient.swift` | 🟡 Task 4 | Add Edge Function routing for generate; keep Railway calls for now |
+| `Core/Networking/APIEndpoint.swift` | 🟡 Task 4 | Add Edge Function URL entries |
+| `Core/Utils/AnalyticsService.swift` | 🟡 Task 3 | Implement `uploadToSupabase()` — local cache is ready |
+| `Core/Utils/TelemetryService.swift` | 🟡 Task 3 | Implement `uploadToSupabase()` — local cache is ready |
+| `Core/Utils/FeatureFlagService.swift` | 🔴 Task 4 | CREATE — fetches `feature_flags` table at launch |
+| `Core/Store/StoreManager.swift` | 🟡 Task 5 | Plan sync fixed (v1.5). Server validation + webhook still needed. |
 
 ---
 
@@ -438,15 +493,18 @@ PromptMeNative_Blueprint/
 │   ├── Storage/
 │   │   └── HistoryStore.swift        # 🔴 Replace with Supabase
 │   ├── Store/
-│   │   ├── StoreManager.swift        # 🟡 Add server validation
-│   │   └── UsageTracker.swift        # 🟡 Client-side only
+│   │   ├── StoreManager.swift        # 🟡 Task 5 — server validation + webhook
+│   │   └── UsageTracker.swift        # 🟡 Task 4 — move enforcement to Edge Function
 │   └── Utils/
-│       ├── AnalyticsService.swift    # 🟡 Add caching
-│       └── TelemetryService.swift    # 🔴 CREATE THIS
+│       ├── AnalyticsService.swift    # 🟡 Task 3 — wire uploadToSupabase()
+│       ├── TelemetryService.swift    # 🟡 Task 3 — wire uploadToSupabase()
+│       └── FeatureFlagService.swift  # 🔴 Task 4 — CREATE THIS
+├── Components/
+│   └── (Glassmorphism.swift DELETED v1.5 — was dead code)
 ├── Features/
 │   ├── Auth/                         # Login flows
 │   ├── History/                      # History + Favorites
-│   ├── Home/                         # Main generation UI
+│   ├── Home/                         # Main generation UI + ShareCard (complete)
 │   ├── Onboarding/                   # First-time experience
 │   ├── Settings/                     # Settings + Upgrade
 │   └── Trending/                     # Prompt catalog
@@ -457,8 +515,18 @@ PromptMeNative_Blueprint/
 
 ---
 
-**Last Updated By:** AI Assistant (Kimi)  
-**Update Notes (v1.4):** Fixed build issues after Phase 2:
+**Last Updated By:** Claude (Natalie's session)
+
+**Update Notes (v1.5) — 2026-03-17:**
+- Locked architecture decision: CloudKit stays for history, Supabase added for data pipeline
+- Deleted `Components/Glassmorphism.swift` (dead code, never used in production)
+- Fixed StoreKit plan sync bug: `StoreManager` now injects `AuthManager`, calls `refreshMe()` after purchase and in transaction listener
+- Fixed ShareCard branding: "ORION ORB" / "Refined by Orion Orb"
+- Corrected Phase 4.3 ShareCard status from NOT STARTED → COMPLETE (was already fully wired)
+- Corrected Phase 2 Supabase table references to reflect Option A decision
+- Updated all file status annotations in reference table
+
+**Update Notes (v1.4) — 2026-03-14 (AI Assistant Kimi):**
 - Added TelemetryService.swift and CloudKitService.swift to Xcode project via Python script
 - Fixed TelemetryErrorDomain enum - added cloudKit and storage cases
 - Fixed CloudKit API calls for iOS 26.3 compatibility (records, save, delete)

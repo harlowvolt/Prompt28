@@ -43,7 +43,7 @@ final class AppEnvironment {
 
         self.preferencesStore = PreferencesStore()
         self.router = AppRouter()
-        self.storeManager = StoreManager()
+        self.storeManager = StoreManager(authManager: authManager)
         self.speechRecognizerFactory = LiveSpeechRecognizerFactory()
         self.orbEngineFactory = LiveOrbEngineFactory(speechFactory: speechRecognizerFactory)
         

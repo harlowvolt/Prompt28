@@ -15,7 +15,10 @@ final class StoreManager {
     @ObservationIgnored
     nonisolated(unsafe) private var updateListenerTask: Task<Void, Error>?
 
-    init() {
+    private let authManager: AuthManager
+
+    init(authManager: AuthManager) {
+        self.authManager = authManager
         updateListenerTask = listenForTransactions()
         Task { await loadProducts() }
     }
@@ -51,6 +54,9 @@ final class StoreManager {
                 let transaction = try checkVerified(verification)
                 purchasedProductIDs.insert(transaction.productID)
                 await transaction.finish()
+                // Refresh the user model so currentUser.plan reflects the new
+                // subscription tier immediately — clears the paywall on next generation.
+                await authManager.refreshMe()
                 AnalyticsService.shared.track(.planUpgradeSuccess(plan: product.id))
                 return true
             case .pending:
@@ -114,6 +120,9 @@ final class StoreManager {
                         _ = self.purchasedProductIDs.insert(transaction.productID)
                     }
                     await transaction.finish()
+                    // Sync the server-side plan for renewals, cancellations, and
+                    // purchases made on other devices (e.g. Family Sharing).
+                    await self.authManager.refreshMe()
                 } catch {}
             }
         }
