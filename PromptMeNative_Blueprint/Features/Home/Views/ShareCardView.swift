@@ -60,11 +60,11 @@ struct ShareCardView: View {
 
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("PROMPT²⁸")
+                    Text("ORION ORB")
                         .font(.system(size: 20, weight: .black, design: .rounded))
                         .foregroundStyle(.white)
 
-                    Text("Made with PROMPT²⁸")
+                    Text("Refined by Orion Orb")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.white.opacity(0.6))
                 }

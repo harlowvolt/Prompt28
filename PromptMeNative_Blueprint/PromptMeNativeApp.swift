@@ -3,7 +3,7 @@ import UIKit
 import GoogleSignIn
 
 @main
-struct PromptMeNativeApp: App {
+struct OrionOrbApp: App {
     @State private var env = AppEnvironment()
     @State private var errorState = ErrorState()
 
@@ -17,7 +17,7 @@ struct PromptMeNativeApp: App {
 
     var body: some Scene {
         WindowGroup {
-            RootView()
+            OrionMainContainer()
                 .environment(env)
                 .environment(\.historyStore, env.historyStore)
                 .environment(\.authManager, env.authManager)
@@ -28,6 +28,8 @@ struct PromptMeNativeApp: App {
                 .environment(\.usageTracker, env.usageTracker)
                 .environment(\.storeManager, env.storeManager)
                 .environment(\.keychainService, env.keychain)
+                .environment(\.telemetryService, env.telemetryService)
+                .environment(\.cloudKitService, env.cloudKitService)
                 .environment(\.speechRecognizerFactory, env.speechRecognizerFactory)
                 .environment(\.orbEngineFactory, env.orbEngineFactory)
                 .onOpenURL { url in

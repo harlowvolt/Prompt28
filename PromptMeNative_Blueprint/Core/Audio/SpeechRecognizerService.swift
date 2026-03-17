@@ -110,6 +110,10 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
                 startWatchdog()
             } catch {
                 permissionStatus = .error(error.localizedDescription)
+                TelemetryService.shared.logSpeechError(
+                    code: "START_FAILED",
+                    message: "Failed to start speech recognition: \(error.localizedDescription)"
+                )
                 failAndStop(message: "Unable to start speech recognition.")
             }
         }
@@ -284,6 +288,13 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
                         self.isStoppingIntentionally = false
                         return
                     }
+                    
+                    // Phase 1: Log speech recognition errors
+                    let nsError = error as NSError
+                    TelemetryService.shared.logSpeechError(
+                        code: "RECOGNITION_ERROR_\(nsError.code)",
+                        message: "Speech recognition error: \(error.localizedDescription) (domain: \(nsError.domain))"
+                    )
 
                     let cleaned = self.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
                     if cleaned.isEmpty {
@@ -311,6 +322,12 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
     }
 
     private func failAndStop(message: String) {
+        // Phase 1: Log critical speech failures
+        TelemetryService.shared.logSpeechError(
+            code: "CRITICAL_FAILURE",
+            message: "Speech recognition critical failure: \(message)"
+        )
+        
         silenceTask?.cancel()
         silenceTask = nil
         audioEngine.inputNode.removeTap(onBus: 0)

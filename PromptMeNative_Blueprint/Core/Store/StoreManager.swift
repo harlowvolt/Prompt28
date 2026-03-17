@@ -15,8 +15,11 @@ final class StoreManager {
     @ObservationIgnored
     nonisolated(unsafe) private var updateListenerTask: Task<Void, Error>?
 
+<<<<<<< HEAD
     /// Injected so that a successful purchase immediately refreshes the
     /// server-side plan tier (fixes the post-purchase plan sync bug).
+=======
+>>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
     private let authManager: AuthManager
 
     init(authManager: AuthManager) {
@@ -56,9 +59,14 @@ final class StoreManager {
                 let transaction = try checkVerified(verification)
                 purchasedProductIDs.insert(transaction.productID)
                 await transaction.finish()
+<<<<<<< HEAD
                 // Sync the server-side plan tier immediately after the receipt is
                 // finished so the UI reflects the new plan without requiring a
                 // manual refresh or app restart.
+=======
+                // Refresh the user model so currentUser.plan reflects the new
+                // subscription tier immediately — clears the paywall on next generation.
+>>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
                 await authManager.refreshMe()
                 AnalyticsService.shared.track(.planUpgradeSuccess(plan: product.id))
                 return true
@@ -123,8 +131,13 @@ final class StoreManager {
                         _ = self.purchasedProductIDs.insert(transaction.productID)
                     }
                     await transaction.finish()
+<<<<<<< HEAD
                     // Sync server plan tier for background transaction updates
                     // (renewals, cross-device restores, family sharing, etc.).
+=======
+                    // Sync the server-side plan for renewals, cancellations, and
+                    // purchases made on other devices (e.g. Family Sharing).
+>>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
                     await self.authManager.refreshMe()
                 } catch {}
             }

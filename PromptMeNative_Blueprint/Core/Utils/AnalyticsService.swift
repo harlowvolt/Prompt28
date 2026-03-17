@@ -18,7 +18,7 @@ enum AnalyticsEvent {
     case paywallShown
     case onboardingCompleted
     case modeSwitched(to: String)
-
+    
     var name: String {
         switch self {
         case .appOpen:               return "app_open"
@@ -38,7 +38,7 @@ enum AnalyticsEvent {
         case .modeSwitched:          return "mode_switched"
         }
     }
-
+    
     var properties: [String: Any] {
         switch self {
         case .generateTapped(let mode):
@@ -61,6 +61,7 @@ enum AnalyticsEvent {
 
 // MARK: - Cached Event
 
+<<<<<<< HEAD
 /// Codable envelope stored in UserDefaults until the Supabase ingress
 /// pipeline is wired in Phase 2.
 struct CachedAnalyticsEvent: Codable {
@@ -68,10 +69,27 @@ struct CachedAnalyticsEvent: Codable {
     let properties: [String: String]   // stringified for Codable conformance
     let timestamp: Date
     let userId: String?
+=======
+struct CachedAnalyticsEvent: Codable {
+    let id: UUID
+    let name: String
+    let properties: Data
+    let timestamp: Date
+    let userId: String?
+    
+    init(event: AnalyticsEvent, userId: String?) {
+        self.id = UUID()
+        self.name = event.name
+        self.properties = try! JSONSerialization.data(withJSONObject: event.properties)
+        self.timestamp = Date()
+        self.userId = userId
+    }
+>>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
 }
 
 // MARK: - Service
 
+<<<<<<< HEAD
 /// Phase 1 analytics service.
 ///
 /// Events are fired into a local UserDefaults cache (max 100) so that
@@ -99,11 +117,38 @@ final class AnalyticsService {
 
     // MARK: - Track
 
+=======
+/// Analytics service with local caching for batch upload to Supabase.
+/// 
+/// Phase 1: Local caching implemented, ready for Supabase integration in Phase 2.
+@MainActor
+final class AnalyticsService {
+    static let shared = AnalyticsService()
+    
+    private let userDefaults = UserDefaults.standard
+    private let cacheKey = "orion.orb.analytics.cache"
+    private let maxCacheSize = 100
+    private var cachedEvents: [CachedAnalyticsEvent] = []
+    private var userId: String?
+    
+    private init() {
+        loadCachedEvents()
+    }
+    
+    /// Set the current user ID for attribution
+    func setUserId(_ id: String?) {
+        self.userId = id
+    }
+    
+    /// Track an event - logs immediately and caches for upload
+>>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
     func track(_ event: AnalyticsEvent) {
+        // Debug logging
         #if DEBUG
         let props = event.properties.isEmpty ? "" : " \(event.properties)"
         print("📊 [Analytics] \(event.name)\(props)")
         #endif
+<<<<<<< HEAD
 
         // Cache locally for Supabase flush (Phase 2).
         let stringProps = event.properties.reduce(into: [String: String]()) { result, pair in
@@ -125,6 +170,83 @@ final class AnalyticsService {
         // Firebase:
         //   Analytics.logEvent(event.name, parameters: event.properties)
         // ─────────────────────────────────────────────────────────────────
+=======
+        
+        // Cache for batch upload
+        let cachedEvent = CachedAnalyticsEvent(event: event, userId: userId)
+        cachedEvents.append(cachedEvent)
+        
+        // Maintain max cache size
+        if cachedEvents.count > maxCacheSize {
+            cachedEvents.removeFirst(cachedEvents.count - maxCacheSize)
+        }
+        
+        persistCache()
+        
+        // Attempt immediate upload if we have connectivity (placeholder for Phase 2)
+        // Task { await attemptUpload() }
+    }
+    
+    /// Get all cached events for upload
+    func getPendingEvents() -> [CachedAnalyticsEvent] {
+        return cachedEvents
+    }
+    
+    /// Clear events that have been successfully uploaded
+    func clearUploadedEvents(_ eventIds: [UUID]) {
+        cachedEvents.removeAll { eventIds.contains($0.id) }
+        persistCache()
+    }
+    
+    /// Clear all cached events (use after successful batch upload)
+    func clearAllEvents() {
+        cachedEvents.removeAll()
+        userDefaults.removeObject(forKey: cacheKey)
+    }
+    
+    /// Get count of pending events
+    var pendingEventCount: Int {
+        return cachedEvents.count
+    }
+    
+    // MARK: - Private
+    
+    private func loadCachedEvents() {
+        guard let data = userDefaults.data(forKey: cacheKey),
+              let events = try? JSONDecoder().decode([CachedAnalyticsEvent].self, from: data) else {
+            cachedEvents = []
+            return
+        }
+        cachedEvents = events
+    }
+    
+    private func persistCache() {
+        guard let data = try? JSONEncoder().encode(cachedEvents) else { return }
+        userDefaults.set(data, forKey: cacheKey)
+    }
+}
+
+// MARK: - Phase 2: Supabase Upload Extension
+
+extension AnalyticsService {
+    /// Upload pending events to Supabase (implement in Phase 2)
+    /// 
+    /// This will be called:
+    /// - Periodically (every 30 seconds when app is active)
+    /// - On app background
+    /// - When event count reaches batch size threshold
+    func uploadToSupabase() async {
+        // Phase 2 Implementation:
+        // 1. Get pending events
+        // 2. Format for Supabase events table
+        // 3. POST to Supabase
+        // 4. Clear uploaded events on success
+        // 5. Retry with exponential backoff on failure
+        
+        #if DEBUG
+        print("📊 [Analytics] Would upload \(pendingEventCount) events to Supabase")
+        #endif
+>>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
     }
 
     // MARK: - Cache management

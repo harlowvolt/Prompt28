@@ -1,52 +1,80 @@
 import Foundation
-import SwiftData
 
-/// Offline-first history store backed by SwiftData.
+/// History store with CloudKit sync and JSON local persistence.
 ///
-/// Phase 4.2: replaced JSON file persistence with a `ModelContext` that
-/// writes to the app's default SwiftData store. The public `HistoryStoring`
-/// API is unchanged; callers are unaffected.
-///
-/// On first launch after the update, `migrateLegacyJSONIfNeeded()` reads the
-/// old `history.json`, inserts every record into SwiftData, then deletes the
-/// JSON file so migration only runs once.
+/// Phase 2: Migrated from SwiftData to Codable JSON + CloudKit.
+/// - Local persistence: Codable JSON file
+/// - Cloud sync: CloudKitService for cross-device sync
+/// - Conflict resolution: Last modified wins
 @Observable
 @MainActor
 final class HistoryStore {
-
+    
     // MARK: - Public state
-
+    
     /// In-memory snapshot, newest-first. Refreshed after every mutation.
     private(set) var items: [PromptHistoryItem] = []
-
+    
+    /// CloudKit sync status
+    private(set) var isSyncing: Bool = false
+    
+    /// Last sync error (if any)
+    private(set) var lastSyncError: Error?
+    
     // MARK: - Private state
-
-    private let modelContext: ModelContext
+    
+    private let cloudKitService: CloudKitService
     private let maxItems = 200
+<<<<<<< HEAD
     /// SwiftData persistence is active. The @Model schema is stable on iOS 17+;
     /// the in-memory hotfix is no longer needed.
     private let persistenceEnabled = true
 
+=======
+    private let fileURL: URL
+    private var syncTask: Task<Void, Never>?
+    
+>>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
     // MARK: - Init
-
-    init(modelContext: ModelContext) {
-        self.modelContext = modelContext
-        if persistenceEnabled {
-            migrateLegacyJSONIfNeeded()
+    
+    init(cloudKitService: CloudKitService) {
+        self.cloudKitService = cloudKitService
+        
+        // Set up file URL for local JSON persistence
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        let appDir = base.appendingPathComponent("OrionOrb", isDirectory: true)
+        
+        // Create directory if needed
+        try? FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true)
+        
+        self.fileURL = appDir.appendingPathComponent("history.json")
+        
+        // Load from disk
+        loadFromDisk()
+        
+        // Migrate legacy data if present
+        migrateLegacyJSONIfNeeded()
+        
+        // Initial CloudKit sync
+        Task {
+            await syncWithCloud()
         }
-        refreshCache()
     }
-
+    
     // MARK: - HistoryStoring conformance
-
+    
     var favorites: [PromptHistoryItem] {
         items.filter(\.favorite)
     }
-
+    
     func add(_ item: PromptHistoryItem) {
+        item.markModified() // Update lastModified timestamp
+        
         if let existing = fetchByID(item.id) {
             copyPersistedFields(from: item, to: existing)
+            existing.markModified()
         } else {
+<<<<<<< HEAD
             let newItem = PromptHistoryItem(
                 id: item.id,
                 createdAt: item.createdAt,
@@ -62,13 +90,21 @@ final class HistoryStore {
             } else {
                 items.insert(newItem, at: 0)
             }
+=======
+            items.insert(item, at: 0)
+>>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
         }
-        save()
+        
+        saveToDisk()
         pruneIfNeeded()
         refreshCache()
+        
+        // Trigger CloudKit sync
+        syncWithCloud()
     }
-
+    
     func remove(id: UUID) {
+<<<<<<< HEAD
         if persistenceEnabled {
             if let item = fetchByID(id) {
                 modelContext.delete(item)
@@ -77,35 +113,120 @@ final class HistoryStore {
             items.removeAll { $0.id == id }
         }
         save()
+=======
+        items.removeAll { $0.id == id }
+        saveToDisk()
+>>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
         refreshCache()
+        
+        // Delete from CloudKit
+        Task {
+            do {
+                try await cloudKitService.deleteFromCloud(id: id)
+            } catch {
+                // Silently fail - item will be re-synced later if needed
+                #if DEBUG
+                print("⚠️ [HistoryStore] Failed to delete from CloudKit: \(error.localizedDescription)")
+                #endif
+            }
+        }
     }
-
+    
     func clearAll() {
         if persistenceEnabled {
             items.forEach { modelContext.delete($0) }
         }
         items = []
-        save()
+        saveToDisk()
         refreshCache()
+        
+        // Note: We're not deleting from CloudKit here to prevent accidental data loss
+        // A separate "clear cloud data" function could be added if needed
     }
-
+    
     func toggleFavorite(id: UUID) {
         guard let item = fetchByID(id) else { return }
         item.favorite.toggle()
-        save()
-        // Reassign so @Observable propagates the change to any view observing `items`.
+        item.markModified()
+        saveToDisk()
         refreshCache()
+        syncWithCloud()
     }
-
+    
     func rename(id: UUID, customName: String?) {
         guard let item = fetchByID(id) else { return }
         item.customName = customName
-        save()
+        item.markModified()
+        saveToDisk()
         refreshCache()
+        syncWithCloud()
     }
-
+    
+    // MARK: - CloudKit Sync
+    
+    /// Sync local items with CloudKit (two-way sync)
+    func syncWithCloud() {
+        // Cancel any pending sync
+        syncTask?.cancel()
+        
+        syncTask = Task { [weak self] in
+            guard let self = self else { return }
+            
+            // Debounce: wait 2 seconds before syncing
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            
+            guard !Task.isCancelled else { return }
+            
+            await performSync()
+        }
+    }
+    
+    /// Perform the actual sync operation
+    private func performSync() async {
+        guard cloudKitService.isCloudKitAvailable else {
+            #if DEBUG
+            print("⚠️ [HistoryStore] CloudKit not available, skipping sync")
+            #endif
+            return
+        }
+        
+        isSyncing = true
+        defer { isSyncing = false }
+        
+        do {
+            let syncedItems = try await cloudKitService.sync(items: items)
+            
+            // Update local items with merged results
+            items = syncedItems
+            refreshCache()
+            saveToDisk()
+            
+            lastSyncError = nil
+            
+            #if DEBUG
+            print("☁️ [HistoryStore] Synced \(items.count) items with CloudKit")
+            #endif
+            
+        } catch {
+            lastSyncError = error
+            
+            #if DEBUG
+            print("❌ [HistoryStore] CloudKit sync failed: \(error.localizedDescription)")
+            #endif
+            
+            // Silently fail - data is still saved locally
+            // Will retry on next mutation
+        }
+    }
+    
+    /// Force immediate sync (for manual pull-to-refresh)
+    func forceSync() async {
+        syncTask?.cancel()
+        await performSync()
+    }
+    
     // MARK: - Private helpers
-
+    
     private func refreshCache() {
         guard persistenceEnabled else {
             items.sort { $0.createdAt > $1.createdAt }
@@ -116,7 +237,7 @@ final class HistoryStore {
         )
         items = (try? modelContext.fetch(descriptor)) ?? []
     }
-
+    
     private func fetchByID(_ id: UUID) -> PromptHistoryItem? {
         // When persistence is off, fall back to the in-memory snapshot.
         guard persistenceEnabled else {
@@ -128,7 +249,7 @@ final class HistoryStore {
         descriptor.fetchLimit = 1
         return (try? modelContext.fetch(descriptor))?.first
     }
-
+    
     private func copyPersistedFields(from source: PromptHistoryItem, to destination: PromptHistoryItem) {
         destination.createdAt = source.createdAt
         destination.mode = source.mode
@@ -137,8 +258,9 @@ final class HistoryStore {
         destination.template = source.template
         destination.favorite = source.favorite
         destination.customName = source.customName
+        destination.recordID = source.recordID
     }
-
+    
     private func pruneIfNeeded() {
         guard items.count > maxItems else { return }
         let toDelete = Array(items.suffix(from: maxItems))
@@ -146,8 +268,9 @@ final class HistoryStore {
             toDelete.forEach { modelContext.delete($0) }
         }
         items = Array(items.prefix(maxItems))
-        save()
+        saveToDisk()
     }
+<<<<<<< HEAD
 
     @discardableResult
     private func save() -> Bool {
@@ -159,11 +282,54 @@ final class HistoryStore {
             // Non-fatal: the in-memory snapshot is still correct.
             // Errors will surface via TelemetryService once integrated.
             return false
+=======
+    
+    // MARK: - Local Persistence (Codable JSON)
+    
+    private func saveToDisk() {
+        do {
+            let data = try JSONEncoder().encode(items)
+            try data.write(to: fileURL, options: [.atomic])
+            
+            #if DEBUG
+            print("💾 [HistoryStore] Saved \(items.count) items to disk")
+            #endif
+        } catch {
+            #if DEBUG
+            print("❌ [HistoryStore] Failed to save: \(error.localizedDescription)")
+            #endif
+            
+            TelemetryService.shared.logStorageError(
+                code: "SAVE_FAILED",
+                message: "Failed to save history: \(error.localizedDescription)"
+            )
+>>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
         }
     }
-
+    
+    private func loadFromDisk() {
+        guard FileManager.default.fileExists(atPath: fileURL.path) else {
+            items = []
+            return
+        }
+        
+        do {
+            let data = try Data(contentsOf: fileURL)
+            items = try JSONDecoder().decode([PromptHistoryItem].self, from: data)
+            
+            #if DEBUG
+            print("💾 [HistoryStore] Loaded \(items.count) items from disk")
+            #endif
+        } catch {
+            #if DEBUG
+            print("❌ [HistoryStore] Failed to load: \(error.localizedDescription)")
+            #endif
+            items = []
+        }
+    }
+    
     // MARK: - Legacy JSON migration
-
+    
     /// Shape of records written by the old JSON-file `HistoryStore`.
     private struct LegacyItem: Codable {
         let id: UUID
@@ -175,27 +341,23 @@ final class HistoryStore {
         var favorite: Bool
         var customName: String?
     }
-
+    
     private static var legacyFileURL: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return base.appendingPathComponent("Prompt28/history.json")
+        return base.appendingPathComponent("OrionOrb/history.json")
     }
-
+    
     private func migrateLegacyJSONIfNeeded() {
         let url = Self.legacyFileURL
         guard FileManager.default.fileExists(atPath: url.path),
               let data = try? Data(contentsOf: url),
-              let legacy = try? JSONDecoder().decode([LegacyItem].self, from: data) else { return }
-
-        // Skip if SwiftData already has data (i.e. migration already ran).
-        let existingCount = (try? modelContext.fetchCount(FetchDescriptor<PromptHistoryItem>())) ?? 0
-        guard existingCount == 0 else {
-            try? FileManager.default.removeItem(at: url)
-            return
-        }
-
-        for legacyItem in legacy {
-            let item = PromptHistoryItem(
+              let legacy = try? JSONDecoder().decode([LegacyItem].self, from: data),
+              !legacy.isEmpty,
+              items.isEmpty else { return }
+        
+        // Convert legacy items to new format
+        let migratedItems = legacy.map { legacyItem in
+            PromptHistoryItem(
                 id: legacyItem.id,
                 createdAt: legacyItem.createdAt,
                 mode: legacyItem.mode,
@@ -203,31 +365,22 @@ final class HistoryStore {
                 professional: legacyItem.professional,
                 template: legacyItem.template,
                 favorite: legacyItem.favorite,
-                customName: legacyItem.customName
+                customName: legacyItem.customName,
+                recordID: nil,
+                lastModified: legacyItem.createdAt,
+                isSynced: false
             )
-            modelContext.insert(item)
         }
-        save()
-
-        // Remove the legacy file so this block never runs again.
-        try? FileManager.default.removeItem(at: url)
+        
+        items = migratedItems
+        saveToDisk()
+        
+        #if DEBUG
+        print("🔄 [HistoryStore] Migrated \(migratedItems.count) legacy items")
+        #endif
+        
+        // Sync migrated items to CloudKit
+        syncWithCloud()
     }
 }
 
-// MARK: - HistoryStoring
-// Defined here (rather than Core/Protocols/StorageProtocols.swift) so it is
-// always compiled as part of the Storage group — no manual Xcode target
-// membership required for a separate Protocols/ folder.
-
-@MainActor
-protocol HistoryStoring: AnyObject {
-    var items: [PromptHistoryItem] { get }
-    var favorites: [PromptHistoryItem] { get }
-    func add(_ item: PromptHistoryItem)
-    func remove(id: UUID)
-    func clearAll()
-    func toggleFavorite(id: UUID)
-    func rename(id: UUID, customName: String?)
-}
-
-extension HistoryStore: HistoryStoring {}
