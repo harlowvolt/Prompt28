@@ -26,6 +26,12 @@ final class APIClient {
             (data, response) = try await session.data(for: request)
         } catch {
             let nsError = error as NSError
+            Task { @MainActor in
+                TelemetryService.shared.logNetworkError(
+                    error,
+                    endpoint: request.url?.path ?? "unknown"
+                )
+            }
             if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorTimedOut {
                 throw NetworkError.transport(message: "The server took too long to respond. Please try again.")
             }

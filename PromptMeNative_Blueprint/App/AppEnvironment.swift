@@ -14,6 +14,12 @@ final class AppEnvironment {
     let storeManager: StoreManager
     /// Keychain-backed client-side freemium usage counter.
     let usageTracker: UsageTracker
+    /// Structured error telemetry — queues to UserDefaults, flushes to Supabase in Phase 2.
+    let telemetryService: TelemetryService
+    /// Supabase project config loaded from Info.plist (SUPABASE_URL + SUPABASE_ANON_KEY).
+    /// Populated when both keys are present; nil while scaffolding is in progress.
+    /// Phase 2: replace with `let supabaseClient: SupabaseClient` once supabase-swift SPM is added.
+    let supabaseConfig: SupabaseConfig?
     /// Factory seam for speech recognizer construction.
     let speechRecognizerFactory: any SpeechRecognizerFactoryProtocol
     /// Factory seam for orb engine construction.
@@ -49,7 +55,15 @@ final class AppEnvironment {
 
         self.preferencesStore = PreferencesStore()
         self.router = AppRouter()
-        self.storeManager = StoreManager()
+        self.telemetryService = TelemetryService.shared
+
+        // Supabase — load non-fatally so the app runs while Info.plist keys are
+        // still being configured. Phase 2: once supabase-swift SPM is added,
+        // replace this with:
+        //   self.supabaseClient = SupabaseClient(supabaseURL: config.url, supabaseKey: config.anonKey)
+        self.supabaseConfig = SupabaseConfig.tryLoad()
+
+        self.storeManager = StoreManager(authManager: authManager)
         self.speechRecognizerFactory = LiveSpeechRecognizerFactory()
         self.orbEngineFactory = LiveOrbEngineFactory(speechFactory: speechRecognizerFactory)
         // Combine forwarding removed — @Observable on AuthManager propagates changes automatically

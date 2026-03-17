@@ -326,6 +326,13 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
         audioLevel = 0
         deactivateAudioSessionIfNeeded()
         permissionStatus = .error(message)
+        // Log to telemetry so transcription failures appear in the error dashboard.
+        TelemetryService.shared.log(
+            domain: "SpeechRecognizer",
+            code: 0,
+            message: message,
+            appState: "recording"
+        )
     }
 
     /// Called on the MainActor for every audio buffer. Drives audioLevel and silence detection.

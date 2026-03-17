@@ -59,19 +59,63 @@ enum AnalyticsEvent {
     }
 }
 
+// MARK: - Cached Event
+
+/// Codable envelope stored in UserDefaults until the Supabase ingress
+/// pipeline is wired in Phase 2.
+struct CachedAnalyticsEvent: Codable {
+    let name: String
+    let properties: [String: String]   // stringified for Codable conformance
+    let timestamp: Date
+    let userId: String?
+}
+
 // MARK: - Service
 
-/// Lightweight analytics wrapper. Replace the `track` body with
-/// Mixpanel / Amplitude / Firebase when ready — callers stay the same.
+/// Phase 1 analytics service.
+///
+/// Events are fired into a local UserDefaults cache (max 100) so that
+/// nothing is lost before the Supabase `events` table is available.
+/// Call `uploadToSupabase()` once SupabaseClient is configured (Phase 2)
+/// to drain the queue.
+///
+/// Replace the `track` body with Mixpanel / Amplitude / Firebase when
+/// ready — the callsites stay the same.
+@MainActor
 final class AnalyticsService {
     static let shared = AnalyticsService()
+
+    private let cacheKey = "analytics_event_cache"
+    private let maxCacheSize = 100
+    private var userId: String?
+
     private init() {}
+
+    // MARK: - User identity
+
+    func setUserId(_ id: String?) {
+        userId = id
+    }
+
+    // MARK: - Track
 
     func track(_ event: AnalyticsEvent) {
         #if DEBUG
         let props = event.properties.isEmpty ? "" : " \(event.properties)"
         print("📊 [Analytics] \(event.name)\(props)")
         #endif
+
+        // Cache locally for Supabase flush (Phase 2).
+        let stringProps = event.properties.reduce(into: [String: String]()) { result, pair in
+            result[pair.key] = "\(pair.value)"
+        }
+        let cached = CachedAnalyticsEvent(
+            name: event.name,
+            properties: stringProps,
+            timestamp: Date(),
+            userId: userId
+        )
+        appendToCache(cached)
 
         // ── Drop-in replacement examples ──────────────────────────────────
         // Mixpanel:
@@ -81,5 +125,50 @@ final class AnalyticsService {
         // Firebase:
         //   Analytics.logEvent(event.name, parameters: event.properties)
         // ─────────────────────────────────────────────────────────────────
+    }
+
+    // MARK: - Cache management
+
+    private func appendToCache(_ event: CachedAnalyticsEvent) {
+        var cached = loadCache()
+        cached.append(event)
+        // FIFO: drop oldest events when limit is exceeded.
+        if cached.count > maxCacheSize {
+            cached = Array(cached.suffix(maxCacheSize))
+        }
+        saveCache(cached)
+    }
+
+    func loadCache() -> [CachedAnalyticsEvent] {
+        guard let data = UserDefaults.standard.data(forKey: cacheKey),
+              let events = try? JSONDecoder().decode([CachedAnalyticsEvent].self, from: data) else {
+            return []
+        }
+        return events
+    }
+
+    private func saveCache(_ events: [CachedAnalyticsEvent]) {
+        guard let data = try? JSONEncoder().encode(events) else { return }
+        UserDefaults.standard.set(data, forKey: cacheKey)
+    }
+
+    private func clearCache() {
+        UserDefaults.standard.removeObject(forKey: cacheKey)
+    }
+
+    // MARK: - Supabase upload (Phase 2 stub)
+
+    /// Drains the local cache to the Supabase `events` table.
+    /// Wire this up in Phase 2 once `SupabaseClient` is configured.
+    func uploadToSupabase() async {
+        let pending = loadCache()
+        guard !pending.isEmpty else { return }
+
+        // TODO (Phase 2): call SupabaseClient to batch-insert `pending`
+        //   into the `events` table, then call clearCache() on success.
+        //
+        // Example:
+        //   try await supabase.from("events").insert(pending).execute()
+        //   clearCache()
     }
 }
