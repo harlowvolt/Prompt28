@@ -354,6 +354,17 @@
 			<key>sourceTree</key>
 			<string>&lt;group&gt;</string>
 		</dict>
+		<key>4175FA284C6F474C8F9C88D1</key>
+		<dict>
+			<key>isa</key>
+			<string>PBXFileReference</string>
+			<key>lastKnownFileType</key>
+			<string>sourcecode.swift</string>
+			<key>path</key>
+			<string>Components/Glassmorphism.swift</string>
+			<key>sourceTree</key>
+			<string>&lt;group&gt;</string>
+		</dict>
 		<key>47632A5AB6044B3EA6150BE53F36D8B5</key>
 		<dict>
 			<key>fileRef</key>
@@ -838,17 +849,6 @@
 				<string>2.5.0</string>
 			</dict>
 		</dict>
-		<key>C30C63181F7C4B33B89CF85E8E653833</key>
-		<dict>
-			<key>isa</key>
-			<string>PBXFileReference</string>
-			<key>lastKnownFileType</key>
-			<string>sourcecode.swift</string>
-			<key>path</key>
-			<string>SupabaseClient.swift</string>
-			<key>sourceTree</key>
-			<string>&lt;group&gt;</string>
-		</dict>
 		<key>C47435D78A2549418F968C3CB4AADEE9</key>
 		<dict>
 			<key>isa</key>
@@ -1026,9 +1026,7 @@
 		<key>CCAB0B612F5D780200C29A7E</key>
 		<dict>
 			<key>children</key>
-			<array>
-				<string>C30C63181F7C4B33B89CF85E8E653833</string>
-			</array>
+			<array/>
 			<key>isa</key>
 			<string>PBXGroup</string>
 			<key>path</key>
@@ -1622,6 +1620,7 @@
 				<string>CCAB0BAA2F5D780200C29A7E</string>
 				<string>CCDE00000000000000000007</string>
 				<string>31C7E4FC66AE49F18F094478EB3CB8FB</string>
+				<string>4175FA284C6F474C8F9C88D1</string>
 			</array>
 			<key>isa</key>
 			<string>PBXGroup</string>
@@ -1902,7 +1901,7 @@
 				<string>47632A5AB6044B3EA6150BE53F36D8B5</string>
 				<string>F2313A265D9E47D8ACD1D12472A54E90</string>
 				<string>CC4E6A41ADD24700885D7B399FA74207</string>
-				<string>FB5CD1E001284907A220DFE64F758586</string>
+				<string>E247382214524E9F946BF5B9</string>
 			</array>
 			<key>isa</key>
 			<string>PBXSourcesBuildPhase</string>
@@ -3044,6 +3043,13 @@
 			<key>isa</key>
 			<string>PBXBuildFile</string>
 		</dict>
+		<key>E247382214524E9F946BF5B9</key>
+		<dict>
+			<key>fileRef</key>
+			<string>4175FA284C6F474C8F9C88D1</string>
+			<key>isa</key>
+			<string>PBXBuildFile</string>
+		</dict>
 		<key>E6094152FE034E82B90163558F4371B3</key>
 		<dict>
 			<key>fileRef</key>
@@ -3076,13 +3082,6 @@
 		<dict>
 			<key>fileRef</key>
 			<string>C7FB9FA76BE4485882D24E3E82747912</string>
-			<key>isa</key>
-			<string>PBXBuildFile</string>
-		</dict>
-		<key>FB5CD1E001284907A220DFE64F758586</key>
-		<dict>
-			<key>fileRef</key>
-			<string>C30C63181F7C4B33B89CF85E8E653833</string>
 			<key>isa</key>
 			<string>PBXBuildFile</string>
 		</dict>

@@ -16,6 +16,28 @@ struct User: Decodable, Identifiable, Equatable {
 	let prompts_used: Int
 	let prompts_remaining: Int?
 	let period_end: String
+	
+	// MARK: - Regular Init
+	
+	init(
+		id: String,
+		email: String,
+		name: String,
+		provider: String,
+		plan: PlanType,
+		prompts_used: Int,
+		prompts_remaining: Int?,
+		period_end: String
+	) {
+		self.id = id
+		self.email = email
+		self.name = name
+		self.provider = provider
+		self.plan = plan
+		self.prompts_used = prompts_used
+		self.prompts_remaining = prompts_remaining
+		self.period_end = period_end
+	}
 
 	private enum CodingKeys: String, CodingKey {
 		case id

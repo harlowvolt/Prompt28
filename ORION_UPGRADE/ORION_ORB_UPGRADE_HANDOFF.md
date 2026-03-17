@@ -1,8 +1,8 @@
 # ORION Orb Upgrade — Handoff Document
 
-**Version:** 1.5
+**Version:** 1.6
 **Last Updated:** 2026-03-17
-**Status:** ✅ Phase 1 & 2 Complete | Architecture Decision Locked | Task 1 Fixes Applied
+**Status:** ✅ Phase 1 & 2 Complete | Task 3 Complete (Supabase Auth) | Architecture Decision Locked
 **Project Name:** Orion Orb (formerly Prompt28)
 **Source Root:** `PromptMeNative_Blueprint/`
 
@@ -37,6 +37,34 @@ This is the **single source of truth** for the Orion Orb upgrade. Any AI assista
 
 ---
 
+## 🔧 Supabase Configuration (Task 3 Complete)
+
+**File:** `Core/Networking/SupabaseClient.swift`
+
+**Current Status:**
+- ✅ Supabase Swift SDK integrated (v2.41.1)
+- ✅ AuthManager migrated to Supabase Auth
+- ⚠️ **Placeholder credentials** — must be updated before release
+
+**Required Configuration:**
+```swift
+// In SupabaseClient.swift, replace these placeholders:
+let supabaseURL = URL(string: "https://your-project.supabase.co")!
+let supabaseKey = "your-anon-public-key"
+```
+
+**Supabase Auth Providers Enabled:**
+- Email/Password (with metadata support for full name)
+- Google Sign-In (via ID token)
+- Apple Sign-In (via ID token, with name capture on first sign-in)
+
+**Backward Compatibility:**
+- APIClient continues to route prompt generation to Railway API
+- AuthManager syncs plan info from Railway API after Supabase auth
+- Token storage continues to use Keychain
+
+---
+
 ## Quick Reference
 
 | Attribute | Value |
@@ -45,8 +73,8 @@ This is the **single source of truth** for the Orion Orb upgrade. Any AI assista
 | **Bundle ID** | `com.harlowvolt.orionorb` |
 | **Scheme** | OrionOrb |
 | **iOS Target** | 17+ |
-| **Backend** | Railway API + iCloud CloudKit |
-| **Auth** | JWT (email/password, Google, Apple) |
+| **Backend** | Railway API + Supabase + iCloud CloudKit |
+| **Auth** | Supabase Auth (email/password, Google, Apple) |
 | **History** | Codable JSON + iCloud CloudKit sync |
 
 ---
@@ -82,11 +110,22 @@ This is the **single source of truth** for the Orion Orb upgrade. Any AI assista
     - `ShareCardView`, `ShareCardRenderer`, `ShareCardFileStore` complete and wired into `ResultView`
     - `ShareLink` functional. Branding now correct (fixed in v1.5)
 
-### 🔄 Next Up (Task 2 → Task 5)
-1. **Task 2 — Supabase SDK + Auth Migration** (`AuthManager.swift`)
-2. **Task 3 — Supabase Schema + Wire Analytics/Telemetry Upload**
-3. **Task 4 — FeatureFlagService + Edge Function (generate-prompt)**
-4. **Task 5 — StoreKit Server Validation + App Store Webhook**
+### ✅ Completed (Task 3 — Supabase SDK Integration + Auth Migration)
+1. **Supabase Swift SDK Added:** `supabase-swift` package (v2.41.1) added via SPM
+2. **SupabaseClient.swift Created:** Wrapper around Supabase SDK in `Core/Networking/SupabaseClient.swift`
+3. **AuthManager Migrated:** Complete rewrite to use Supabase Auth
+   - Email/password authentication via `supabase.auth.signIn/signUp`
+   - Google Sign-In via `supabase.auth.signInWithIdToken(provider: .google)`
+   - Apple Sign-In via `supabase.auth.signInWithIdToken(provider: .apple)`
+   - Auth state change listener for automatic session management
+   - Backward compatibility: Still syncs plan info from Railway API
+4. **AppEnvironment Updated:** Now initializes SupabaseClient and passes to AuthManager
+5. **User Model Updated:** Added regular init for programmatic User creation
+6. **Build Verified:** Project builds successfully with all changes
+
+### 🔄 Next Up (Task 4 → Task 5)
+1. **Task 4 — FeatureFlagService + Edge Function (generate-prompt)**
+2. **Task 5 — StoreKit Server Validation + App Store Webhook**
 
 ---
 
@@ -443,7 +482,7 @@ private let persistenceEnabled = false  // SwiftData disabled due to runtime tra
 
 | File | Status | Notes |
 |------|--------|-------|
-| `Core/Auth/AuthManager.swift` | 🔴 Task 2 | Migrate JWT to Supabase Auth — do NOT touch CloudKit |
+| `Core/Auth/AuthManager.swift` | ✅ Task 3 Complete | Migrated to Supabase Auth (Google, Apple, Email) |
 | `Core/Storage/HistoryStore.swift` | ✅ DO NOT TOUCH | CloudKit sync is correct and complete. Not replaced by Supabase. |
 | `Core/Storage/CloudKitService.swift` | ✅ DO NOT TOUCH | Works correctly. Architecture decision locks this in. |
 | `Core/Networking/APIClient.swift` | 🟡 Task 4 | Add Edge Function routing for generate; keep Railway calls for now |
@@ -516,6 +555,16 @@ PromptMeNative_Blueprint/
 ---
 
 **Last Updated By:** Claude (Natalie's session)
+
+**Update Notes (v1.6) — 2026-03-17 (Task 3 Complete):**
+- Added Supabase Swift SDK (v2.41.1) via SPM
+- Created `Core/Networking/SupabaseClient.swift` - wrapper for Supabase SDK
+- Migrated `AuthManager.swift` to Supabase Auth with full Google/Apple/Email support
+- Updated `AppEnvironment.swift` to initialize SupabaseClient and inject into AuthManager
+- Updated `User.swift` with regular init for programmatic creation
+- Removed `Glassmorphism.swift` reference from Xcode project (file was already deleted)
+- Build verified: Project compiles successfully
+- **TODO:** Update Supabase credentials in `SupabaseClient.swift` before release
 
 **Update Notes (v1.5) — 2026-03-17:**
 - Locked architecture decision: CloudKit stays for history, Supabase added for data pipeline

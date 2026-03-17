@@ -21,15 +21,30 @@ final class AppEnvironment {
     let speechRecognizerFactory: any SpeechRecognizerFactoryProtocol
     /// Factory seam for orb engine construction.
     let orbEngineFactory: any OrbEngineFactoryProtocol
+    /// Supabase client for auth, database, and real-time features (Task 3)
+    let supabase: SupabaseClient
 
     init() {
         let baseURL = URL(string: "https://promptme-app-production.up.railway.app")!
         let keychain = KeychainService()
         let apiClient = APIClient(baseURL: baseURL)
-
+        
+        // Task 3: Initialize Supabase client
+        // Uses singleton for shared configuration
+        let supabase = SupabaseClient.shared
+        
         self.keychain = keychain
         self.apiClient = apiClient
-        self.authManager = AuthManager(apiClient: apiClient, keychain: keychain)
+        self.supabase = supabase
+        
+        // Task 3: AuthManager now uses Supabase for authentication
+        // APIClient is still passed for backward compatibility with Railway API
+        self.authManager = AuthManager(
+            supabase: supabase,
+            apiClient: apiClient,
+            keychain: keychain
+        )
+        
         self.usageTracker = UsageTracker(keychain: keychain)
         self.telemetryService = TelemetryService.shared
         
@@ -144,6 +159,10 @@ private struct SpeechRecognizerFactoryKey: EnvironmentKey {
     static var defaultValue: (any SpeechRecognizerFactoryProtocol)? = nil
 }
 
+private struct SupabaseClientKey: EnvironmentKey {
+    static var defaultValue: SupabaseClient? = nil
+}
+
 extension EnvironmentValues {
     var historyStore: (any HistoryStoring)? {
         get { self[HistoryStoreKey.self] }
@@ -208,5 +227,10 @@ extension EnvironmentValues {
     var speechRecognizerFactory: (any SpeechRecognizerFactoryProtocol)? {
         get { self[SpeechRecognizerFactoryKey.self] }
         set { self[SpeechRecognizerFactoryKey.self] = newValue }
+    }
+    
+    var supabase: SupabaseClient? {
+        get { self[SupabaseClientKey.self] }
+        set { self[SupabaseClientKey.self] = newValue }
     }
 }
