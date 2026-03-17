@@ -37,6 +37,10 @@
 	<string>Prompt28 uses the microphone to capture your voice for prompt generation.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Prompt28 uses speech recognition to transcribe your voice into prompts.</string>
+	<key>SUPABASE_URL</key>
+	<string>https://jzwerkqoczhtkyhigigf.supabase.co</string>
+	<key>SUPABASE_ANON_KEY</key>
+	<string>sb_publishable_LECnrvYUeR10rudfadkS_w_V05</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
