@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "CCD1CDF82F5C55F700566BCF"
-               BuildableName = "OrionOrb.app"
-               BlueprintName = "OrionOrb"
+               BuildableName = "Prompt28.app"
+               BlueprintName = "Prompt28"
                ReferencedContainer = "container:Prompt28.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -36,8 +36,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "CCD1CE072F5C55FC00566BCF"
-               BuildableName = "OrionOrbTests.xctest"
-               BlueprintName = "OrionOrbTests"
+               BuildableName = "Prompt28Tests.xctest"
+               BlueprintName = "Prompt28Tests"
                ReferencedContainer = "container:Prompt28.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -47,8 +47,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "CCD1CE112F5C55FC00566BCF"
-               BuildableName = "OrionOrbUITests.xctest"
-               BlueprintName = "OrionOrbUITests"
+               BuildableName = "Prompt28UITests.xctest"
+               BlueprintName = "Prompt28UITests"
                ReferencedContainer = "container:Prompt28.xcodeproj">
             </BuildableReference>
          </TestableReference>
@@ -69,8 +69,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CCD1CDF82F5C55F700566BCF"
-            BuildableName = "OrionOrb.app"
-            BlueprintName = "OrionOrb"
+            BuildableName = "Prompt28.app"
+            BlueprintName = "Prompt28"
             ReferencedContainer = "container:Prompt28.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -93,8 +93,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "CCD1CDF82F5C55F700566BCF"
-            BuildableName = "OrionOrb.app"
-            BlueprintName = "OrionOrb"
+            BuildableName = "Prompt28.app"
+            BlueprintName = "Prompt28"
             ReferencedContainer = "container:Prompt28.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
