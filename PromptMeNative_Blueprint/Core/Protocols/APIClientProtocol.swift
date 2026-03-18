@@ -33,5 +33,3 @@ protocol APIClientProtocol: AnyObject {
     func adminUpdatePrompts(key: String, catalog: PromptCatalog) async throws -> SuccessResponse
 }
 
-// MARK: - Conformance
-extension APIClient: APIClientProtocol {}
