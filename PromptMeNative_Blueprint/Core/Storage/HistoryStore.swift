@@ -53,7 +53,7 @@ private struct PromptRecord: Codable {
         PromptHistoryItem(
             id:           id,
             createdAt:    createdAt,
-            mode:         PromptMode(rawValue: mode) ?? .standard,
+            mode:         PromptMode(rawValue: mode) ?? .ai,
             input:        input,
             professional: professional,
             template:     template,
