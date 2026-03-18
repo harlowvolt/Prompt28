@@ -1,9 +1,25 @@
 import Foundation
 import SwiftUI
+@preconcurrency import Supabase
 
+// MARK: - AppEnvironment
+
+/// Root dependency container for the entire app.
+///
+/// All services are created here exactly once and injected downward via
+/// SwiftUI's Environment. `@MainActor init()` resolves the Swift concurrency
+/// error "Main actor-isolated property cannot be mutated from a non-isolated
+/// context" that arises when `@Observable` properties are set in an
+/// un-isolated initialiser.
+///
+/// Note: CloudKit has been removed from this class. Do not reintroduce it.
 @Observable
 @MainActor
 final class AppEnvironment {
+
+    // MARK: - Services
+
+    let supabase: SupabaseClient
     let apiClient: APIClient
     let keychain: KeychainService
     let authManager: AuthManager
@@ -13,97 +29,81 @@ final class AppEnvironment {
     let storeManager: StoreManager
     /// Keychain-backed client-side freemium usage counter.
     let usageTracker: UsageTracker
-<<<<<<< HEAD
-    /// Structured error telemetry — queues to UserDefaults, flushes to Supabase in Phase 2.
+    /// Structured error telemetry — queues locally, flushes to Supabase `telemetry_errors`.
     let telemetryService: TelemetryService
-    /// Supabase project config loaded from Info.plist (SUPABASE_URL + SUPABASE_ANON_KEY).
-    /// Populated when both keys are present; nil while scaffolding is in progress.
-    /// Phase 2: replace with `let supabaseClient: SupabaseClient` once supabase-swift SPM is added.
-    let supabaseConfig: SupabaseConfig?
-=======
-    /// Production error telemetry service (Phase 1)
-    let telemetryService: TelemetryService
-    /// CloudKit sync service for cross-device history (Phase 2)
-    let cloudKitService: CloudKitService
->>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
     /// Factory seam for speech recognizer construction.
     let speechRecognizerFactory: any SpeechRecognizerFactoryProtocol
     /// Factory seam for orb engine construction.
     let orbEngineFactory: any OrbEngineFactoryProtocol
-    /// Supabase client for auth, database, and real-time features (Task 3)
-    let supabase: SupabaseClient
 
+    // MARK: - Init
+
+    @MainActor
     init() {
+        // ── Supabase ─────────────────────────────────────────────────────────
+        // Hard-fails at launch if SUPABASE_URL / SUPABASE_ANON_KEY are absent
+        // from Info.plist. Both keys must be present before shipping.
+        let config = SupabaseConfig.load()
+        let supabase = SupabaseClient(
+            supabaseURL: config.url,
+            supabaseKey: config.anonKey
+        )
+        self.supabase = supabase
+
+        // ── Core services ────────────────────────────────────────────────────
         let baseURL = URL(string: "https://promptme-app-production.up.railway.app")!
         let keychain = KeychainService()
         let apiClient = APIClient(baseURL: baseURL)
-        
-        // Task 3: Initialize Supabase client
-        // Uses singleton for shared configuration
-        let supabase = SupabaseClient.shared
-        
+
         self.keychain = keychain
         self.apiClient = apiClient
-        self.supabase = supabase
-        
-        // Task 3: AuthManager now uses Supabase for authentication
-        // APIClient is still passed for backward compatibility with Railway API
+
+        // ── Auth ─────────────────────────────────────────────────────────────
         self.authManager = AuthManager(
             supabase: supabase,
             apiClient: apiClient,
             keychain: keychain
         )
-        
-        self.usageTracker = UsageTracker(keychain: keychain)
-        self.telemetryService = TelemetryService.shared
-        
-        // Phase 2: Initialize CloudKit service
-        // Uses default container (no identifier needed for standard iCloud container)
-        self.cloudKitService = CloudKitService()
-        
-        // Phase 2: HistoryStore now uses CloudKitService for sync
-        // Falls back to Codable JSON local persistence
-        self.historyStore = HistoryStore(cloudKitService: cloudKitService)
 
+        // ── Storage ──────────────────────────────────────────────────────────
+        self.historyStore = HistoryStore(supabase: supabase)
         self.preferencesStore = PreferencesStore()
-        self.router = AppRouter()
-<<<<<<< HEAD
-        self.telemetryService = TelemetryService.shared
 
-        // Supabase — load non-fatally so the app runs while Info.plist keys are
-        // still being configured. Phase 2: once supabase-swift SPM is added,
-        // replace this with:
-        //   self.supabaseClient = SupabaseClient(supabaseURL: config.url, supabaseKey: config.anonKey)
-        self.supabaseConfig = SupabaseConfig.tryLoad()
-
-=======
->>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
+        // ── Usage & Store ────────────────────────────────────────────────────
+        self.usageTracker = UsageTracker(keychain: keychain)
         self.storeManager = StoreManager(authManager: authManager)
-        self.speechRecognizerFactory = LiveSpeechRecognizerFactory()
-        self.orbEngineFactory = LiveOrbEngineFactory(speechFactory: speechRecognizerFactory)
-        
-        // Phase 1: Setup analytics and telemetry user ID syncing
-        setupAnalyticsAndTelemetry()
-    }
-    
-    private func setupAnalyticsAndTelemetry() {
-        // Track app open event
+
+        // ── Navigation ───────────────────────────────────────────────────────
+        self.router = AppRouter()
+
+        // ── Telemetry / Analytics (singletons) ───────────────────────────────
+        // Inject the live Supabase client so the singletons can flush their
+        // local caches to the `telemetry_errors` / `events` Supabase tables.
+        self.telemetryService = TelemetryService.shared
+        TelemetryService.shared.configure(supabase: supabase)
+        AnalyticsService.shared.configure(supabase: supabase)
+
+        // ── Speech / Orb factories ────────────────────────────────────────────
+        let speechFactory = LiveSpeechRecognizerFactory()
+        self.speechRecognizerFactory = speechFactory
+        self.orbEngineFactory = LiveOrbEngineFactory(speechFactory: speechFactory)
+
+        // ── Boot analytics ───────────────────────────────────────────────────
         AnalyticsService.shared.track(.appOpen)
-        
-        // Sync user ID when auth state changes
-        Task {
-            await syncAnalyticsUserId()
-        }
+        Task { await syncAnalyticsUserId() }
     }
-    
+
+    // MARK: - Private helpers
+
     private func syncAnalyticsUserId() async {
-        // Set initial user ID if already authenticated
         if let user = authManager.currentUser {
             AnalyticsService.shared.setUserId(user.id)
             TelemetryService.shared.setUserId(user.id)
         }
     }
 }
+
+// MARK: - ErrorState
 
 @Observable
 @MainActor
@@ -126,6 +126,8 @@ final class ErrorState {
         presented = nil
     }
 }
+
+// MARK: - Environment Keys
 
 private struct HistoryStoreKey: EnvironmentKey {
     static var defaultValue: (any HistoryStoring)? = nil
@@ -167,10 +169,6 @@ private struct TelemetryServiceKey: EnvironmentKey {
     static var defaultValue: TelemetryService? = nil
 }
 
-private struct CloudKitServiceKey: EnvironmentKey {
-    static var defaultValue: CloudKitService? = nil
-}
-
 private struct OrbEngineFactoryKey: EnvironmentKey {
     static var defaultValue: (any OrbEngineFactoryProtocol)? = nil
 }
@@ -182,6 +180,8 @@ private struct SpeechRecognizerFactoryKey: EnvironmentKey {
 private struct SupabaseClientKey: EnvironmentKey {
     static var defaultValue: SupabaseClient? = nil
 }
+
+// MARK: - EnvironmentValues
 
 extension EnvironmentValues {
     var historyStore: (any HistoryStoring)? {
@@ -234,11 +234,6 @@ extension EnvironmentValues {
         set { self[TelemetryServiceKey.self] = newValue }
     }
 
-    var cloudKitService: CloudKitService? {
-        get { self[CloudKitServiceKey.self] }
-        set { self[CloudKitServiceKey.self] = newValue }
-    }
-
     var orbEngineFactory: (any OrbEngineFactoryProtocol)? {
         get { self[OrbEngineFactoryKey.self] }
         set { self[OrbEngineFactoryKey.self] = newValue }
@@ -248,7 +243,7 @@ extension EnvironmentValues {
         get { self[SpeechRecognizerFactoryKey.self] }
         set { self[SpeechRecognizerFactoryKey.self] = newValue }
     }
-    
+
     var supabase: SupabaseClient? {
         get { self[SupabaseClientKey.self] }
         set { self[SupabaseClientKey.self] = newValue }

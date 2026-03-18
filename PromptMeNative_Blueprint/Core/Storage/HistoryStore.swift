@@ -1,336 +1,338 @@
 import Foundation
+@preconcurrency import Supabase
 
-/// History store with CloudKit sync and JSON local persistence.
+// MARK: - Supabase DTO
+
+/// Snake_case–keyed Codable struct for inserting / selecting rows in the
+/// Supabase `prompts` table.
 ///
-/// Phase 2: Migrated from SwiftData to Codable JSON + CloudKit.
-/// - Local persistence: Codable JSON file
-/// - Cloud sync: CloudKitService for cross-device sync
-/// - Conflict resolution: Last modified wins
+/// Keeps `PromptHistoryItem` (the domain model) free of server-side naming
+/// conventions. The `userId` field is only populated on insert — remote
+/// records returned by SELECT already carry it, so decoding works symmetrically.
+private struct PromptRecord: Codable {
+    let id: UUID
+    let userId: UUID
+    let createdAt: Date
+    let mode: String          // PromptMode.rawValue
+    let input: String
+    let professional: String
+    let template: String
+    let favorite: Bool
+    let customName: String?
+    let lastModified: Date
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case userId       = "user_id"
+        case createdAt    = "created_at"
+        case mode
+        case input
+        case professional
+        case template
+        case favorite
+        case customName   = "custom_name"
+        case lastModified = "last_modified"
+    }
+
+    /// Build a `PromptRecord` from a local `PromptHistoryItem` ready for upsert.
+    init(item: PromptHistoryItem, userId: UUID) {
+        self.id           = item.id
+        self.userId       = userId
+        self.createdAt    = item.createdAt
+        self.mode         = item.mode.rawValue
+        self.input        = item.input
+        self.professional = item.professional
+        self.template     = item.template
+        self.favorite     = item.favorite
+        self.customName   = item.customName
+        self.lastModified = item.lastModified
+    }
+
+    /// Convert a remote record back into a local `PromptHistoryItem`.
+    func toHistoryItem() -> PromptHistoryItem {
+        PromptHistoryItem(
+            id:           id,
+            createdAt:    createdAt,
+            mode:         PromptMode(rawValue: mode) ?? .standard,
+            input:        input,
+            professional: professional,
+            template:     template,
+            favorite:     favorite,
+            customName:   customName,
+            lastModified: lastModified,
+            isSynced:     true
+        )
+    }
+}
+
+// MARK: - HistoryStore
+
+/// Local-first history store with Supabase cloud sync.
+///
+/// Storage strategy:
+/// - **Local**: Codable JSON file in Application Support (survives offline use).
+/// - **Cloud**: Supabase `prompts` table — synced automatically when the user
+///   signs in via the Supabase auth-state listener, and on demand via
+///   `syncWithSupabase(userId:)`.
+///   Conflict resolution: `lastModified` drives last-write-wins.
+///   `isSynced` flags records that still need to be upserted.
+///
+/// Note: CloudKit has been removed. Do not reintroduce it.
 @Observable
 @MainActor
 final class HistoryStore {
-    
-    // MARK: - Public state
-    
-    /// In-memory snapshot, newest-first. Refreshed after every mutation.
-    private(set) var items: [PromptHistoryItem] = []
-    
-    /// CloudKit sync status
-    private(set) var isSyncing: Bool = false
-    
-    /// Last sync error (if any)
-    private(set) var lastSyncError: Error?
-    
-    // MARK: - Private state
-    
-    private let cloudKitService: CloudKitService
-    private let maxItems = 200
-<<<<<<< HEAD
-    /// SwiftData persistence is active. The @Model schema is stable on iOS 17+;
-    /// the in-memory hotfix is no longer needed.
-    private let persistenceEnabled = true
 
-=======
+    // MARK: - Public state
+
+    /// In-memory snapshot, newest-first. Updated after every local mutation
+    /// and after each successful Supabase sync.
+    private(set) var items: [PromptHistoryItem] = []
+
+    /// `true` while a Supabase sync is in flight.
+    private(set) var isSyncing: Bool = false
+
+    /// Last sync error (non-fatal — data is still available locally).
+    private(set) var lastSyncError: Error?
+
+    // MARK: - Private
+
+    private let supabase: SupabaseClient
     private let fileURL: URL
-    private var syncTask: Task<Void, Never>?
-    
->>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
+    private let maxItems = 200
+
+    /// Background task that listens to `supabase.auth.authStateChanges`.
+    private var authListenerTask: Task<Void, Never>?
+
     // MARK: - Init
-    
-    init(cloudKitService: CloudKitService) {
-        self.cloudKitService = cloudKitService
-        
-        // Set up file URL for local JSON persistence
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+
+    init(supabase: SupabaseClient) {
+        self.supabase = supabase
+
+        let base = FileManager.default.urls(
+            for: .applicationSupportDirectory, in: .userDomainMask
+        ).first!
         let appDir = base.appendingPathComponent("OrionOrb", isDirectory: true)
-        
-        // Create directory if needed
-        try? FileManager.default.createDirectory(at: appDir, withIntermediateDirectories: true)
-        
+        try? FileManager.default.createDirectory(
+            at: appDir, withIntermediateDirectories: true
+        )
         self.fileURL = appDir.appendingPathComponent("history.json")
-        
-        // Load from disk
+
         loadFromDisk()
-        
-        // Migrate legacy data if present
         migrateLegacyJSONIfNeeded()
-        
-        // Initial CloudKit sync
-        Task {
-            await syncWithCloud()
-        }
+        startAuthListener()
     }
-    
-    // MARK: - HistoryStoring conformance
-    
+
+    // MARK: - Public API
+
     var favorites: [PromptHistoryItem] {
         items.filter(\.favorite)
     }
-    
+
     func add(_ item: PromptHistoryItem) {
-        item.markModified() // Update lastModified timestamp
-        
         if let existing = fetchByID(item.id) {
-            copyPersistedFields(from: item, to: existing)
+            copyFields(from: item, to: existing)
             existing.markModified()
         } else {
-<<<<<<< HEAD
-            let newItem = PromptHistoryItem(
-                id: item.id,
-                createdAt: item.createdAt,
-                mode: item.mode,
-                input: item.input,
-                professional: item.professional,
-                template: item.template,
-                favorite: item.favorite,
-                customName: item.customName
-            )
-            if persistenceEnabled {
-                modelContext.insert(newItem)
-            } else {
-                items.insert(newItem, at: 0)
-            }
-=======
+            item.markModified()
             items.insert(item, at: 0)
->>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
         }
-        
         saveToDisk()
         pruneIfNeeded()
-        refreshCache()
-        
-        // Trigger CloudKit sync
-        syncWithCloud()
     }
-    
+
     func remove(id: UUID) {
-<<<<<<< HEAD
-        if persistenceEnabled {
-            if let item = fetchByID(id) {
-                modelContext.delete(item)
-            }
-        } else {
-            items.removeAll { $0.id == id }
-        }
-        save()
-=======
         items.removeAll { $0.id == id }
         saveToDisk()
->>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
-        refreshCache()
-        
-        // Delete from CloudKit
-        Task {
-            do {
-                try await cloudKitService.deleteFromCloud(id: id)
-            } catch {
-                // Silently fail - item will be re-synced later if needed
-                #if DEBUG
-                print("⚠️ [HistoryStore] Failed to delete from CloudKit: \(error.localizedDescription)")
-                #endif
-            }
-        }
     }
-    
+
     func clearAll() {
-        if persistenceEnabled {
-            items.forEach { modelContext.delete($0) }
-        }
         items = []
         saveToDisk()
-        refreshCache()
-        
-        // Note: We're not deleting from CloudKit here to prevent accidental data loss
-        // A separate "clear cloud data" function could be added if needed
     }
-    
+
     func toggleFavorite(id: UUID) {
         guard let item = fetchByID(id) else { return }
         item.favorite.toggle()
         item.markModified()
         saveToDisk()
-        refreshCache()
-        syncWithCloud()
     }
-    
+
     func rename(id: UUID, customName: String?) {
         guard let item = fetchByID(id) else { return }
         item.customName = customName
         item.markModified()
         saveToDisk()
-        refreshCache()
-        syncWithCloud()
     }
-    
-    // MARK: - CloudKit Sync
-    
-    /// Sync local items with CloudKit (two-way sync)
-    func syncWithCloud() {
-        // Cancel any pending sync
-        syncTask?.cancel()
-        
-        syncTask = Task { [weak self] in
-            guard let self = self else { return }
-            
-            // Debounce: wait 2 seconds before syncing
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            
-            guard !Task.isCancelled else { return }
-            
-            await performSync()
-        }
-    }
-    
-    /// Perform the actual sync operation
-    private func performSync() async {
-        guard cloudKitService.isCloudKitAvailable else {
-            #if DEBUG
-            print("⚠️ [HistoryStore] CloudKit not available, skipping sync")
-            #endif
-            return
-        }
-        
+
+    // MARK: - Supabase Sync
+
+    /// Two-way last-write-wins merge against the Supabase `prompts` table.
+    ///
+    /// 1. Upserts every local record where `isSynced == false`.
+    /// 2. Fetches all remote records for the user.
+    /// 3. Merges by `lastModified` — remote wins when it is newer.
+    /// 4. Marks successfully uploaded records as `isSynced = true`.
+    func syncWithSupabase(userId: UUID) async {
         isSyncing = true
         defer { isSyncing = false }
-        
+
         do {
-            let syncedItems = try await cloudKitService.sync(items: items)
-            
-            // Update local items with merged results
-            items = syncedItems
-            refreshCache()
+            // ── Step 1: upload unsynced local records ──────────────────────
+            let unsynced = items.filter { !$0.isSynced }
+            if !unsynced.isEmpty {
+                let records = unsynced.map { PromptRecord(item: $0, userId: userId) }
+                try await supabase
+                    .from("prompts")
+                    .upsert(records)
+                    .execute()
+
+                unsynced.forEach { $0.isSynced = true }
+                saveToDisk()
+
+                #if DEBUG
+                print("☁️ [HistoryStore] Upserted \(records.count) record(s) to Supabase")
+                #endif
+            }
+
+            // ── Step 2: fetch all remote records for this user ─────────────
+            let remote: [PromptRecord] = try await supabase
+                .from("prompts")
+                .select()
+                .eq("user_id", value: userId.uuidString)
+                .execute()
+                .value
+
+            // ── Step 3: last-write-wins merge ──────────────────────────────
+            var merged = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
+            for record in remote {
+                if let local = merged[record.id] {
+                    if record.lastModified > local.lastModified {
+                        // Remote wins — overwrite the local item in place.
+                        copyFields(from: record.toHistoryItem(), to: local)
+                        local.isSynced = true
+                    }
+                    // else: local wins — already in `merged`, nothing to do.
+                } else {
+                    // New remote record — add it locally.
+                    merged[record.id] = record.toHistoryItem()
+                }
+            }
+
+            items = merged.values.sorted { $0.createdAt > $1.createdAt }
             saveToDisk()
-            
+
             lastSyncError = nil
-            
+
             #if DEBUG
-            print("☁️ [HistoryStore] Synced \(items.count) items with CloudKit")
+            print("☁️ [HistoryStore] Sync complete — \(items.count) item(s) total")
             #endif
-            
+
         } catch {
             lastSyncError = error
-            
+            TelemetryService.shared.logStorageError(
+                code: "SUPABASE_SYNC_FAILED",
+                message: "HistoryStore Supabase sync failed: \(error.localizedDescription)"
+            )
             #if DEBUG
-            print("❌ [HistoryStore] CloudKit sync failed: \(error.localizedDescription)")
+            print("❌ [HistoryStore] Supabase sync failed: \(error.localizedDescription)")
             #endif
-            
-            // Silently fail - data is still saved locally
-            // Will retry on next mutation
         }
     }
-    
-    /// Force immediate sync (for manual pull-to-refresh)
+
+    /// Force a sync right now (e.g. pull-to-refresh). Fetches the current
+    /// session from Supabase so no `userId` parameter is needed at the call site.
     func forceSync() async {
-        syncTask?.cancel()
-        await performSync()
+        guard let session = try? await supabase.auth.session else { return }
+        await syncWithSupabase(userId: session.user.id)
     }
-    
+
+    // MARK: - Auth listener
+
+    /// Listens to `supabase.auth.authStateChanges` and auto-syncs on `.signedIn`.
+    private func startAuthListener() {
+        authListenerTask?.cancel()
+        authListenerTask = Task { [weak self] in
+            guard let self else { return }
+            for await (event, session) in supabase.auth.authStateChanges {
+                guard !Task.isCancelled else { break }
+                if event == .signedIn, let userId = session?.user.id {
+                    await self.syncWithSupabase(userId: userId)
+                }
+            }
+        }
+    }
+
     // MARK: - Private helpers
-    
-    private func refreshCache() {
-        guard persistenceEnabled else {
-            items.sort { $0.createdAt > $1.createdAt }
-            return
-        }
-        let descriptor = FetchDescriptor<PromptHistoryItem>(
-            sortBy: [SortDescriptor(\.createdAt, order: .reverse)]
-        )
-        items = (try? modelContext.fetch(descriptor)) ?? []
-    }
-    
+
     private func fetchByID(_ id: UUID) -> PromptHistoryItem? {
-        // When persistence is off, fall back to the in-memory snapshot.
-        guard persistenceEnabled else {
-            return items.first(where: { $0.id == id })
-        }
-        var descriptor = FetchDescriptor<PromptHistoryItem>(
-            predicate: #Predicate { $0.id == id }
-        )
-        descriptor.fetchLimit = 1
-        return (try? modelContext.fetch(descriptor))?.first
+        items.first { $0.id == id }
     }
-    
-    private func copyPersistedFields(from source: PromptHistoryItem, to destination: PromptHistoryItem) {
-        destination.createdAt = source.createdAt
-        destination.mode = source.mode
-        destination.input = source.input
+
+    private func copyFields(
+        from source: PromptHistoryItem,
+        to destination: PromptHistoryItem
+    ) {
+        destination.createdAt    = source.createdAt
+        destination.mode         = source.mode
+        destination.input        = source.input
         destination.professional = source.professional
-        destination.template = source.template
-        destination.favorite = source.favorite
-        destination.customName = source.customName
-        destination.recordID = source.recordID
+        destination.template     = source.template
+        destination.favorite     = source.favorite
+        destination.customName   = source.customName
+        destination.lastModified = source.lastModified
+        destination.isSynced     = source.isSynced
     }
-    
+
     private func pruneIfNeeded() {
         guard items.count > maxItems else { return }
-        let toDelete = Array(items.suffix(from: maxItems))
-        if persistenceEnabled {
-            toDelete.forEach { modelContext.delete($0) }
-        }
         items = Array(items.prefix(maxItems))
         saveToDisk()
     }
-<<<<<<< HEAD
 
-    @discardableResult
-    private func save() -> Bool {
-        guard persistenceEnabled else { return true }
-        do {
-            try modelContext.save()
-            return true
-        } catch {
-            // Non-fatal: the in-memory snapshot is still correct.
-            // Errors will surface via TelemetryService once integrated.
-            return false
-=======
-    
-    // MARK: - Local Persistence (Codable JSON)
-    
+    // MARK: - Local persistence (Codable JSON)
+
     private func saveToDisk() {
         do {
             let data = try JSONEncoder().encode(items)
             try data.write(to: fileURL, options: [.atomic])
-            
             #if DEBUG
-            print("💾 [HistoryStore] Saved \(items.count) items to disk")
+            print("💾 [HistoryStore] Saved \(items.count) item(s) to disk")
             #endif
         } catch {
-            #if DEBUG
-            print("❌ [HistoryStore] Failed to save: \(error.localizedDescription)")
-            #endif
-            
             TelemetryService.shared.logStorageError(
                 code: "SAVE_FAILED",
                 message: "Failed to save history: \(error.localizedDescription)"
             )
->>>>>>> 672afe4ae655afe7762f0394bb152c9d4bbe6247
+            #if DEBUG
+            print("❌ [HistoryStore] Save failed: \(error.localizedDescription)")
+            #endif
         }
     }
-    
+
     private func loadFromDisk() {
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             items = []
             return
         }
-        
         do {
             let data = try Data(contentsOf: fileURL)
             items = try JSONDecoder().decode([PromptHistoryItem].self, from: data)
-            
             #if DEBUG
-            print("💾 [HistoryStore] Loaded \(items.count) items from disk")
+            print("💾 [HistoryStore] Loaded \(items.count) item(s) from disk")
             #endif
         } catch {
-            #if DEBUG
-            print("❌ [HistoryStore] Failed to load: \(error.localizedDescription)")
-            #endif
             items = []
+            TelemetryService.shared.logStorageError(
+                code: "LOAD_FAILED",
+                message: "Failed to load history: \(error.localizedDescription)"
+            )
         }
     }
-    
+
     // MARK: - Legacy JSON migration
-    
-    /// Shape of records written by the old JSON-file `HistoryStore`.
+
+    /// Shape of records written by older versions of HistoryStore that did not
+    /// yet have `lastModified` or `isSynced` fields.
     private struct LegacyItem: Codable {
         let id: UUID
         let createdAt: Date
@@ -341,46 +343,38 @@ final class HistoryStore {
         var favorite: Bool
         var customName: String?
     }
-    
-    private static var legacyFileURL: URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return base.appendingPathComponent("OrionOrb/history.json")
-    }
-    
+
+    /// If the current `history.json` contains pre-Phase-2 records (decoding as
+    /// `PromptHistoryItem` failed, leaving `items` empty), attempt to decode them
+    /// as `LegacyItem` and up-convert so no history is lost on first upgrade.
     private func migrateLegacyJSONIfNeeded() {
-        let url = Self.legacyFileURL
-        guard FileManager.default.fileExists(atPath: url.path),
-              let data = try? Data(contentsOf: url),
+        // If loadFromDisk() succeeded, nothing to migrate.
+        guard items.isEmpty else { return }
+
+        guard FileManager.default.fileExists(atPath: fileURL.path),
+              let data = try? Data(contentsOf: fileURL),
               let legacy = try? JSONDecoder().decode([LegacyItem].self, from: data),
-              !legacy.isEmpty,
-              items.isEmpty else { return }
-        
-        // Convert legacy items to new format
-        let migratedItems = legacy.map { legacyItem in
+              !legacy.isEmpty
+        else { return }
+
+        items = legacy.map { legacyItem in
             PromptHistoryItem(
-                id: legacyItem.id,
-                createdAt: legacyItem.createdAt,
-                mode: legacyItem.mode,
-                input: legacyItem.input,
+                id:           legacyItem.id,
+                createdAt:    legacyItem.createdAt,
+                mode:         legacyItem.mode,
+                input:        legacyItem.input,
                 professional: legacyItem.professional,
-                template: legacyItem.template,
-                favorite: legacyItem.favorite,
-                customName: legacyItem.customName,
-                recordID: nil,
+                template:     legacyItem.template,
+                favorite:     legacyItem.favorite,
+                customName:   legacyItem.customName,
                 lastModified: legacyItem.createdAt,
-                isSynced: false
+                isSynced:     false
             )
         }
-        
-        items = migratedItems
         saveToDisk()
-        
+
         #if DEBUG
-        print("🔄 [HistoryStore] Migrated \(migratedItems.count) legacy items")
+        print("🔄 [HistoryStore] Migrated \(items.count) legacy item(s)")
         #endif
-        
-        // Sync migrated items to CloudKit
-        syncWithCloud()
     }
 }
-

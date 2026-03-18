@@ -3519,3 +3519,136 @@ Tradeoff (explicit):
 
 Next recommended follow-up:
 - Reintroduce persistence using a known-stable fallback (JSON-file storage) before release if persistence is required in this milestone.
+
+---
+
+## Phase 2 — Supabase SDK Integration (v1.8)
+
+**Session date: 2026-03-18**
+
+This session completed the full migration from the legacy Railway JWT system to the live Supabase SDK. All six files carrying `<<<<<<< HEAD … >>>>>>> 672afe4` merge-conflict markers were resolved, and four major Phase 2 tasks were executed.
+
+### Manual prerequisites (already done by owner before this session)
+
+- `supabase-swift` added via Swift Package Manager (SPM) in Xcode.
+- `SUPABASE_URL` and `SUPABASE_ANON_KEY` keys populated in `Info.plist`.
+
+### Files changed
+
+**`App/AppEnvironment.swift`** — Complete rewrite.
+
+- Added `@preconcurrency import Supabase`.
+- Removed `supabaseConfig: SupabaseConfig?` scaffold property; replaced with `let supabase: SupabaseClient` (live client).
+- `init()` is now marked `@MainActor` — resolves the Swift concurrency error "Main actor-isolated property 'authManager' can not be mutated from a non-isolated context."
+- `SupabaseClient` is instantiated via `SupabaseClient(supabaseURL: config.url, supabaseKey: config.anonKey)` using `SupabaseConfig.load()` (hard-fails at launch if Info.plist keys are absent).
+- `CloudKitService` and `cloudKitService` property removed entirely.
+- `HistoryStore` now receives `supabase:` instead of `cloudKitService:`.
+- `TelemetryService.shared.configure(supabase:)` and `AnalyticsService.shared.configure(supabase:)` called once from `init()`.
+- Duplicate `telemetryService` assignment resolved.
+- `CloudKitServiceKey` / `cloudKitService` environment key removed.
+
+**`Core/Storage/HistoryStore.swift`** — Complete rewrite.
+
+- All merge conflicts and CloudKit / SwiftData references removed.
+- Injects `supabase: SupabaseClient` in `init(supabase:)`.
+- Local persistence: Codable JSON file at `Application Support/OrionOrb/history.json` (`.atomic` write). Satisfies the hotfix follow-up from the post-closeout incident above.
+- `PromptRecord` private DTO — snake_case `CodingKeys` for Supabase (`user_id`, `created_at`, `custom_name`, `last_modified`).
+- `syncWithSupabase(userId: UUID)` — two-way last-write-wins merge:
+  1. Upserts all local records where `isSynced == false`.
+  2. Fetches all remote records for the user (`SELECT … WHERE user_id = ?`).
+  3. Merges by `lastModified`; remote wins when newer, otherwise local wins.
+  4. Marks uploaded records `isSynced = true`.
+- `forceSync()` — fetches the current Supabase session and delegates to `syncWithSupabase(userId:)`; call from pull-to-refresh.
+- Auth listener (`startAuthListener()`) — iterates `supabase.auth.authStateChanges` in a background `Task`; auto-syncs on `.signedIn`.
+- Legacy migration path preserved: if `history.json` contains pre-Phase-2 records (no `lastModified`/`isSynced` fields), they are decoded as `LegacyItem` and up-converted on first launch.
+- No CloudKit, no SwiftData.
+
+**`Core/Auth/AuthManager.swift`** — Bug fix only (no structural change).
+
+- `convertSupabaseUserToAppUser` was using `metadata["full_name"] as? String`, which silently returns `nil` because `userMetadata` values are the `AnyJSON` enum, not plain `String`.
+- Fixed: `metadata["full_name"]?.stringValue` and `supabaseUser.appMetadata["provider"]?.stringValue`.
+
+**`Core/Utils/TelemetryService.swift`** — Conflict resolved + real Supabase upload wired (previous session).
+
+- Closure-based `NotificationCenter` observers (no `@objc`, no NSObject inheritance).
+- `configure(supabase: SupabaseClient)` method added.
+- Real `uploadToSupabase()`: `supabase.from("telemetry_errors").insert(pending).execute()`.
+
+**`Core/Utils/AnalyticsService.swift`** — Conflict resolved + real Supabase upload wired (previous session).
+
+- Same pattern as TelemetryService.
+- `import UIKit` added (required for `UIApplication.didEnterBackgroundNotification`).
+- `configure(supabase: SupabaseClient)` method added.
+- Real `uploadToSupabase()`: `supabase.from("events").insert(pending).execute()`.
+
+**`Models/Local/PromptHistoryItem.swift`** — Rewritten to remove CloudKit (previous session).
+
+- Kimi had introduced `import CloudKit`, `CKRecord.ID recordID`, and `toCKRecord()`. All removed.
+- Clean `Codable, Identifiable` class with two new Supabase-sync properties: `lastModified: Date` and `isSynced: Bool`.
+- `markModified()` helper sets `lastModified = Date()` and `isSynced = false`.
+
+**`Core/Networking/APIClient.swift`** — Conflict resolved (previous session).
+
+- Telemetry calls (`logNetworkError`, `logAPIError`) wrapped in `Task { @MainActor in }` because `APIClient` is non-isolated and `TelemetryService` is `@MainActor`.
+
+**`Core/Audio/SpeechRecognizerService.swift`** — Conflict resolved (previous session).
+
+- Duplicate (old-API) telemetry call in `failAndStop` removed.
+
+**`Core/Store/StoreManager.swift`** — Conflict resolved (previous session).
+
+- Trivial conflict (identical logic, differing comments). Took the cleaner version.
+
+### Supabase table requirements
+
+The following tables must exist in the Supabase project before sync features are live:
+
+`prompts` — stores `PromptHistoryItem` records.
+
+```sql
+create table prompts (
+  id            uuid primary key,
+  user_id       uuid not null references auth.users(id) on delete cascade,
+  created_at    timestamptz not null,
+  mode          text not null,
+  input         text not null,
+  professional  text not null,
+  template      text not null,
+  favorite      boolean not null default false,
+  custom_name   text,
+  last_modified timestamptz not null
+);
+alter table prompts enable row level security;
+create policy "Users own their prompts"
+  on prompts for all using (auth.uid() = user_id);
+```
+
+`events` — stores `CachedAnalyticsEvent` records (AnalyticsService).
+
+`telemetry_errors` — stores `TelemetryRecord` records (TelemetryService).
+
+Schemas for the latter two should match the `CodingKeys` defined in `AnalyticsService.swift` and `TelemetryService.swift` respectively (all snake_case).
+
+### Key architectural invariants going forward
+
+- `SupabaseClient.shared` does not exist in `supabase-swift`. Always use `SupabaseClient(supabaseURL:supabaseKey:)`.
+- `@preconcurrency import Supabase` is required wherever the SDK is used in `@MainActor` or strict-concurrency contexts.
+- `AnyJSON` values (from `userMetadata`, `appMetadata`) must be accessed via `.stringValue`, not `as? String`.
+- CloudKit is permanently removed. Do not reintroduce it.
+- `HistoryStoring` protocol conformance must be maintained on `HistoryStore` for `EnvironmentValues` injection.
+
+### System state as of v1.8
+
+| Component | Status |
+|---|---|
+| `AppEnvironment.swift` | ✅ Clean — live SupabaseClient, @MainActor init, no CloudKit |
+| `AuthManager.swift` | ✅ Clean — Supabase Auth, AnyJSON fix applied |
+| `HistoryStore.swift` | ✅ Clean — JSON local + Supabase two-way sync |
+| `PromptHistoryItem.swift` | ✅ Clean — Codable, lastModified, isSynced |
+| `TelemetryService.swift` | ✅ Clean — real Supabase upload |
+| `AnalyticsService.swift` | ✅ Clean — real Supabase upload |
+| `APIClient.swift` | ✅ Clean — telemetry calls MainActor-safe |
+| `SpeechRecognizerService.swift` | ✅ Clean — no duplicate telemetry |
+| `StoreManager.swift` | ✅ Clean — merge conflict resolved |
+| Supabase tables created | ⏳ Owner action required |
+| End-to-end auth smoke test | ⏳ Owner action required |

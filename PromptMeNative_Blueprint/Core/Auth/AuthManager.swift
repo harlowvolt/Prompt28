@@ -269,14 +269,15 @@ final class AuthManager {
     private func convertSupabaseUserToAppUser(_ supabaseUser: Supabase.User, plan: PlanType) -> User {
         let metadata = supabaseUser.userMetadata
         
-        // Extract name from user metadata or email
-        let name = metadata["full_name"] as? String
-            ?? metadata["name"] as? String
+        // Extract name from user metadata or email.
+        // userMetadata values are AnyJSON — use .stringValue, not `as? String`.
+        let name = metadata["full_name"]?.stringValue
+            ?? metadata["name"]?.stringValue
             ?? supabaseUser.email?.components(separatedBy: "@").first
             ?? "User"
-        
-        // Extract provider from app metadata
-        let provider = (supabaseUser.appMetadata["provider"] as? String) ?? "email"
+
+        // appMetadata values are also AnyJSON.
+        let provider = supabaseUser.appMetadata["provider"]?.stringValue ?? "email"
         
         return User(
             id: supabaseUser.id.uuidString,
