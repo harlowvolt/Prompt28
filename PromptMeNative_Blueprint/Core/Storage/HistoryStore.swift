@@ -1,15 +1,15 @@
 import Foundation
 import SwiftData
 
-/// Offline-first history store backed by SwiftData.
+/// Offline-first history store backed by a JSON file.
 ///
-/// Phase 4.2: replaced JSON file persistence with a `ModelContext` that
-/// writes to the app's default SwiftData store. The public `HistoryStoring`
-/// API is unchanged; callers are unaffected.
+/// SwiftData persistence was disabled after runtime traps on some
+/// simulator/device states (see post-closeout incident in HANDOFF.md).
+/// This implementation restores persistence via a plain JSON file in the
+/// app's Application Support directory — the same location used by the
+/// legacy migration path, but now as the primary storage layer.
 ///
-/// On first launch after the update, `migrateLegacyJSONIfNeeded()` reads the
-/// old `history.json`, inserts every record into SwiftData, then deletes the
-/// JSON file so migration only runs once.
+/// The public `HistoryStoring` API is unchanged; callers are unaffected.
 @Observable
 @MainActor
 final class HistoryStore {
@@ -23,17 +23,12 @@ final class HistoryStore {
 
     private let modelContext: ModelContext
     private let maxItems = 200
-    /// Temporary stability switch: SwiftData runtime calls are disabled because
-    /// insert/fetch can trap at runtime on some devices/simulator states.
-    private let persistenceEnabled = false
 
     // MARK: - Init
 
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
-        if persistenceEnabled {
-            migrateLegacyJSONIfNeeded()
-        }
+        loadFromDisk()
         refreshCache()
     }
 
@@ -59,27 +54,27 @@ final class HistoryStore {
             )
             items.insert(newItem, at: 0)
         }
-        save()
         pruneIfNeeded()
+        saveToDisk()
         refreshCache()
     }
 
     func remove(id: UUID) {
         items.removeAll { $0.id == id }
-        save()
+        saveToDisk()
         refreshCache()
     }
 
     func clearAll() {
         items = []
-        save()
+        saveToDisk()
         refreshCache()
     }
 
     func toggleFavorite(id: UUID) {
         guard let item = fetchByID(id) else { return }
         item.favorite.toggle()
-        save()
+        saveToDisk()
         // Reassign so @Observable propagates the change to any view observing `items`.
         refreshCache()
     }
@@ -87,7 +82,7 @@ final class HistoryStore {
     func rename(id: UUID, customName: String?) {
         guard let item = fetchByID(id) else { return }
         item.customName = customName
-        save()
+        saveToDisk()
         refreshCache()
     }
 
@@ -114,18 +109,13 @@ final class HistoryStore {
     private func pruneIfNeeded() {
         guard items.count > maxItems else { return }
         items = Array(items.prefix(maxItems))
-        save()
     }
 
-    @discardableResult
-    private func save() -> Bool {
-        true
-    }
+    // MARK: - JSON persistence
 
-    // MARK: - Legacy JSON migration
-
-    /// Shape of records written by the old JSON-file `HistoryStore`.
-    private struct LegacyItem: Codable {
+    /// Codable mirror of `PromptHistoryItem` for JSON serialisation.
+    /// Using a separate struct avoids coupling the `@Model` class to Codable.
+    private struct PersistedItem: Codable {
         let id: UUID
         let createdAt: Date
         let mode: PromptMode
@@ -136,41 +126,55 @@ final class HistoryStore {
         var customName: String?
     }
 
-    private static var legacyFileURL: URL {
+    private static var jsonFileURL: URL {
         let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return base.appendingPathComponent("Prompt28/history.json")
+        let dir = base.appendingPathComponent("Prompt28", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir.appendingPathComponent("history.json")
     }
 
-    private func migrateLegacyJSONIfNeeded() {
-        let url = Self.legacyFileURL
+    private func loadFromDisk() {
+        let url = Self.jsonFileURL
         guard FileManager.default.fileExists(atPath: url.path),
               let data = try? Data(contentsOf: url),
-              let legacy = try? JSONDecoder().decode([LegacyItem].self, from: data) else { return }
+              let persisted = try? JSONDecoder().decode([PersistedItem].self, from: data)
+        else { return }
 
-        // Skip if SwiftData already has data (i.e. migration already ran).
-        let existingCount = (try? modelContext.fetchCount(FetchDescriptor<PromptHistoryItem>())) ?? 0
-        guard existingCount == 0 else {
-            try? FileManager.default.removeItem(at: url)
-            return
-        }
-
-        for legacyItem in legacy {
-            let item = PromptHistoryItem(
-                id: legacyItem.id,
-                createdAt: legacyItem.createdAt,
-                mode: legacyItem.mode,
-                input: legacyItem.input,
-                professional: legacyItem.professional,
-                template: legacyItem.template,
-                favorite: legacyItem.favorite,
-                customName: legacyItem.customName
+        items = persisted.map { p in
+            PromptHistoryItem(
+                id: p.id,
+                createdAt: p.createdAt,
+                mode: p.mode,
+                input: p.input,
+                professional: p.professional,
+                template: p.template,
+                favorite: p.favorite,
+                customName: p.customName
             )
-            modelContext.insert(item)
         }
-        save()
+    }
 
-        // Remove the legacy file so this block never runs again.
-        try? FileManager.default.removeItem(at: url)
+    @discardableResult
+    private func saveToDisk() -> Bool {
+        let persisted = items.map { item in
+            PersistedItem(
+                id: item.id,
+                createdAt: item.createdAt,
+                mode: item.mode,
+                input: item.input,
+                professional: item.professional,
+                template: item.template,
+                favorite: item.favorite,
+                customName: item.customName
+            )
+        }
+        guard let data = try? JSONEncoder().encode(persisted) else { return false }
+        do {
+            try data.write(to: Self.jsonFileURL, options: .atomic)
+            return true
+        } catch {
+            return false
+        }
     }
 }
 

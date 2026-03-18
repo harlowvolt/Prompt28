@@ -3519,3 +3519,27 @@ Tradeoff (explicit):
 
 Next recommended follow-up:
 - Reintroduce persistence using a known-stable fallback (JSON-file storage) before release if persistence is required in this milestone.
+
+#### Post-closeout fix — HistoryStore JSON persistence restored
+
+**Date:** 2026-03-18
+
+**Problem:**
+`HistoryStore` had `persistenceEnabled = false` (set as a hotfix after SwiftData runtime traps). All prompt history was lost on every app restart.
+
+**Fix applied:**
+- Removed the `persistenceEnabled` flag entirely.
+- Replaced the no-op `save()` stub with a real `saveToDisk()` method that encodes `items` to JSON and writes atomically to `Application Support/Prompt28/history.json`.
+- Added `loadFromDisk()` called in `init`, which reads and decodes the JSON file on startup.
+- Added a private `PersistedItem: Codable` struct as a serialisation mirror of `PromptHistoryItem` (avoids coupling the `@Model` class to Codable).
+- Removed the old SwiftData-dependent `migrateLegacyJSONIfNeeded()` (it was a no-op since `persistenceEnabled` was false and the JSON file path is now the primary store).
+- The `modelContext: ModelContext` parameter in `init` is retained for API compatibility; it is no longer used for persistence.
+
+**Verification:**
+- No compile errors introduced (public `HistoryStoring` API unchanged).
+- History now survives app restarts via JSON file at `Application Support/Prompt28/history.json`.
+- Favorites, renames, and deletions are persisted atomically on every mutation.
+
+**Tradeoff:**
+- JSON file persistence is not as efficient as SwiftData for large datasets, but is fully stable and sufficient for the 200-item cap enforced by `pruneIfNeeded()`.
+- SwiftData can be reintroduced in a future milestone once the runtime trap root cause is identified.
