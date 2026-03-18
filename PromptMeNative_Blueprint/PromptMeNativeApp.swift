@@ -21,31 +21,25 @@ struct OrionOrbApp: App {
 
     var body: some Scene {
         WindowGroup {
-            // 4. We use a local view to bypass all "Cannot find in scope" errors
-            ZStack {
-                Color(red: 14/255, green: 12/255, blue: 22/255).ignoresSafeArea()
-                
-                VStack(spacing: 20) {
-                    Circle()
-                        .fill(LinearGradient(colors: [.purple, .blue], startPoint: .topLeading, endPoint: .bottomTrailing))
-                        .frame(width: 80, height: 80)
-                        .shadow(color: .purple.opacity(0.5), radius: 10)
-                    
-                    Text("ORION ORB 2.5")
-                        .font(.system(size: 24, weight: .bold, design: .rounded))
-                        .foregroundColor(.white)
-                    
-                    Text("ENVIRONMENT LOADED")
-                        .font(.caption)
-                        .tracking(2)
-                        .foregroundColor(.gray)
+            RootView()
+                .environment(env)
+                .environment(errorState)
+                .environment(\.authManager, env.authManager)
+                .environment(\.appRouter, env.router)
+                .environment(\.errorState, errorState)
+                .environment(\.apiClient, env.apiClient)
+                .environment(\.preferencesStore, env.preferencesStore)
+                .environment(\.historyStore, env.historyStore)
+                .environment(\.usageTracker, env.usageTracker)
+                .environment(\.storeManager, env.storeManager)
+                .environment(\.keychainService, env.keychain)
+                .environment(\.telemetryService, env.telemetryService)
+                .environment(\.orbEngineFactory, env.orbEngineFactory)
+                .environment(\.speechRecognizerFactory, env.speechRecognizerFactory)
+                .environment(\.supabase, env.supabase)
+                .onOpenURL { url in
+                    GIDSignIn.sharedInstance.handle(url)
                 }
-            }
-            .environment(env) // This injects the WHOLE environment
-            .environment(errorState)
-            .onOpenURL { url in
-                GIDSignIn.sharedInstance.handle(url)
-            }
         }
     }
 }
