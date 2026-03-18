@@ -2,6 +2,7 @@ import SwiftUI
 import UIKit
 import GoogleSignIn
 
+@MainActor
 @main
 struct OrionOrbApp: App {
     @State private var env = AppEnvironment()
@@ -29,7 +30,7 @@ struct OrionOrbApp: App {
                 .environment(\.storeManager, env.storeManager)
                 .environment(\.keychainService, env.keychain)
                 .environment(\.telemetryService, env.telemetryService)
-                .environment(\.cloudKitService, env.cloudKitService)
+                .environment(\.supabase, env.supabase)
                 .environment(\.speechRecognizerFactory, env.speechRecognizerFactory)
                 .environment(\.orbEngineFactory, env.orbEngineFactory)
                 .onOpenURL { url in
