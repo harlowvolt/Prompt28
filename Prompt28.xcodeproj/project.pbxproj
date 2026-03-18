@@ -73,6 +73,7 @@
 		CCDE00000000000000000016 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000015 /* NotificationService.swift */; };
 		CCDE00000000000000000019 /* UsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000018 /* UsageTracker.swift */; };
 		CCDE0000000000000000001C /* PrivacyConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE0000000000000000001B /* PrivacyConsentView.swift */; };
+		CCE5A6052F6B190900F16A24 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = CCE5A6042F6B190900F16A24 /* Supabase */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -183,6 +184,7 @@
 			files = (
 				CC564D082F5FD40F008BE78E /* GoogleSignIn in Frameworks */,
 				CC564D0A2F5FD416008BE78E /* GoogleSignInSwift in Frameworks */,
+				CCE5A6052F6B190900F16A24 /* Supabase in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -634,6 +636,7 @@
 			packageProductDependencies = (
 				CC564D072F5FD40F008BE78E /* GoogleSignIn */,
 				CC564D092F5FD416008BE78E /* GoogleSignInSwift */,
+				CCE5A6042F6B190900F16A24 /* Supabase */,
 			);
 			productName = Prompt28;
 			productReference = CCD1CDF92F5C55F700566BCF /* Prompt28.app */;
@@ -719,6 +722,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				CC02DFF62F5DE13F00A1F3B2 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */,
+				CCE5A6032F6B190900F16A24 /* XCRemoteSwiftPackageReference "supabase-swift" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CCD1CDFA2F5C55F700566BCF /* Products */;
@@ -1218,6 +1222,14 @@
 				minimumVersion = 9.1.0;
 			};
 		};
+		CCE5A6032F6B190900F16A24 /* XCRemoteSwiftPackageReference "supabase-swift" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/supabase/supabase-swift";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.0.0;
+			};
+		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1230,6 +1242,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = CC02DFF62F5DE13F00A1F3B2 /* XCRemoteSwiftPackageReference "GoogleSignIn-iOS" */;
 			productName = GoogleSignInSwift;
+		};
+		CCE5A6042F6B190900F16A24 /* Supabase */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CCE5A6032F6B190900F16A24 /* XCRemoteSwiftPackageReference "supabase-swift" */;
+			productName = Supabase;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};
