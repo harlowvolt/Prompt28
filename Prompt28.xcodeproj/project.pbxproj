@@ -28,7 +28,7 @@
 		CCAB0BBC2F5D780200C29A7E /* NetworkError.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B5F2F5D780200C29A7E /* NetworkError.swift */; };
 		CCAB0BBE2F5D780200C29A7E /* GenerateModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B972F5D780200C29A7E /* GenerateModels.swift */; };
 		CCAB0BBF2F5D780200C29A7E /* HistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B7A2F5D780200C29A7E /* HistoryViewModel.swift */; };
-		CCAB0BC02F5D780200C29A7E /* PromptMeNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0BAB2F5D780200C29A7E /* PromptMeNativeApp.swift */; };
+		CCAB0BC02F5D780200C29A7E /* OrionOrbApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0BAB2F5D780200C29A7E /* OrionOrbApp.swift */; };
 		CCAB0BC12F5D780200C29A7E /* OAuthCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B5B2F5D780200C29A7E /* OAuthCoordinator.swift */; };
 		CCAB0BC22F5D780200C29A7E /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B962F5D780200C29A7E /* AuthModels.swift */; };
 		CCAB0BC32F5D780200C29A7E /* SpeechRecognizerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B572F5D780200C29A7E /* SpeechRecognizerService.swift */; };
@@ -147,7 +147,7 @@
 		CCAB0B9C2F5D780200C29A7E /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
 		CCAB0B9D2F5D780200C29A7E /* PromptHistoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptHistoryItem.swift; sourceTree = "<group>"; };
 		CCAB0BA12F5D780200C29A7E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		CCAB0BAB2F5D780200C29A7E /* PromptMeNativeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptMeNativeApp.swift; sourceTree = "<group>"; };
+		CCAB0BAB2F5D780200C29A7E /* OrionOrbApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrionOrbApp.swift; sourceTree = "<group>"; };
 		CCAB0BF02F5D780200C29A7E /* AppUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUI.swift; sourceTree = "<group>"; };
 		CCD1CDF92F5C55F700566BCF /* Prompt28.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Prompt28.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CCD1CE082F5C55FC00566BCF /* Prompt28Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Prompt28Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -546,7 +546,7 @@
 				CCAB0B9F2F5D780200C29A7E /* Models */,
 				CCAB0BA22F5D780200C29A7E /* Resources */,
 				CCAB0BAA2F5D780200C29A7E /* UITests */,
-				CCAB0BAB2F5D780200C29A7E /* PromptMeNativeApp.swift */,
+				CCAB0BAB2F5D780200C29A7E /* OrionOrbApp.swift */,
 				CCDE00000000000000000007 /* PrivacyInfo.xcprivacy */,
 			);
 			path = PromptMeNative_Blueprint;
@@ -781,7 +781,7 @@
 				CCAB0BBC2F5D780200C29A7E /* NetworkError.swift in Sources */,
 				CCAB0BBE2F5D780200C29A7E /* GenerateModels.swift in Sources */,
 				CCAB0BBF2F5D780200C29A7E /* HistoryViewModel.swift in Sources */,
-				CCAB0BC02F5D780200C29A7E /* PromptMeNativeApp.swift in Sources */,
+				CCAB0BC02F5D780200C29A7E /* OrionOrbApp.swift in Sources */,
 				CCAB0BC12F5D780200C29A7E /* OAuthCoordinator.swift in Sources */,
 				CCAB0BC22F5D780200C29A7E /* AuthModels.swift in Sources */,
 				CCAB0BC32F5D780200C29A7E /* SpeechRecognizerService.swift in Sources */,

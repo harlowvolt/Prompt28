@@ -3,18 +3,25 @@ import UIKit
 import GoogleSignIn
 
 @main
-struct PromptMeNativeApp: App {
-    @State private var env = AppEnvironment()
-    @State private var errorState = ErrorState()
-
+struct OrionOrbApp: App {
+    // Fixed Swift 6 isolation: @MainActor initialization via State(initialValue:)
+    @State private var env: AppEnvironment
+    @State private var errorState: ErrorState
+    
+    @MainActor
     init() {
+        // Initialize state variables safely inside the @MainActor init
+        self._env = State(initialValue: AppEnvironment())
+        self._errorState = State(initialValue: ErrorState())
+        
         UIWindow.appearance().backgroundColor = UIColor(red: 14/255, green: 12/255, blue: 22/255, alpha: 1)
         UIView.appearance(whenContainedInInstancesOf: [UIHostingController<AnyView>.self]).backgroundColor = .clear
+        
 #if !DEBUG
         resetRootBackgroundExperimentFlags()
 #endif
     }
-
+    
     var body: some Scene {
         WindowGroup {
             RootView()
@@ -27,7 +34,7 @@ struct PromptMeNativeApp: App {
                 .environment(\.preferencesStore, env.preferencesStore)
                 .environment(\.usageTracker, env.usageTracker)
                 .environment(\.storeManager, env.storeManager)
-                .environment(\.keychainService, env.keychain)
+                .environment(\.keychainService, env.keychain) // Mapped env.keychain -> keychainService
                 .environment(\.speechRecognizerFactory, env.speechRecognizerFactory)
                 .environment(\.orbEngineFactory, env.orbEngineFactory)
                 .onOpenURL { url in
@@ -36,7 +43,7 @@ struct PromptMeNativeApp: App {
                 }
         }
     }
-
+    
     private func resetRootBackgroundExperimentFlags() {
         let defaults = UserDefaults.standard
         defaults.set(false, forKey: ExperimentFlags.RootBackground.home)
