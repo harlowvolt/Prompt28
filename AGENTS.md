@@ -1,8 +1,8 @@
-# Prompt28 (Orion Orb) — AI Agent Guide
+# Prompt28 (Orion Orb) — AI Agent Guide (Phase 2 Clean)
 
-**Last updated: 2026-03-17**
+**Last updated: 2026-03-18 | Version v1.9 (Post-Phase-2 Cleanup)**
 
-This document provides essential information for AI coding agents working on the Prompt28 iOS project (marketed as "Orion Orb").
+This document provides essential information for AI coding agents working on the Prompt28 iOS project (marketed as "Orion Orb"). **SwiftData has been removed. CloudKit has been removed. Persistence is now Codable JSON + Supabase sync.**
 
 ---
 
@@ -23,8 +23,10 @@ Prompt28 is an AI-powered prompt generation iOS app built with SwiftUI. Users ca
 | Component | Technology |
 |-----------|------------|
 | UI Framework | SwiftUI with Observation framework |
-| Persistence | Codable JSON (local), Supabase (sync), UserDefaults (preferences), Keychain (auth tokens) |
-| Authentication | JWT tokens stored in Keychain; Google Sign-In, Apple Sign-In, Email/Password |
+| Persistence | **Codable JSON** (local @ `Application Support/OrionOrb/history.json`), **Supabase** (two-way sync, last-write-wins), UserDefaults (preferences), Keychain (auth tokens) |
+| Authentication | **Supabase Auth** with JWT stored in Keychain; Google Sign-In, Apple Sign-In, Email/Password |
+| Database Backend | **Supabase PostgreSQL** (prompts, events, telemetry_errors tables) |
+| Legacy API | Railway backend (https://promptme-app-production.up.railway.app) — for plan info during bootstrap |
 | Networking | URLSession with async/await |
 | Audio | Speech framework (SFSpeechRecognizer), AVFoundation |
 | In-App Purchases | StoreKit 2 |
@@ -115,16 +117,18 @@ All dependencies are centralized in `AppEnvironment` and injected via SwiftUI's 
 
 ```swift
 @Observable @MainActor final class AppEnvironment {
-    let apiClient: APIClient
+    let supabase: SupabaseClient              // Live Supabase auth & database
+    let apiClient: APIClient                  // Legacy Railway API (for bootstrap user plan info)
     let keychain: KeychainService
-    let authManager: AuthManager
-    let historyStore: HistoryStore
+    let authManager: AuthManager              // Supabase Auth
+    let historyStore: HistoryStore            // JSON + Supabase sync
     let preferencesStore: PreferencesStore
     let router: AppRouter
-    let storeManager: StoreManager
+    let storeManager: StoreManager            // StoreKit 2
     let usageTracker: UsageTracker
-    let telemetryService: TelemetryService
-    let telemetryService: TelemetryService
+    let telemetryService: TelemetryService    // Uploads to Supabase telemetry_errors
+    let speechRecognizerFactory: SpeechRecognizerFactoryProtocol
+    let orbEngineFactory: OrbEngineFactoryProtocol
 }
 ```
 
@@ -319,7 +323,7 @@ struct User: Decodable, Identifiable, Equatable {
 }
 ```
 
-### PromptHistoryItem (Local Model with Supabase Sync)
+### PromptHistoryItem (Codable Local Model with Supabase Sync)
 ```swift
 final class PromptHistoryItem: Codable, Identifiable {
     var id: UUID
@@ -330,7 +334,8 @@ final class PromptHistoryItem: Codable, Identifiable {
     var template: String
     var favorite: Bool
     var customName: String?
-    var lastModified: Date
+    var lastModified: Date        // Drives last-write-wins merge
+    var isSynced: Bool            // false = queued for Supabase upsert
 }
 ```
 
