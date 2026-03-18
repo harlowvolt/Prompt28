@@ -23,7 +23,7 @@ Prompt28 is an AI-powered prompt generation iOS app built with SwiftUI. Users ca
 | Component | Technology |
 |-----------|------------|
 | UI Framework | SwiftUI with Observation framework |
-| Persistence | Codable JSON (local), CloudKit (sync), UserDefaults (preferences), Keychain (auth tokens) |
+| Persistence | Codable JSON (local), Supabase (sync), UserDefaults (preferences), Keychain (auth tokens) |
 | Authentication | JWT tokens stored in Keychain; Google Sign-In, Apple Sign-In, Email/Password |
 | Networking | URLSession with async/await |
 | Audio | Speech framework (SFSpeechRecognizer), AVFoundation |
@@ -49,7 +49,7 @@ PromptMeNative_Blueprint/          # Source root
 ├── Core/                          # Core business logic
 │   ├── Auth/                      # Authentication (AuthManager, KeychainService, OAuthCoordinator)
 │   ├── Networking/                # API layer (APIClient, APIEndpoint, NetworkError, RequestBuilder)
-│   ├── Storage/                   # Data persistence (HistoryStore, PreferencesStore, SecureStore, CloudKitService)
+│   ├── Storage/                   # Data persistence (HistoryStore, PreferencesStore, SecureStore)
 │   ├── Store/                     # IAP (StoreConfig, StoreManager, UsageTracker)
 │   ├── Audio/                     # Voice input (OrbEngine, SpeechRecognizerService)
 │   ├── Notifications/             # Push notifications (NotificationService)
@@ -124,7 +124,7 @@ All dependencies are centralized in `AppEnvironment` and injected via SwiftUI's 
     let storeManager: StoreManager
     let usageTracker: UsageTracker
     let telemetryService: TelemetryService
-    let cloudKitService: CloudKitService
+    let telemetryService: TelemetryService
 }
 ```
 
@@ -319,7 +319,7 @@ struct User: Decodable, Identifiable, Equatable {
 }
 ```
 
-### PromptHistoryItem (Local Model with CloudKit Sync)
+### PromptHistoryItem (Local Model with Supabase Sync)
 ```swift
 final class PromptHistoryItem: Codable, Identifiable {
     var id: UUID
@@ -330,9 +330,7 @@ final class PromptHistoryItem: Codable, Identifiable {
     var template: String
     var favorite: Bool
     var customName: String?
-    var recordID: CKRecord.ID?  // CloudKit sync
     var lastModified: Date
-    var isSynced: Bool
 }
 ```
 
