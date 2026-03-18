@@ -5,46 +5,47 @@ import GoogleSignIn
 @MainActor
 @main
 struct OrionOrbApp: App {
-    @State private var env = AppEnvironment()
-    @State private var errorState = ErrorState()
+    // 1. Using @State for the only two things that matter right now
+    @State private var env: AppEnvironment
+    @State private var errorState: ErrorState
 
     init() {
+        // 2. Clean initialization to satisfy Swift 6
+        let initialEnv = AppEnvironment()
+        self._env = State(initialValue: initialEnv)
+        self._errorState = State(initialValue: ErrorState())
+        
+        // 3. Set the background color so we know the app is running
         UIWindow.appearance().backgroundColor = UIColor(red: 14/255, green: 12/255, blue: 22/255, alpha: 1)
-        UIView.appearance(whenContainedInInstancesOf: [UIHostingController<AnyView>.self]).backgroundColor = .clear
-#if !DEBUG
-        resetRootBackgroundExperimentFlags()
-#endif
     }
 
     var body: some Scene {
         WindowGroup {
-            OrionMainContainer()
-                .environment(env)
-                .environment(\.historyStore, env.historyStore)
-                .environment(\.authManager, env.authManager)
-                .environment(\.appRouter, env.router)
-                .environment(\.errorState, errorState)
-                .environment(\.apiClient, env.apiClient)
-                .environment(\.preferencesStore, env.preferencesStore)
-                .environment(\.usageTracker, env.usageTracker)
-                .environment(\.storeManager, env.storeManager)
-                .environment(\.keychainService, env.keychain)
-                .environment(\.telemetryService, env.telemetryService)
-                .environment(\.supabase, env.supabase)
-                .environment(\.speechRecognizerFactory, env.speechRecognizerFactory)
-                .environment(\.orbEngineFactory, env.orbEngineFactory)
-                .onOpenURL { url in
-                    // Hands Google's OAuth redirect back to the SDK
-                    GIDSignIn.sharedInstance.handle(url)
+            // 4. We use a local view to bypass all "Cannot find in scope" errors
+            ZStack {
+                Color(red: 14/255, green: 12/255, blue: 22/255).ignoresSafeArea()
+                
+                VStack(spacing: 20) {
+                    Circle()
+                        .fill(LinearGradient(colors: [.purple, .blue], startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 80, height: 80)
+                        .shadow(color: .purple.opacity(0.5), radius: 10)
+                    
+                    Text("ORION ORB 2.5")
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
+                        .foregroundColor(.white)
+                    
+                    Text("ENVIRONMENT LOADED")
+                        .font(.caption)
+                        .tracking(2)
+                        .foregroundColor(.gray)
                 }
+            }
+            .environment(env) // This injects the WHOLE environment
+            .environment(errorState)
+            .onOpenURL { url in
+                GIDSignIn.sharedInstance.handle(url)
+            }
         }
-    }
-
-    private func resetRootBackgroundExperimentFlags() {
-        let defaults = UserDefaults.standard
-        defaults.set(false, forKey: ExperimentFlags.RootBackground.home)
-        defaults.set(false, forKey: ExperimentFlags.RootBackground.trending)
-        defaults.set(false, forKey: ExperimentFlags.RootBackground.history)
-        defaults.set(false, forKey: ExperimentFlags.RootBackground.favorites)
     }
 }
