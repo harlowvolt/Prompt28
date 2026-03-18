@@ -1,6 +1,6 @@
 # Prompt28 — AI Agent Guide
 
-**Last updated: 2026-03-14**
+**Last updated: 2026-03-18**
 
 This document provides essential information for AI coding agents working on the Prompt28 iOS project.
 
@@ -12,7 +12,7 @@ Prompt28 is an AI-powered prompt generation iOS app built with SwiftUI. Users ca
 
 - **Platform**: iOS 26.2+ (Swift 5.0+)
 - **Architecture**: SwiftUI with Observation framework (`@Observable`)
-- **Minimum Deployment**: iOS 17+ (required for SwiftData `@Model` on `PromptHistoryItem`)
+- **Minimum Deployment**: iOS 17+
 - **Bundle ID**: `com.prompt28.prompt28`
 - **Backend**: https://promptme-app-production.up.railway.app
 
@@ -23,7 +23,7 @@ Prompt28 is an AI-powered prompt generation iOS app built with SwiftUI. Users ca
 | Component | Technology |
 |-----------|------------|
 | UI Framework | SwiftUI with Observation framework |
-| Persistence | SwiftData (PromptHistoryItem), UserDefaults (preferences), Keychain (auth tokens) |
+| Persistence | JSON file (`history.json`), UserDefaults (preferences), Keychain (auth tokens) |
 | Authentication | JWT tokens stored in Keychain; Google Sign-In, Apple Sign-In, Email/Password |
 | Networking | URLSession with async/await |
 | Audio | Speech framework (SFSpeechRecognizer), AVFoundation |
@@ -50,7 +50,6 @@ PromptMeNative_Blueprint/          # Source root
 │   ├── Store/                     # IAP (StoreConfig, StoreManager, UsageTracker)
 │   ├── Audio/                     # Voice input (OrbEngine, SpeechRecognizerService)
 │   ├── Notifications/             # Push notifications
-│   ├── Protocols/                 # Protocol definitions (APIClientProtocol, StorageProtocols)
 │   └── Utils/                     # Utilities (Analytics, Haptics, JSONCoding, Date extensions)
 ├── Features/                      # Feature modules (MVVM pattern)
 │   ├── Admin/                     # Dev-only admin panel
@@ -65,13 +64,12 @@ PromptMeNative_Blueprint/          # Source root
 │   ├── API/                       # Server response models (User, AuthModels, GenerateModels, etc.)
 │   └── Local/                     # Local storage models (PromptHistoryItem, AppPreferences)
 ├── Resources/                     # Bundled resources
-│   ├── trending_prompts.json      # Bundled prompt catalog (44 prompts, 6 categories)
-│   └── PrivacyInfo.xcprivacy      # Apple privacy manifest
-└── PromptMeNativeApp.swift        # App entry point (@main)
+│   └── trending_prompts.json      # Bundled prompt catalog (44 prompts, 6 categories)
+├── PrivacyInfo.xcprivacy          # Apple privacy manifest
+└── OrionOrbApp.swift              # App entry point (@main)
 
 Prompt28/                          # Xcode project configuration
 ├── Info.plist                     # App configuration, permissions, Google Sign-In
-├── PrivacyInfo.xcprivacy          # Privacy manifest (duplicate)
 └── Prompt28.entitlements          # App entitlements
 
 Prompt28Tests/                     # Unit tests (Swift Testing framework)
@@ -266,7 +264,7 @@ Uses standard XCTest framework for end-to-end testing.
 
 ### ❌ NEVER DO THESE
 1. Never remove `PromptPremiumBackground()` from views with NavigationStack
-2. Never remove window background color setup in `PromptMeNativeApp.init()` (prevents black flash)
+2. Never remove window background color setup in `OrionOrbApp.init()` (prevents black flash)
 3. Never use `geo.size.width/height` inside `PromptPremiumBackground`'s inner ZStack frame (use `.frame(maxWidth: .infinity, maxHeight: .infinity)`)
 4. Never add NavigationStack to a view that already wraps inside another NavigationStack
 5. Never change `.toolbar(.hidden, for: .navigationBar)` on main tab screens
@@ -312,7 +310,7 @@ struct User: Decodable, Identifiable, Equatable {
 }
 ```
 
-### PromptHistoryItem (SwiftData Model)
+### PromptHistoryItem (Local Model)
 ```swift
 @Model
 final class PromptHistoryItem {
