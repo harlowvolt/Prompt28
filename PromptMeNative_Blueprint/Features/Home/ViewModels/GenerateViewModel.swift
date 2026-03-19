@@ -184,13 +184,20 @@ final class GenerateViewModel {
         } catch {
             HapticService.notification(.error)
             if let network = error as? NetworkError {
-                // Show paywall on rate limit
+                // Show paywall only on explicit rate-limit, not auth errors.
                 if case .rateLimited = network {
                     showPaywall = true
                     AnalyticsService.shared.track(.generateRateLimited)
                     AnalyticsService.shared.track(.paywallShown)
                 }
-                errorMessage = network.errorDescription
+                // Railway rejects Supabase JWTs with 401, which maps to .unauthorized.
+                // Showing "Session expired" is misleading — the user IS signed in.
+                // Show a service-level message instead until Phase 3 migrates to Edge Functions.
+                if case .unauthorized = network {
+                    errorMessage = "Prompt generation is temporarily unavailable. Please try again."
+                } else {
+                    errorMessage = network.errorDescription
+                }
             } else {
                 errorMessage = error.localizedDescription
             }

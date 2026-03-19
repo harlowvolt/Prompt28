@@ -1,8 +1,8 @@
 # Orion Orb — Clean Roadmap (Post-Phase-2, v1.9)
 
 **Last updated: 2026-03-19**
-**Version**: v2.1 (Phase 2 hardening / Phase 2.5)
-**Status**: Phase 2 hardening in progress — native cleanup done, auth live, history hardening implemented, physical-device validation is the current practical path
+**Version**: v2.3 (Phase 2 hardening / Phase 2.5)
+**Status**: Phase 2 hardening in progress — auth session bug fixed, UpgradeView paywall unblocked, generation error messaging corrected, physical-device validation is the current practical path
 
 This roadmap separates **current working reality** from **next critical steps** from **long-term vision**. It is grounded in actual code, not aspirations.
 
@@ -56,6 +56,10 @@ This roadmap separates **current working reality** from **next critical steps** 
 19. ✅ Pending deletes are filtered out of deferred-history restore/persistence, preventing deleted items from resurfacing during the reconciliation window
 20. ✅ Generation path now refreshes the Supabase session token before calling the legacy Railway `/api/generate` endpoint and retries once on session-expired responses
 21. ✅ Generate failure surfacing now includes raw backend/body text when the legacy Railway response is non-JSON or decodes unexpectedly
+22. ✅ `AuthManager.bootstrap()` clears the SDK's internal stale session on restore failure — fixes "session expired" blocking all fresh logins
+23. ✅ `UpgradeView` resolves the "Loading plans…" infinite spinner: tracks `productsLoaded` state, shows a real "Plans not available" message when StoreKit returns empty
+24. ✅ `UpgradeView` dev section restructured — "Reset Usage Counter" and "Admin key / Activate Dev Plan" are now clearly separated sections with explanatory labels
+25. ✅ `GenerateViewModel` Railway 401 now shows "Prompt generation is temporarily unavailable" instead of the misleading "Session expired. Please sign in again."
 
 ### What's NOT Fully Validated Yet
 
@@ -388,11 +392,14 @@ When implementing Phase 3+ features:
 
 | Issue | Status | Workaround |
 |-------|--------|-----------|
-| Supabase anon key wrong | ⏳ Awaiting fix | Replace in Info.plist |
-| Supabase tables missing | ⏳ Awaiting creation | Run SQL setup scripts |
-| Railway user plan fetch fails | ⏳ Awaiting schema alignment | Verify endpoint in AuthManager |
+| Supabase anon key format | ✅ Publishable key (`sb_publishable_...`) is correct format | In Info.plist |
+| Auth "session expired" on login | ✅ Fixed — bootstrap now clears stale SDK session | `AuthManager.bootstrap()` |
+| Supabase tables missing | ⏳ Awaiting creation | Run SQL setup scripts in CURRENT_STATE_CLEAN_ROADMAP Step 2 |
+| Railway user plan fetch fails | ⏳ By design — Supabase JWTs rejected by Railway | Phase 3: migrate to Edge Functions |
+| Railway generate call fails (401) | ⏳ By design — Supabase JWTs rejected | Shows clear error now; Phase 3 migration fix |
+| UpgradeView "Loading plans…" forever | ✅ Fixed — `productsLoaded` state + fallback UI | `UpgradeView.swift` |
 | Metal Orb not rolling out | ✅ Ready | Enable feature flag |
-| IAP products not available | ⏳ Awaiting App Store setup | Create products in App Store Connect |
+| IAP products not available | ⏳ Awaiting App Store Connect setup | Create products in App Store Connect |
 
 ---
 

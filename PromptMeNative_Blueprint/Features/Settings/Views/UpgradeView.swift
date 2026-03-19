@@ -8,6 +8,9 @@ struct UpgradeView: View {
     @Environment(\.usageTracker) private var scopedUsageTracker
     @Bindable var viewModel: SettingsViewModel
 
+    /// Tracks whether `loadProducts()` has returned (products may still be empty).
+    @State private var productsLoaded = false
+
     // MARK: - Body
 
     var body: some View {
@@ -41,6 +44,9 @@ struct UpgradeView: View {
         .task {
             guard let scopedStoreManager else { return }
             await scopedStoreManager.loadProducts()
+            // Mark loading complete regardless of whether products came back.
+            // This lets the UI exit the spinner state and show a real message.
+            productsLoaded = true
         }
     }
 
@@ -75,7 +81,8 @@ struct UpgradeView: View {
     @ViewBuilder
     private var productList: some View {
         if let scopedStoreManager {
-            if scopedStoreManager.products.isEmpty {
+            if !productsLoaded {
+                // Still waiting for StoreKit to return
                 VStack(spacing: 14) {
                     ProgressView()
                         .tint(PromptTheme.softLilac)
@@ -85,6 +92,22 @@ struct UpgradeView: View {
                 }
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 32)
+            } else if scopedStoreManager.products.isEmpty {
+                // StoreKit returned but no products configured yet (sandbox / pre-App Store setup)
+                VStack(spacing: 8) {
+                    Image(systemName: "bag.badge.questionmark")
+                        .font(.system(size: 30))
+                        .foregroundStyle(PromptTheme.softLilac.opacity(0.5))
+                    Text("Plans are not available right now.")
+                        .font(.system(size: 15, weight: .semibold, design: .rounded))
+                        .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.75))
+                    Text("Check back soon, or contact support if this persists.")
+                        .font(.system(size: 13, design: .rounded))
+                        .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
+                        .multilineTextAlignment(.center)
+                }
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 24)
             } else {
                 VStack(spacing: 14) {
                     ForEach(scopedStoreManager.products, id: \.id) { product in
@@ -135,14 +158,17 @@ struct UpgradeView: View {
         Divider()
             .overlay(PromptTheme.softLilac.opacity(0.2))
 
-        VStack(alignment: .leading, spacing: 10) {
-            Text("Dev Plan (internal)")
+        VStack(alignment: .leading, spacing: 12) {
+
+            // ── Usage counter reset ──────────────────────────────────────────
+            // Resets the local Keychain freemium counter. No key required.
+            // Use this during development when the 10-prompt gate fires before
+            // the backend plan sync is operational with Supabase JWTs.
+
+            Text("Usage Counter")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
 
-            // DEBUG-only: resets the local Keychain usage counter without touching Railway.
-            // Use this when the free-tier gate fires during development before plan sync
-            // with Railway is operational on Supabase JWTs.
             if let tracker = scopedUsageTracker {
                 Button("Reset Usage Counter (Dev)") {
                     tracker.reset()
@@ -150,7 +176,22 @@ struct UpgradeView: View {
                 .font(.system(size: 13, weight: .medium, design: .rounded))
                 .foregroundStyle(.orange.opacity(0.85))
                 .buttonStyle(.plain)
+
+                Text("Clears the local monthly count to 0. No admin key needed.")
+                    .font(.system(size: 11, design: .rounded))
+                    .foregroundStyle(PromptTheme.softLilac.opacity(0.38))
+                    .fixedSize(horizontal: false, vertical: true)
             }
+
+            Divider()
+                .overlay(PromptTheme.softLilac.opacity(0.12))
+                .padding(.vertical, 2)
+
+            // ── Dev plan activation (requires Railway admin key) ─────────────
+
+            Text("Dev Plan (requires admin key)")
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
 
             SecureField("Admin key", text: $viewModel.devAdminKey)
                 .font(.system(size: 14, design: .monospaced))

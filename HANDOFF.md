@@ -349,6 +349,10 @@ File: `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift`
 - StoreKit product loading failure is not the generation gate in the current app flow.
 - `GenerateViewModel` now refreshes the Supabase session token before generation and retries once on legacy 401/session-expired responses instead of immediately logging the user out.
 - `APIClient` now surfaces raw backend/body text for `/api/generate` failures when the Railway response is non-JSON or decodes unexpectedly, so device testing can distinguish auth rejection, bad response shape, and backend errors.
+- `UpgradeView` now tracks a `productsLoaded: Bool` state separately from `products.isEmpty`. After `loadProducts()` returns with no products (e.g. no App Store Connect sandbox products registered), the view shows "Plans are not available right now." instead of an infinite spinner.
+- `UpgradeView` dev section now has two clearly separated subsections: "Usage Counter" (Reset button, no key needed) and "Dev Plan (requires admin key)" (SecureField + Activate Dev Plan button). Labels make it explicit that the reset button does not require an admin key.
+- `GenerateViewModel` outer catch now shows "Prompt generation is temporarily unavailable. Please try again." for `.unauthorized` errors instead of "Session expired. Please sign in again." — Railway rejects Supabase JWTs with 401, and the previous message was misleading since the user is authenticated.
+- `AuthManager.bootstrap()` now calls `try? await supabase.auth.signOut()` when session restoration fails, clearing the SDK's internal session storage so subsequent login attempts do not re-send the expired token as a Bearer header. This fixes the "session expired, please login again" error that blocked all fresh login attempts.
 - **Important truth:** automated validation completion is still pending unless `xcodebuild test` returns real pass/fail results. Do not claim Phase 2 hardening is fully validated yet.
 
 ## Known Remaining Gaps

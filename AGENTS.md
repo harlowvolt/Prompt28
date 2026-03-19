@@ -335,6 +335,10 @@ Uses standard XCTest framework for end-to-end testing.
 - StoreKit product loading does not gate free-tier generation in `GenerateViewModel`.
 - `GenerateViewModel` now refreshes the Supabase session before generate and retries once on a legacy 401/session-expired response.
 - `APIClient` now exposes raw backend/body text for `/api/generate` failure paths when possible, instead of collapsing them into generic decode/server messages.
+- `AuthManager.bootstrap()` now calls `try? await supabase.auth.signOut()` on session-restore failure to clear the SDK's stale internal session, preventing "session expired" errors on subsequent fresh logins (commit `2767e12`).
+- `UpgradeView` now tracks `productsLoaded: Bool` separately from `products.isEmpty`; when StoreKit returns no products (no App Store Connect sandbox setup), the spinner resolves to a clear "Plans are not available right now." message rather than spinning forever.
+- `UpgradeView` dev section is now split into two clearly labelled subsections: "Usage Counter" (Reset button, no key needed) and "Dev Plan (requires admin key)" — eliminating the UX confusion where the admin key SecureField appeared to be a prerequisite for the reset button.
+- `GenerateViewModel` now shows "Prompt generation is temporarily unavailable. Please try again." for `.unauthorized` API errors (Railway rejects Supabase JWTs with 401) instead of the misleading "Session expired. Please sign in again." — the paywall is not shown for this case.
 - Automated validation completion is still pending unless `xcodebuild test` has completed with real pass/fail output.
 
 ## Known Remaining Gaps
