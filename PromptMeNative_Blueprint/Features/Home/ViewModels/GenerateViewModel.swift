@@ -23,6 +23,10 @@ final class GenerateViewModel {
     private let preferencesStore: any PreferenceStoring
     private let usageTracker: UsageTracker
 
+    // Phase 3: StoreKit plan gate — reads verified receipts to determine real plan tier.
+    // Nil during testing / when storeManager isn't available; falls back to auth plan.
+    private let storeManager: StoreManager?
+
     // Phase 3: Supabase Edge Function generation path.
     // Nil when the feature flag is not set (default — falls back to Railway).
     private let supabase: SupabaseClient?
@@ -36,6 +40,7 @@ final class GenerateViewModel {
         historyStore: any HistoryStoring,
         preferencesStore: any PreferenceStoring,
         usageTracker: UsageTracker,
+        storeManager: StoreManager? = nil,
         supabase: SupabaseClient? = nil
     ) {
         self.apiClient = apiClient
@@ -43,6 +48,7 @@ final class GenerateViewModel {
         self.historyStore = historyStore
         self.preferencesStore = preferencesStore
         self.usageTracker = usageTracker
+        self.storeManager = storeManager
         self.supabase = supabase
         // Read the Edge Function name from Info.plist at init time.
         // Set SUPABASE_GENERATE_FUNCTION = "" in Info.plist to disable (default).
@@ -101,7 +107,9 @@ final class GenerateViewModel {
         }
 
         // Client-side freemium gate — avoids a wasted API call when local count is exhausted.
-        let plan = authManager.currentUser?.plan ?? .starter
+        // Prefer StoreKit receipt-backed plan (storeManager.activePlan) so paid users aren't
+        // blocked by the Railway plan-sync failure. Fall back to auth user plan, then starter.
+        let plan = storeManager?.activePlan ?? authManager.currentUser?.plan ?? .starter
         guard usageTracker.canGenerate(for: plan) else {
             showPaywall = true
             AnalyticsService.shared.track(.paywallShown)

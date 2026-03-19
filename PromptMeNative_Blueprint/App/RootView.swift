@@ -10,6 +10,7 @@ struct RootView: View {
     @Environment(\.historyStore) private var scopedHistoryStore
     @Environment(\.usageTracker) private var scopedUsageTracker
     @Environment(\.orbEngineFactory) private var scopedOrbEngineFactory
+    @Environment(\.storeManager) private var scopedStoreManager
     @Environment(\.supabase) private var scopedSupabase
     @AppStorage("hasAcceptedPrivacy") private var hasAcceptedPrivacy = false
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
@@ -210,6 +211,7 @@ struct RootView: View {
                 historyStore: historyStore,
                 usageTracker: usageTracker,
                 orbEngineFactory: orbEngineFactory,
+                storeManager: scopedStoreManager,
                 supabase: scopedSupabase
             )
         } else {

@@ -92,6 +92,21 @@ final class StoreManager {
 
     // MARK: - Helpers
 
+    /// The highest plan tier unlocked by current verified StoreKit receipts.
+    /// Reads directly from `purchasedProductIDs` — no server round-trip needed.
+    /// Falls back to `.starter` when no active purchase is found.
+    var activePlan: PlanType {
+        if purchasedProductIDs.contains(StoreProductID.unlimitedMonthly) ||
+           purchasedProductIDs.contains(StoreProductID.unlimitedYearly) {
+            return .unlimited
+        }
+        if purchasedProductIDs.contains(StoreProductID.proMonthly) ||
+           purchasedProductIDs.contains(StoreProductID.proYearly) {
+            return .pro
+        }
+        return .starter
+    }
+
     /// Returns the `PlanType` that corresponds to a given StoreKit product ID,
     /// so we can sync the backend after a successful purchase.
     func planType(for productID: String) -> PlanType? {

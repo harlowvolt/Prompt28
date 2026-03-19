@@ -24,6 +24,7 @@ struct HomeView: View {
         historyStore: any HistoryStoring,
         usageTracker: UsageTracker,
         orbEngineFactory: any OrbEngineFactoryProtocol,
+        storeManager: StoreManager? = nil,
         supabase: SupabaseClient? = nil
     ) {
         self.authManager = authManager
@@ -42,6 +43,7 @@ struct HomeView: View {
                 historyStore: historyStore,
                 preferencesStore: preferencesStore,
                 usageTracker: usageTracker,
+                storeManager: storeManager,
                 supabase: supabase
             )
         )
