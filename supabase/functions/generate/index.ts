@@ -1,23 +1,19 @@
 // Supabase Edge Function: generate
 // Receives a GenerateRequest from the iOS app and returns a GenerateResponse.
 //
-// Required Supabase secret (set via CLI or dashboard):
-//   OPENAI_API_KEY   — your OpenAI API key
+// Required Supabase secret — set ONE of these:
+//   ANTHROPIC_API_KEY   — preferred (get from console.anthropic.com)
+//   OPENAI_API_KEY      — fallback  (get from platform.openai.com)
 //
-// Request body (matches iOS GenerateRequest):
-//   { input: string, refinement?: string, mode: "ai" | "human", systemPrompt?: string }
-//
-// Response body (matches iOS GenerateResponse / EdgeGenerateResponse):
-//   { professional: string, template: string }
+// Set via CLI:
+//   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 //
 // Deploy:
 //   supabase functions deploy generate --no-verify-jwt
-//
-// Note: --no-verify-jwt lets the function handle auth itself (or be open).
-// If you want strict JWT verification, remove the flag and the JWT check below.
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -35,13 +31,13 @@ interface GenerateResponse {
 }
 
 const defaultSystemPrompts: Record<string, string> = {
-  ai: "You are an expert AI prompt engineer. Transform the user's raw spoken idea into a precise, structured prompt optimised for AI language models. Maximise clarity, specificity, and instructional detail.",
+  ai: "You are an expert AI prompt engineer. Transform the user's raw idea into a precise, structured prompt optimised for AI language models. Maximise clarity, specificity, and instructional detail.",
   human:
-    "You are an expert communicator and copywriter. Transform the user's raw spoken idea into clear, compelling, human-centred communication. Use natural language, conversational tone, and emotional clarity.",
+    "You are an expert communicator and copywriter. Transform the user's raw idea into clear, compelling, human-centred communication. Use natural language, conversational tone, and emotional clarity.",
 };
 
 Deno.serve(async (req: Request) => {
-  // ── CORS preflight ──────────────────────────────────────────────────────────
+  // ── CORS preflight ───────────────────────────────────────────────────────────
   if (req.method === "OPTIONS") {
     return new Response("ok", {
       headers: {
@@ -53,7 +49,7 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    // ── Parse request body ────────────────────────────────────────────────────
+    // ── Parse body ───────────────────────────────────────────────────────────────
     const body = (await req.json()) as GenerateRequest;
     const { input, refinement, mode, systemPrompt } = body;
 
@@ -61,14 +57,11 @@ Deno.serve(async (req: Request) => {
       return errorResponse("Input too short.", 400);
     }
 
-    // ── Auth: verify user JWT (optional but recommended) ─────────────────────
-    // The supabase-swift SDK sends the user's JWT as Bearer automatically.
-    // We verify it here so only authenticated users can call this function.
+    // ── Auth: verify Supabase JWT ─────────────────────────────────────────────
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return errorResponse("Unauthorized.", 401);
     }
-
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
         auth: { persistSession: false },
@@ -80,121 +73,147 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // ── Build the OpenAI prompt ───────────────────────────────────────────────
+    // ── Build prompts ─────────────────────────────────────────────────────────
     const resolvedSystemPrompt =
-      (systemPrompt && systemPrompt.trim().length > 0)
-        ? systemPrompt.trim()
-        : (defaultSystemPrompts[mode] ?? defaultSystemPrompts.ai);
+      systemPrompt?.trim() || defaultSystemPrompts[mode] || defaultSystemPrompts.ai;
 
-    // Build user message — include refinement context when provided
     let userMessage = input.trim();
-    if (refinement && refinement.trim().length > 0) {
-      userMessage = `Original prompt:\n${input.trim()}\n\nRefinement request:\n${refinement.trim()}\n\nPlease refine the original prompt based on the refinement request.`;
+    if (refinement?.trim()) {
+      userMessage =
+        `Original prompt:\n${input.trim()}\n\nRefinement request:\n${refinement.trim()}\n\nRefine the original prompt based on the refinement request.`;
     }
 
-    // ── Call OpenAI ───────────────────────────────────────────────────────────
-    if (!OPENAI_API_KEY) {
-      return errorResponse("OpenAI API key not configured.", 500);
+    const taskInstruction =
+      `${userMessage}\n\nReturn ONLY a JSON object with exactly two keys — no markdown, no explanation:\n{"professional":"<full polished prompt>","template":"<fill-in-the-blank version with [PLACEHOLDER] tokens>"}`;
+
+    // ── Route to available AI provider ────────────────────────────────────────
+    let rawContent: string;
+
+    if (ANTHROPIC_API_KEY) {
+      rawContent = await callAnthropic(resolvedSystemPrompt, taskInstruction);
+    } else if (OPENAI_API_KEY) {
+      rawContent = await callOpenAI(resolvedSystemPrompt, taskInstruction);
+    } else {
+      return errorResponse(
+        "No AI API key configured. Set ANTHROPIC_API_KEY or OPENAI_API_KEY in Supabase secrets.",
+        500,
+      );
     }
 
-    const openAIResponse = await fetch(
-      "https://api.openai.com/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENAI_API_KEY}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "gpt-4o-mini",
-          messages: [
-            { role: "system", content: resolvedSystemPrompt },
-            {
-              role: "user",
-              content:
-                `Transform this into a polished, structured prompt. Return a JSON object with exactly two keys:\n- "professional": the full, refined prompt\n- "template": a shorter, fill-in-the-blank template version with [PLACEHOLDER] tokens where appropriate\n\nInput: ${userMessage}`,
-            },
-          ],
-          response_format: { type: "json_object" },
-          temperature: 0.7,
-          max_tokens: 1000,
-        }),
-      },
-    );
+    // ── Parse JSON from AI response ───────────────────────────────────────────
+    // Strip any markdown fences the model may have added despite instructions.
+    const cleaned = rawContent
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
 
-    if (!openAIResponse.ok) {
-      const errText = await openAIResponse.text();
-      console.error("OpenAI error:", openAIResponse.status, errText);
-
-      // Surface the actual OpenAI error reason so the iOS client can display it.
-      let detail = `OpenAI error ${openAIResponse.status}`;
-      try {
-        const errJson = JSON.parse(errText);
-        if (errJson?.error?.message) {
-          detail = errJson.error.message;
-        } else if (typeof errJson?.error === "string") {
-          detail = errJson.error;
-        }
-      } catch { /* keep default detail */ }
-
-      // Map common OpenAI status codes to user-facing messages.
-      if (openAIResponse.status === 401) {
-        return errorResponse("OpenAI API key is invalid or missing. Please contact support.", 500);
-      } else if (openAIResponse.status === 429) {
-        return errorResponse("Generation quota reached. Please try again in a moment.", 429);
-      } else if (openAIResponse.status === 402) {
-        return errorResponse("OpenAI account billing issue. Please contact support.", 500);
-      }
-
-      return errorResponse(`Generation failed: ${detail}`, 502);
-    }
-
-    const openAIData = await openAIResponse.json();
-    const rawContent = openAIData?.choices?.[0]?.message?.content;
-
-    if (!rawContent) {
-      return errorResponse("Empty response from AI service.", 502);
-    }
-
-    // ── Parse JSON from OpenAI ────────────────────────────────────────────────
-    let parsed: { professional?: string; template?: string };
+    let parsed: { professional?: string; template?: string } = {};
     try {
-      parsed = JSON.parse(rawContent);
+      parsed = JSON.parse(cleaned);
     } catch {
-      // Fallback: use the raw content as professional, derive a simple template
-      parsed = {
-        professional: rawContent.trim(),
-        template: rawContent.trim(),
-      };
+      // If JSON parse fails entirely, use the raw text for both fields.
+      parsed = { professional: cleaned, template: cleaned };
     }
 
-    const professional = (parsed.professional ?? rawContent).trim();
+    const professional = (parsed.professional ?? cleaned).trim();
     const template = (parsed.template ?? professional).trim();
 
     if (!professional) {
-      return errorResponse("AI returned empty result.", 502);
+      return errorResponse("AI returned an empty result. Please try again.", 502);
     }
 
     const result: GenerateResponse = { professional, template };
-
     return new Response(JSON.stringify(result), {
-      headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*",
-      },
+      headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });
   } catch (err) {
+    if (err instanceof APIError) {
+      return errorResponse(err.message, err.status);
+    }
     console.error("Edge Function unhandled error:", err);
     return errorResponse("Internal server error.", 500);
   }
 });
 
+// ── Anthropic (Claude) ────────────────────────────────────────────────────────
+async function callAnthropic(system: string, userMsg: string): Promise<string> {
+  const res = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    headers: {
+      "x-api-key": ANTHROPIC_API_KEY!,
+      "anthropic-version": "2023-06-01",
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "claude-haiku-4-5-20251001",
+      max_tokens: 1024,
+      system,
+      messages: [{ role: "user", content: userMsg }],
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("Anthropic error:", res.status, text);
+    if (res.status === 401) throw new APIError("Anthropic API key is invalid. Please contact support.", 500);
+    if (res.status === 429) throw new APIError("Generation quota reached. Please try again in a moment.", 429);
+    throw new APIError(`Anthropic error ${res.status}`, 502);
+  }
+
+  const data = await res.json();
+  const content = data?.content?.[0]?.text;
+  if (!content) throw new APIError("Empty response from Anthropic.", 502);
+  return content;
+}
+
+// ── OpenAI (GPT-4o-mini) ──────────────────────────────────────────────────────
+async function callOpenAI(system: string, userMsg: string): Promise<string> {
+  const res = await fetch("https://api.openai.com/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${OPENAI_API_KEY}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      model: "gpt-4o-mini",
+      response_format: { type: "json_object" },
+      temperature: 0.7,
+      max_tokens: 1000,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: userMsg },
+      ],
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("OpenAI error:", res.status, text);
+    if (res.status === 401) throw new APIError("OpenAI API key is invalid. Please contact support.", 500);
+    if (res.status === 429) throw new APIError("Generation quota reached. Please try again in a moment.", 429);
+    if (res.status === 402) throw new APIError("OpenAI billing issue. Please contact support.", 500);
+    throw new APIError(`OpenAI error ${res.status}`, 502);
+  }
+
+  const data = await res.json();
+  const content = data?.choices?.[0]?.message?.content;
+  if (!content) throw new APIError("Empty response from OpenAI.", 502);
+  return content;
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+class APIError extends Error {
+  status: number;
+  constructor(message: string, status: number) {
+    super(message);
+    this.status = status;
+  }
+}
+
 function errorResponse(message: string, status: number): Response {
   return new Response(JSON.stringify({ error: message }), {
     status,
-    headers: {
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*",
-    },
+    headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
   });
 }
