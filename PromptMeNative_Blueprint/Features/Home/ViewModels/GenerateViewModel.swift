@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import UIKit
+@preconcurrency import Supabase
 
 @Observable
 @MainActor
@@ -22,18 +23,32 @@ final class GenerateViewModel {
     private let preferencesStore: any PreferenceStoring
     private let usageTracker: UsageTracker
 
+    // Phase 3: Supabase Edge Function generation path.
+    // Nil when the feature flag is not set (default — falls back to Railway).
+    private let supabase: SupabaseClient?
+    // Name of the deployed Edge Function, read from Info.plist key
+    // SUPABASE_GENERATE_FUNCTION. Empty string or missing key → Railway fallback.
+    private let edgeFunctionName: String?
+
     init(
         apiClient: any APIClientProtocol,
         authManager: AuthManager,
         historyStore: any HistoryStoring,
         preferencesStore: any PreferenceStoring,
-        usageTracker: UsageTracker
+        usageTracker: UsageTracker,
+        supabase: SupabaseClient? = nil
     ) {
         self.apiClient = apiClient
         self.authManager = authManager
         self.historyStore = historyStore
         self.preferencesStore = preferencesStore
         self.usageTracker = usageTracker
+        self.supabase = supabase
+        // Read the Edge Function name from Info.plist at init time.
+        // Set SUPABASE_GENERATE_FUNCTION = "" in Info.plist to disable (default).
+        // Set it to the deployed function name (e.g. "generate") to enable Phase 3 path.
+        let raw = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_GENERATE_FUNCTION") as? String
+        self.edgeFunctionName = (raw?.isEmpty == false) ? raw : nil
         self.selectedMode = preferencesStore.preferences.selectedMode
     }
 
@@ -114,18 +129,35 @@ final class GenerateViewModel {
             )
 
             let response: GenerateResponse
-            do {
-                response = try await apiClient.generate(request, token: token)
-            } catch {
-                if let network = error as? NetworkError, network.isSessionExpired {
-                    await authManager.refreshMe()
-                    guard let refreshedToken = authManager.token else {
-                        errorMessage = "Please sign in to generate prompts."
-                        return
+
+            if let sb = supabase, let fnName = edgeFunctionName {
+                // ── Phase 3: Supabase Edge Function path ──────────────────────
+                // Uses supabase.functions.invoke() — carries the user's Supabase
+                // JWT automatically, no Railway auth needed.
+                response = try await invokeEdgeFunction(
+                    supabase: sb,
+                    functionName: fnName,
+                    request: request,
+                    plan: plan
+                )
+            } else {
+                // ── Phase 2: Legacy Railway path ──────────────────────────────
+                // Note: Railway rejects Supabase JWTs with 401. The retry below
+                // refreshes the Supabase session token and tries once more.
+                // If Railway still rejects, the outer catch shows a clear message.
+                do {
+                    response = try await apiClient.generate(request, token: token)
+                } catch {
+                    if let network = error as? NetworkError, network.isSessionExpired {
+                        await authManager.refreshMe()
+                        guard let refreshedToken = authManager.token else {
+                            errorMessage = "Please sign in to generate prompts."
+                            return
+                        }
+                        response = try await apiClient.generate(request, token: refreshedToken)
+                    } else {
+                        throw error
                     }
-                    response = try await apiClient.generate(request, token: refreshedToken)
-                } else {
-                    throw error
                 }
             }
             let promptText = response.professional.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -227,6 +259,41 @@ final class GenerateViewModel {
         errorMessage = nil
     }
 
+    // MARK: - Phase 3: Edge Function invocation
+
+    /// Calls the Supabase Edge Function at `functionName` and maps the response
+    /// to the app's `GenerateResponse`. The Edge Function only needs to return
+    /// `{ professional, template }` — usage/plan fields are filled in locally
+    /// if the function doesn't provide them.
+    private func invokeEdgeFunction(
+        supabase: SupabaseClient,
+        functionName: String,
+        request: GenerateRequest,
+        plan: PlanType
+    ) async throws -> GenerateResponse {
+        let raw: EdgeGenerateResponse = try await supabase.functions.invoke(
+            functionName,
+            options: FunctionInvokeOptions(body: request)
+        )
+        // Fill in usage metadata locally when the Edge Function omits them.
+        let used = raw.prompts_used ?? (usageTracker.count + 1)
+        let remaining: Int?
+        if let r = raw.prompts_remaining {
+            remaining = r
+        } else if plan == .starter {
+            remaining = max(0, UsageTracker.freeMonthlyLimit - used)
+        } else {
+            remaining = nil
+        }
+        return GenerateResponse(
+            professional: raw.professional,
+            template: raw.template,
+            prompts_used: used,
+            prompts_remaining: remaining,
+            plan: raw.plan ?? plan
+        )
+    }
+
     func toggleFavoriteForLatest() {
         guard let latestResult else { return }
         HapticService.impact(.medium)
@@ -248,4 +315,28 @@ final class GenerateViewModel {
         historyStore.add(item)
         latestHistoryItemID = item.id
     }
+}
+
+// MARK: - Edge Function DTO
+
+/// Decodable response from the Supabase Edge Function `/generate`.
+/// The Edge Function MUST return at minimum `{ professional, template }`.
+/// All other fields are optional and filled in locally when absent.
+///
+/// Minimum Edge Function response shape (Deno / Node):
+/// ```json
+/// {
+///   "professional": "Refined prompt text…",
+///   "template": "Template text…",
+///   "prompts_used": 1,           // optional
+///   "prompts_remaining": 9,      // optional (starter plan)
+///   "plan": "starter"            // optional
+/// }
+/// ```
+private struct EdgeGenerateResponse: Decodable, Sendable {
+    let professional: String
+    let template: String
+    let prompts_used: Int?
+    let prompts_remaining: Int?
+    let plan: PlanType?
 }

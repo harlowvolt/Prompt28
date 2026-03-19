@@ -1,4 +1,5 @@
 import SwiftUI
+@preconcurrency import Supabase
 
 struct HomeView: View {
     @Environment(\.errorState) private var errorState
@@ -22,7 +23,8 @@ struct HomeView: View {
         preferencesStore: any PreferenceStoring,
         historyStore: any HistoryStoring,
         usageTracker: UsageTracker,
-        orbEngineFactory: any OrbEngineFactoryProtocol
+        orbEngineFactory: any OrbEngineFactoryProtocol,
+        supabase: SupabaseClient? = nil
     ) {
         self.authManager = authManager
         self.router = router
@@ -39,7 +41,8 @@ struct HomeView: View {
                 authManager: authManager,
                 historyStore: historyStore,
                 preferencesStore: preferencesStore,
-                usageTracker: usageTracker
+                usageTracker: usageTracker,
+                supabase: supabase
             )
         )
     }

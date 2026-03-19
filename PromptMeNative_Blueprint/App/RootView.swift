@@ -10,6 +10,7 @@ struct RootView: View {
     @Environment(\.historyStore) private var scopedHistoryStore
     @Environment(\.usageTracker) private var scopedUsageTracker
     @Environment(\.orbEngineFactory) private var scopedOrbEngineFactory
+    @Environment(\.supabase) private var scopedSupabase
     @AppStorage("hasAcceptedPrivacy") private var hasAcceptedPrivacy = false
     @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var didBootstrap = false
@@ -208,7 +209,8 @@ struct RootView: View {
                 preferencesStore: preferencesStore,
                 historyStore: historyStore,
                 usageTracker: usageTracker,
-                orbEngineFactory: orbEngineFactory
+                orbEngineFactory: orbEngineFactory,
+                supabase: scopedSupabase
             )
         } else {
             launchView

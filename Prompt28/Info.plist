@@ -43,6 +43,8 @@
 	<string>https://jzwerkqoczhtkyhigigf.supabase.co</string>
 	<key>SUPABASE_ANON_KEY</key>
 	<string>sb_publishable_LECnrvYUeR1OrudfadkS_w_V05R0OXg</string>
+	<key>SUPABASE_GENERATE_FUNCTION</key>
+	<string></string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

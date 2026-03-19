@@ -1,7 +1,7 @@
 # Orion Orb — Clean Roadmap (Post-Phase-2, v1.9)
 
 **Last updated: 2026-03-19**
-**Version**: v2.3 (Phase 2 hardening / Phase 2.5)
+**Version**: v2.4 (Phase 2 hardening / Phase 2.5 → Phase 3 foundation)
 **Status**: Phase 2 hardening in progress — auth session bug fixed, UpgradeView paywall unblocked, generation error messaging corrected, physical-device validation is the current practical path
 
 This roadmap separates **current working reality** from **next critical steps** from **long-term vision**. It is grounded in actual code, not aspirations.
@@ -60,6 +60,9 @@ This roadmap separates **current working reality** from **next critical steps** 
 23. ✅ `UpgradeView` resolves the "Loading plans…" infinite spinner: tracks `productsLoaded` state, shows a real "Plans not available" message when StoreKit returns empty
 24. ✅ `UpgradeView` dev section restructured — "Reset Usage Counter" and "Admin key / Activate Dev Plan" are now clearly separated sections with explanatory labels
 25. ✅ `GenerateViewModel` Railway 401 now shows "Prompt generation is temporarily unavailable" instead of the misleading "Session expired. Please sign in again."
+26. ✅ **Phase 3 foundation wired**: `GenerateViewModel` now checks `SUPABASE_GENERATE_FUNCTION` in Info.plist. When set to a deployed Edge Function name (e.g. `"generate"`), generation routes to `supabase.functions.invoke()` instead of Railway — carrying the Supabase JWT natively and bypassing the Railway auth incompatibility. Currently set to `""` (disabled — Railway fallback active).
+27. ✅ `HomeView` and `RootView` thread `SupabaseClient` through to `GenerateViewModel` so Edge Function path works end-to-end when enabled.
+28. ✅ `EdgeGenerateResponse` DTO defined — Edge Function only needs to return `{ professional, template }`, usage/plan metadata filled in locally if absent.
 
 ### What's NOT Fully Validated Yet
 
