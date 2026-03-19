@@ -125,7 +125,28 @@ Deno.serve(async (req: Request) => {
     if (!openAIResponse.ok) {
       const errText = await openAIResponse.text();
       console.error("OpenAI error:", openAIResponse.status, errText);
-      return errorResponse("AI service error. Please try again.", 502);
+
+      // Surface the actual OpenAI error reason so the iOS client can display it.
+      let detail = `OpenAI error ${openAIResponse.status}`;
+      try {
+        const errJson = JSON.parse(errText);
+        if (errJson?.error?.message) {
+          detail = errJson.error.message;
+        } else if (typeof errJson?.error === "string") {
+          detail = errJson.error;
+        }
+      } catch { /* keep default detail */ }
+
+      // Map common OpenAI status codes to user-facing messages.
+      if (openAIResponse.status === 401) {
+        return errorResponse("OpenAI API key is invalid or missing. Please contact support.", 500);
+      } else if (openAIResponse.status === 429) {
+        return errorResponse("Generation quota reached. Please try again in a moment.", 429);
+      } else if (openAIResponse.status === 402) {
+        return errorResponse("OpenAI account billing issue. Please contact support.", 500);
+      }
+
+      return errorResponse(`Generation failed: ${detail}`, 502);
     }
 
     const openAIData = await openAIResponse.json();

@@ -238,6 +238,10 @@ final class GenerateViewModel {
                 } else {
                     errorMessage = network.errorDescription
                 }
+            } else if let edgeMessage = edgeFunctionErrorMessage(from: error) {
+                // Edge Function returned a non-2xx response with a JSON body like
+                // { "error": "OpenAI API key is invalid…" }. Show that message directly.
+                errorMessage = edgeMessage
             } else {
                 errorMessage = error.localizedDescription
             }
@@ -324,6 +328,41 @@ final class GenerateViewModel {
         latestHistoryItemID = item.id
     }
 }
+
+// MARK: - Edge Function error extraction
+
+    /// Extracts a human-readable error message from a Supabase `FunctionsError`.
+    ///
+    /// When an Edge Function returns a non-2xx response, supabase-swift v2 throws
+    /// an error whose associated value contains the raw response `Data`. We use
+    /// Mirror to reach that `Data` without importing the internal FunctionsError
+    /// type directly, then decode the JSON body for the "error" field.
+    ///
+    /// Expected Edge Function error body: `{ "error": "some message" }`
+    private func edgeFunctionErrorMessage(from error: Error) -> String? {
+        // Walk the Mirror tree up to two levels to find any Data associated value.
+        func findData(in value: Any) -> Data? {
+            let m = Mirror(reflecting: value)
+            for child in m.children {
+                if let data = child.value as? Data { return data }
+                let inner = Mirror(reflecting: child.value)
+                for innerChild in inner.children {
+                    if let data = innerChild.value as? Data { return data }
+                }
+            }
+            return nil
+        }
+
+        guard let data = findData(in: error) else { return nil }
+
+        // Decode the edge function error body.
+        struct EdgeError: Decodable { let error: String? }
+        if let body = try? JSONDecoder().decode(EdgeError.self, from: data) {
+            return body.error
+        }
+        // Fallback: try as plain string.
+        return String(data: data, encoding: .utf8)
+    }
 
 // MARK: - Edge Function DTO
 
