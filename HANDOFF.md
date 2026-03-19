@@ -1,6 +1,6 @@
-# Prompt28 (Orion Orb) — AI Handoff Document (v3.1, Phase 5 Active)
+# Prompt28 (Orion Orb) — AI Handoff Document (v3.2, Phase 5 Active)
 
-**Last updated: 2026-03-19. Version v3.1 (Phase 4 complete + Trending Supabase-direct, Phase 5 foundations active). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
+**Last updated: 2026-03-19. Version v3.2 (Railway fully retired — all dead code removed; Trending Supabase-direct; Phase 5 foundations active). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
 
 ---
 
@@ -24,6 +24,7 @@ Phases 3 and 4 are fully complete. Phase 5 foundations (intent classifier, tempo
 - ✅ **Metal Orb GPU renderer** (`MetalOrbView.swift` + `Orb.metal`) behind `is_metal_orb_enabled` flag
 - ✅ **Supabase Realtime Trending** — `TrendingViewModel` subscribes to INSERT/UPDATE on `trending_prompts`
 - ✅ **Trending Supabase-direct fetch** — `TrendingViewModel.refreshFromSupabase()` queries `trending_prompts` table directly (WHERE `is_active=true`, ORDER BY `use_count DESC`), maps rows → `PromptCatalog`. Railway `promptsTrending()` retained as silent fallback only. Realtime-triggered refreshes also use the Supabase path.
+- ✅ **Railway fully retired** — `AuthManager` no longer has an `apiClient` dependency; plan is read from `user_metadata.plan`. `GenerateViewModel` has no Railway fallback; missing Edge Function config shows a clear error. `SettingsViewModel.updatePlan()` writes to Supabase user_metadata; `resetUsage()` calls local `UsageTracker.reset()`. `APIClientProtocol`/`APIClient`/`APIEndpoint` stripped to admin+config only. Dead auth/generate DTOs removed from `AuthModels.swift`.
 - ✅ **Shareable cards** — `ShareCardView` + `ImageRenderer` + `ShareLink` with PNG preview
 - ✅ `TypePromptView` glass design system rewrite; `HomeView` double-NavigationStack fixed
 - ✅ **Usage pill** on `HomeView` — live prompts-remaining counter for starter plan users
@@ -113,7 +114,7 @@ It uses a single shared `AppEnvironment` injected via `.environment()` at the ro
 - **Auth direction:** Supabase Auth is live; Apple Sign In code exists but not yet configured in dashboard
 - **OAuth status:** Google sign-in working; Apple sign-in needs Apple Developer + Supabase config
 - **Generation backend:** Supabase Edge Function (`generate`) — Anthropic API primary, OpenAI fallback; Phase 5 intent classifier + temporal context active
-- **Railway status:** fully retired for user-facing calls; `APIClient` may be deleted in a future cleanup
+- **Railway status:** fully retired — `APIClient` stripped to admin+config only; all dead auth/generate/user methods removed
 - **Metering:** server-side (Edge Function counts `prompts` table rows) + client-side (`UsageTracker` Keychain, synced after each generation)
 - **History direction:** local-first JSON + Supabase two-way sync (last-write-wins); pull-to-refresh available
 - **Feedback direction:** RLHF thumbs up/down → Supabase `prompt_feedback` table; `intent_category` + `latency_ms` logged per generation

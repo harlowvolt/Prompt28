@@ -61,7 +61,6 @@ final class AppEnvironment {
         // ── Auth ─────────────────────────────────────────────────────────────
         self.authManager = AuthManager(
             supabase: supabase,
-            apiClient: apiClient,
             keychain: keychain
         )
 

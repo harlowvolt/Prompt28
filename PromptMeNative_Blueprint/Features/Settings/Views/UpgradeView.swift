@@ -358,11 +358,11 @@ private struct ProductCard: View {
         let success = await storeManager.purchase(product)
         guard success else { return }
 
-        // Sync the purchased plan back to the backend
+        // StoreManager.purchase() already calls syncPlanToSupabase() to write
+        // user_metadata.plan and refreshMe() to update the in-memory user.
+        // Just refresh the UI plan picker to reflect the new tier.
         if let planType = storeManager.planType(for: product.id) {
             viewModel.selectedPlan = planType
-            _ = await viewModel.updatePlan()
-            await authManager?.refreshMe()
         }
     }
 }

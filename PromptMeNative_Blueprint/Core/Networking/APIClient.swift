@@ -3,10 +3,6 @@ import Foundation
 @MainActor
 protocol APIClientProtocol: AnyObject {
     func settings() async throws -> AppSettings
-    func updatePlan(_ request: UpdatePlanRequest, token: String) async throws -> UpdatePlanResponse
-    func resetUsage(token: String) async throws -> SuccessResponse
-    func deleteUser(token: String) async throws -> SuccessResponse
-    func generate(_ request: GenerateRequest, token: String) async throws -> GenerateResponse
     func promptsTrending() async throws -> PromptCatalog
     func adminVerify(key: String) async throws -> AdminVerifyResponse
     func adminSettings(key: String) async throws -> AppSettings
@@ -123,53 +119,7 @@ final class APIClient {
         _ = try await send(endpoint, bearerToken: bearerToken, adminKey: adminKey, as: SuccessResponse.self)
     }
 
-    // MARK: Auth
-
-    func register(_ request: RegisterRequest) async throws -> AuthResponse {
-        try await send(.register(request), as: AuthResponse.self)
-    }
-
-    func login(_ request: LoginRequest) async throws -> AuthResponse {
-        try await send(.login(request), as: AuthResponse.self)
-    }
-
-    func googleAuth(_ request: GoogleAuthRequest) async throws -> AuthResponse {
-        try await send(.googleAuth(request), as: AuthResponse.self)
-    }
-
-    func appleAuth(_ request: AppleAuthRequest) async throws -> AuthResponse {
-        try await send(.appleAuth(request), as: AuthResponse.self)
-    }
-
-    // MARK: User
-
-    func me(token: String) async throws -> User {
-        try await send(.me, bearerToken: token, as: User.self)
-    }
-
-    func updatePlan(_ request: UpdatePlanRequest, token: String) async throws -> UpdatePlanResponse {
-        try await send(.updatePlan(request), bearerToken: token, as: UpdatePlanResponse.self)
-    }
-
-    func deleteUser(token: String) async throws -> SuccessResponse {
-        try await send(.deleteUser, bearerToken: token, as: SuccessResponse.self)
-    }
-
-    func resetUsage(token: String) async throws -> SuccessResponse {
-        try await send(.resetUsage, bearerToken: token, as: SuccessResponse.self)
-    }
-
-    // MARK: Generation
-
-    func generate(_ request: GenerateRequest, token: String) async throws -> GenerateResponse {
-        try await send(.generate(request), bearerToken: token, as: GenerateResponse.self)
-    }
-
     // MARK: Config
-
-    func config() async throws -> AppConfigResponse {
-        try await send(.config, as: AppConfigResponse.self)
-    }
 
     func settings() async throws -> AppSettings {
         try await send(.settings, as: AppSettings.self)

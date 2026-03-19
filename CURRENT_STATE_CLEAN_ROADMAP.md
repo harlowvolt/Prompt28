@@ -1,7 +1,7 @@
-# Orion Orb — Clean Roadmap (Phase 4 Complete + Trending Supabase-Direct, v3.1)
+# Orion Orb — Clean Roadmap (Railway Fully Retired, v3.2)
 
 **Last updated: 2026-03-19**
-**Version**: v3.1 (Phase 4 complete + Trending now fetches directly from Supabase `trending_prompts` table — Railway fully retired as data source)
+**Version**: v3.2 (Railway fully retired — all dead code removed, APIClient stripped to admin-only, AuthManager independent of Railway, plan read from Supabase user_metadata)
 **Status**: All Phase 3 + Phase 4 features implemented. Phase 5 (MCP intent routing) is the next horizon. Device validation and App Store Connect IAP setup are the remaining blockers before TestFlight.
 
 This roadmap separates **current working reality** from **next critical steps** from **long-term vision**. It is grounded in actual code, not aspirations.
@@ -88,6 +88,16 @@ This roadmap separates **current working reality** from **next critical steps** 
 44. ✅ `TypePromptView` glass design system rewrite — custom mode segmented control, TextEditor with glassFill + focus ring animation, gradient Generate button, `.presentationDetents([.medium, .large])`.
 45. ✅ `HomeView` double-NavigationStack fix — `TypePromptView` now owns its own NavigationStack; `HomeView` no longer wraps it.
 46. ✅ **Trending fetches directly from Supabase** — `TrendingViewModel` now queries `trending_prompts` table (WHERE `is_active = true`, ORDER BY `use_count DESC`) via `supabase-swift`. Groups rows by `category` into the existing `PromptCatalog → PromptCategory → PromptItem` hierarchy. Supabase is tried first; Railway `promptsTrending()` is the fallback if Supabase fails. `TrendingView` passes `scopedSupabase` to both `loadIfNeeded` and `refresh`. Realtime-triggered refreshes also use the Supabase path. Railway is no longer the primary data source for Trending.
+47. ✅ **Railway fully retired — dead code removed**:
+    - `AuthManager`: removed `apiClient` dependency, removed `syncUserWithServer()` (Railway `/api/me`), `convertSupabaseUserToAppUser` now reads `plan` from `user_metadata.plan` (written by StoreManager after IAP).
+    - `GenerateViewModel`: Railway fallback `else` branch removed; `apiClient` property/parameter removed entirely. If `SUPABASE_GENERATE_FUNCTION` is not set, shows a clear config error instead of silently calling dead Railway endpoint.
+    - `SettingsViewModel.updatePlan()`: replaced Railway call with `supabase.auth.update(user: UserAttributes(data: ["plan": ...]))`. Dev plan activation now writes Supabase user_metadata directly.
+    - `SettingsViewModel.resetUsage()`: replaced Railway call with local `usageTracker.reset()` (synchronous, no async).
+    - `APIClientProtocol`: stripped to admin + config methods only (`settings`, `promptsTrending`, admin verbs).
+    - `APIClient`: removed `register`, `login`, `googleAuth`, `appleAuth`, `me`, `updatePlan`, `deleteUser`, `resetUsage`, `generate`, `config` methods.
+    - `APIEndpoint`: removed all user/auth/generate cases; only `settings`, `promptsTrending`, and admin cases remain.
+    - `AuthModels.swift`: removed Railway-only DTOs (`AuthResponse`, `RegisterRequest`, `LoginRequest`, `GoogleAuthRequest`, `AppleAuthRequest`, `AppConfigResponse`, `UpdatePlanRequest`, `UpdatePlanResponse`). Kept shared types: `SuccessResponse`, `AdminVerifyResponse`, `APIErrorResponse`.
+    - `UpgradeView.handlePurchase()`: removed redundant `viewModel.updatePlan()` call (StoreManager already calls `syncPlanToSupabase`).
 
 ### What's NOT Fully Validated Yet
 

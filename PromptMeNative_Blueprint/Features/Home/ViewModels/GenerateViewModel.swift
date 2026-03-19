@@ -17,7 +17,6 @@ final class GenerateViewModel {
     var showPaywall = false
     var showCopiedToast = false
 
-    private let apiClient: any APIClientProtocol
     private let authManager: AuthManager
     private let historyStore: any HistoryStoring
     private let preferencesStore: any PreferenceStoring
@@ -35,7 +34,6 @@ final class GenerateViewModel {
     private let edgeFunctionName: String?
 
     init(
-        apiClient: any APIClientProtocol,
         authManager: AuthManager,
         historyStore: any HistoryStoring,
         preferencesStore: any PreferenceStoring,
@@ -43,7 +41,6 @@ final class GenerateViewModel {
         storeManager: StoreManager? = nil,
         supabase: SupabaseClient? = nil
     ) {
-        self.apiClient = apiClient
         self.authManager = authManager
         self.historyStore = historyStore
         self.preferencesStore = preferencesStore
@@ -110,18 +107,14 @@ final class GenerateViewModel {
             return
         }
 
-        // Note: refreshMe() is NOT called here. The Railway /me endpoint rejects Supabase
-        // JWTs, so a blocking pre-flight call would silently fail and add network latency
-        // before the gate check. Plan data is synced after a successful generation instead.
-
-        guard let token = authManager.token else {
+        guard authManager.token != nil else {
             errorMessage = "Please sign in to generate prompts."
             return
         }
 
         // Client-side freemium gate — avoids a wasted API call when local count is exhausted.
-        // Prefer StoreKit receipt-backed plan (storeManager.activePlan) so paid users aren't
-        // blocked by the Railway plan-sync failure. Fall back to auth user plan, then starter.
+        // Prefer StoreKit receipt-backed plan so paid users aren't blocked by any plan-sync lag.
+        // Fall back to auth user plan (from user_metadata), then starter.
         let plan = storeManager?.activePlan ?? authManager.currentUser?.plan ?? .starter
         guard usageTracker.canGenerate(for: plan) else {
             showPaywall = true
@@ -151,36 +144,19 @@ final class GenerateViewModel {
 
             let response: GenerateResponse
 
-            if let sb = supabase, let fnName = edgeFunctionName {
-                // ── Phase 3: Supabase Edge Function path ──────────────────────
-                // Uses supabase.functions.invoke() — carries the user's Supabase
-                // JWT automatically, no Railway auth needed.
-                response = try await invokeEdgeFunction(
-                    supabase: sb,
-                    functionName: fnName,
-                    request: request,
-                    plan: plan
-                )
-            } else {
-                // ── Phase 2: Legacy Railway path ──────────────────────────────
-                // Note: Railway rejects Supabase JWTs with 401. The retry below
-                // refreshes the Supabase session token and tries once more.
-                // If Railway still rejects, the outer catch shows a clear message.
-                do {
-                    response = try await apiClient.generate(request, token: token)
-                } catch {
-                    if let network = error as? NetworkError, network.isSessionExpired {
-                        await authManager.refreshMe()
-                        guard let refreshedToken = authManager.token else {
-                            errorMessage = "Please sign in to generate prompts."
-                            return
-                        }
-                        response = try await apiClient.generate(request, token: refreshedToken)
-                    } else {
-                        throw error
-                    }
-                }
+            guard let sb = supabase, let fnName = edgeFunctionName else {
+                errorMessage = "Generation service not configured. Check SUPABASE_GENERATE_FUNCTION in Info.plist."
+                HapticService.notification(.error)
+                return
             }
+
+            // Supabase Edge Function path — carries the user's JWT automatically.
+            response = try await invokeEdgeFunction(
+                supabase: sb,
+                functionName: fnName,
+                request: request,
+                plan: plan
+            )
             let promptText = response.professional.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !promptText.isEmpty else {
                 errorMessage = "The server returned an empty result. Please try again."

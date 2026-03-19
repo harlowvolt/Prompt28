@@ -19,6 +19,7 @@ final class SettingsViewModel {
 	private var preferencesStore: (any PreferenceStoring)?
 	private var historyStore: (any HistoryStoring)?
 	private var supabase: SupabaseClient?
+    private var usageTracker: UsageTracker?
 
 	init() {}
 
@@ -27,7 +28,8 @@ final class SettingsViewModel {
 		authManager: AuthManager,
 		preferencesStore: any PreferenceStoring,
 		historyStore: any HistoryStoring,
-		supabase: SupabaseClient? = nil
+		supabase: SupabaseClient? = nil,
+        usageTracker: UsageTracker? = nil
 	) {
 		guard self.apiClient == nil else { return }
 		self.apiClient = apiClient
@@ -35,6 +37,7 @@ final class SettingsViewModel {
 		self.preferencesStore = preferencesStore
 		self.historyStore = historyStore
 		self.supabase = supabase
+        self.usageTracker = usageTracker
 		syncFromStores()
 	}
 
@@ -76,8 +79,11 @@ final class SettingsViewModel {
 		}
 	}
 
+    /// Writes `selectedPlan` directly to Supabase `user_metadata.plan`.
+    /// Used by the dev "Activate Dev Plan" button in UpgradeView.
+    /// Production IAP upgrades are handled by `StoreManager.syncPlanToSupabase()`.
 	func updatePlan() async -> Bool {
-		guard let authManager, let apiClient, let token = authManager.token else {
+		guard let authManager, let sb = supabase else {
 			errorMessage = "Not authenticated."
 			return false
 		}
@@ -87,11 +93,10 @@ final class SettingsViewModel {
 		defer { isSaving = false }
 
 		do {
-			let adminKey = devAdminKey.trimmingCharacters(in: .whitespacesAndNewlines)
-			_ = try await apiClient.updatePlan(
-				UpdatePlanRequest(plan: selectedPlan, adminKey: adminKey.isEmpty ? nil : adminKey),
-				token: token
-			)
+			try await sb.auth.update(
+                user: UserAttributes(data: ["plan": .string(selectedPlan.rawValue)])
+            )
+            // Refresh the in-memory user so the UI picks up the new plan immediately.
 			await authManager.refreshMe()
 			return true
 		} catch {
@@ -100,22 +105,10 @@ final class SettingsViewModel {
 		}
 	}
 
-	func resetUsage() async {
-		guard let authManager, let apiClient, let token = authManager.token else {
-			errorMessage = "Not authenticated."
-			return
-		}
-
-		isSaving = true
-		errorMessage = nil
-		defer { isSaving = false }
-
-		do {
-			_ = try await apiClient.resetUsage(token: token)
-			await authManager.refreshMe()
-		} catch {
-			errorMessage = error.localizedDescription
-		}
+    /// Resets the local Keychain usage counter to zero.
+    /// Dev-only — visible when `currentUser.plan == .dev`.
+	func resetUsage() {
+		usageTracker?.reset()
 	}
 
 	func deleteAccount() async -> Bool {

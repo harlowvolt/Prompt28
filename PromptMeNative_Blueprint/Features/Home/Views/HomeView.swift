@@ -38,7 +38,6 @@ struct HomeView: View {
 
         self._generateViewModel = State(
             wrappedValue: GenerateViewModel(
-                apiClient: apiClient,
                 authManager: authManager,
                 historyStore: historyStore,
                 preferencesStore: preferencesStore,

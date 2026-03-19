@@ -92,7 +92,8 @@ struct SettingsView: View {
                 authManager: authManager,
                 preferencesStore: preferencesStore,
                 historyStore: historyStore,
-                supabase: scopedSupabase
+                supabase: scopedSupabase,
+                usageTracker: scopedUsageTracker
             )
             viewModel.syncFromStores()
             await viewModel.loadRemoteSettings()
@@ -287,7 +288,7 @@ struct SettingsView: View {
 
                 if authManager?.currentUser?.plan == .dev {
                     Button("Reset Usage") {
-                        Task { await viewModel.resetUsage() }
+                        viewModel.resetUsage()
                     }
                     .font(PromptTheme.Typography.rounded(13, .medium))
                     .foregroundStyle(PromptTheme.softLilac.opacity(0.65))

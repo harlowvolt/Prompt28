@@ -16,9 +16,6 @@ final class AuthManager {
     /// The Supabase client for auth operations
     private let supabase: SupabaseClient
     
-    /// Legacy API client for backward compatibility with Railway API
-    private let apiClient: APIClient
-    
     /// Keychain service for secure token storage
     private let keychain: KeychainService
     
@@ -28,9 +25,8 @@ final class AuthManager {
     private let tokenKey = "orionorb_token"
     private let refreshTokenKey = "orionorb_refresh_token"
     
-    init(supabase: SupabaseClient, apiClient: APIClient, keychain: KeychainService) {
+    init(supabase: SupabaseClient, keychain: KeychainService) {
         self.supabase = supabase
-        self.apiClient = apiClient
         self.keychain = keychain
         
         // Load existing session
@@ -253,30 +249,34 @@ final class AuthManager {
         
         self.token = session.accessToken
         
-        // Convert Supabase user to app User model
-        // For now, default to starter plan - plan sync happens via StoreManager
-        let appUser = convertSupabaseUserToAppUser(session.user, plan: .starter)
+        // Convert Supabase user to app User model.
+        // Plan is read from user_metadata.plan (written by StoreManager.syncPlanToSupabase
+        // after every verified purchase/renewal). Defaults to .starter if absent.
+        let appUser = convertSupabaseUserToAppUser(session.user)
         self.currentUser = appUser
-        
+
         // Track auth success
         AnalyticsService.shared.track(.authSuccess(provider: appUser.provider))
         AnalyticsService.shared.setUserId(appUser.id)
         TelemetryService.shared.setUserId(appUser.id)
-        
-        // Sync with server for plan info (backward compatibility)
-        await syncUserWithServer()
     }
     
-    /// Convert Supabase User to app User model
-    private func convertSupabaseUserToAppUser(_ supabaseUser: Supabase.User, plan: PlanType) -> User {
+    /// Convert Supabase User to app User model.
+    /// Reads `plan` from `user_metadata.plan` (set by StoreManager after purchases).
+    private func convertSupabaseUserToAppUser(_ supabaseUser: Supabase.User) -> User {
         let metadata = supabaseUser.userMetadata
-        
+
         // Extract name from user metadata or email.
         // userMetadata values are AnyJSON — use .stringValue, not `as? String`.
         let name = metadata["full_name"]?.stringValue
             ?? metadata["name"]?.stringValue
             ?? supabaseUser.email?.components(separatedBy: "@").first
             ?? "User"
+
+        // Read plan from user_metadata (written by StoreManager.syncPlanToSupabase
+        // after every IAP purchase/renewal). Falls back to .starter for new users.
+        let plan: PlanType = metadata["plan"]?.stringValue
+            .flatMap(PlanType.init(rawValue:)) ?? .starter
 
         // appMetadata values are also AnyJSON.
         let provider = supabaseUser.appMetadata["provider"]?.stringValue ?? "email"
@@ -291,33 +291,6 @@ final class AuthManager {
             prompts_remaining: nil,
             period_end: ""
         )
-    }
-    
-    private func syncUserWithServer() async {
-        // Fetch full user profile from Railway API for plan information
-        // This maintains backward compatibility during migration
-        guard let token = token else { return }
-        
-        do {
-            let serverUser = try await apiClient.me(token: token)
-            // Update only the plan-related fields from server
-            if let currentUser = currentUser {
-                let updatedUser = User(
-                    id: currentUser.id,
-                    email: currentUser.email,
-                    name: currentUser.name,
-                    provider: currentUser.provider,
-                    plan: serverUser.plan,
-                    prompts_used: serverUser.prompts_used,
-                    prompts_remaining: serverUser.prompts_remaining,
-                    period_end: serverUser.period_end
-                )
-                self.currentUser = updatedUser
-            }
-        } catch {
-            // Silently fail - user can still use app with local auth
-            // Plan info will sync on next refreshMe() call
-        }
     }
     
     private func clearSession() {
