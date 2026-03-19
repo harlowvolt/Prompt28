@@ -1,6 +1,65 @@
-# Prompt28 (Orion Orb) — AI Handoff Document (Phase 2.5 Hardening)
+# Prompt28 (Orion Orb) — AI Handoff Document (Phase 3 Foundation)
 
-**Last updated: 2026-03-19. Version v2.2 (Phase 2 hardening / Phase 2.5). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
+**Last updated: 2026-03-19. Version v2.5 (Phase 3 Edge Function foundation). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
+
+---
+
+## ⚡ Phase 3: Edge Function Deployment (NEXT IMMEDIATE ACTION)
+
+Generation is currently blocked because Railway rejects Supabase JWTs with 401. The iOS app is fully wired for the Edge Function path — it just needs the function deployed and the flag flipped.
+
+### Step-by-step (do this on your Mac)
+
+**1. Set the OPENAI_API_KEY secret in Supabase:**
+```bash
+supabase secrets set OPENAI_API_KEY=sk-...your-key-here...
+```
+
+**2. Deploy the Edge Function:**
+```bash
+cd ~/Desktop/Prompt28
+supabase functions deploy generate --no-verify-jwt
+```
+This deploys `supabase/functions/generate/index.ts` (already committed to repo).
+
+**3. Test the function in the Supabase Dashboard:**
+- Go to Supabase Dashboard → Edge Functions → `generate` → Test
+- POST body: `{"input": "write a poem about the ocean", "mode": "ai"}`
+- Expected response: `{"professional": "...", "template": "..."}`
+
+**4. Activate in the iOS app — set Info.plist flag:**
+In Xcode, open `Prompt28/Info.plist`, find `SUPABASE_GENERATE_FUNCTION`, change the value from `""` to `"generate"`.
+
+**5. Rebuild and test on device.** Generation should now work end-to-end via Supabase.
+
+### Edge Function location
+`supabase/functions/generate/index.ts`
+
+### Request shape (from iOS GenerateRequest)
+```json
+{ "input": "string", "refinement": "string|null", "mode": "ai|human", "systemPrompt": "string|null" }
+```
+
+### Minimum response shape (iOS reads EdgeGenerateResponse)
+```json
+{ "professional": "string", "template": "string" }
+```
+Optional: `prompts_used`, `prompts_remaining`, `plan` — filled in locally on device if absent.
+
+### What the function does
+1. Verifies the Supabase JWT from the Authorization header
+2. Calls OpenAI `gpt-4o-mini` with `response_format: { type: "json_object" }`
+3. Returns `{ professional, template }` — both derived from a single OpenAI call
+
+### If supabase CLI is not installed
+```bash
+brew install supabase/tap/supabase
+supabase login
+supabase link --project-ref jzwerkqoczhtkyhigigf
+```
+Then follow steps 1–5 above.
+
+---
 
 ---
 
