@@ -424,6 +424,8 @@ final class HistoryStore {
 
     private func startLifecycleObservers() {
         #if canImport(UIKit)
+        removeLifecycleObservers()
+
         let notificationNames: [Notification.Name] = [
             UIApplication.willEnterForegroundNotification,
             UIApplication.didBecomeActiveNotification
@@ -443,6 +445,15 @@ final class HistoryStore {
         }
         #endif
     }
+
+    #if canImport(UIKit)
+    private func removeLifecycleObservers() {
+        for token in lifecycleObserverTokens {
+            NotificationCenter.default.removeObserver(token)
+        }
+        lifecycleObserverTokens.removeAll()
+    }
+    #endif
 
     private func currentSessionUserID() async -> UUID? {
         if let sessionUserIDProvider {
@@ -480,6 +491,15 @@ final class HistoryStore {
     }
 
     private func prepareLocalState(for userId: UUID) {
+        if localOwnerUserID == nil,
+           (!items.isEmpty || deferredInitialItems != nil || !pendingDeletedIDs.isEmpty) {
+            deferredInitialItems = nil
+            items = []
+            pendingDeletedIDs = []
+            savePendingDeletes()
+            saveToDisk()
+        }
+
         if let localOwnerUserID, localOwnerUserID != userId {
             deferredInitialItems = nil
             items = []
