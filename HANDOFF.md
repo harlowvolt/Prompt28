@@ -1,6 +1,6 @@
-# Prompt28 (Orion Orb) — AI Handoff Document (Phase 2 Clean)
+# Prompt28 (Orion Orb) — AI Handoff Document (Phase 2.5 Hardening)
 
-**Last updated: 2026-03-18. Version v1.9 (post-Phase-2 cleanup). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
+**Last updated: 2026-03-18. Version v2.0 (Phase 2 hardening / Phase 2.5). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
 
 ---
 
@@ -13,6 +13,16 @@ Prompt28 (marketed as **Orion Orb**) is a SwiftUI iOS app (Swift 5.9+, **iOS 17+
 It uses a single shared `AppEnvironment` injected via `.environment()` at the root.
 
 > **Hybrid architecture note (v1.9):** Auth and history persistence run through Supabase (Phase 2). The `APIClient` pointing at the Railway backend is still present and used for legacy endpoints (plan metering, `prompts_used`/`prompts_remaining`). Both coexist intentionally. Phase 3 will migrate remaining Railway endpoints to Supabase Edge Functions and retire the Railway dependency entirely.
+
+## Current State
+
+- **Current phase:** Phase 2 hardening / Phase 2.5
+- **Platform direction:** native iOS 17+ SwiftUI app
+- **Persistence direction:** no SwiftData, no CloudKit, no reintroduction of either
+- **Auth direction:** Supabase Auth is live
+- **OAuth status:** Google sign-in is working; Apple sign-in flow exists in code
+- **Backend status:** Railway remains only for legacy endpoints during migration
+- **History direction:** local-first JSON remains the primary source of resilience; Supabase sync is secondary and best-effort
 
 ### Entry Point
 **App file**: `PromptMeNative_Blueprint/OrionOrbApp.swift` (struct `OrionOrbApp`)
@@ -86,7 +96,7 @@ PromptMeNative_Blueprint/
 │   │   ├── NetworkError.swift
 │   │   └── RequestBuilder.swift
 │   ├── Storage/
-│   │   ├── HistoryStore.swift        ← Codable JSON + Supabase prompts table sync (two-way, last-write-wins)
+│   │   ├── HistoryStore.swift        ← Codable JSON + Supabase prompts table sync (two-way, last-write-wins, delete propagation)
 │   │   ├── PreferencesStore.swift    ← user prefs (mode, saveHistory)
 │   │   └── SecureStore.swift
 │   ├── Store/
@@ -259,6 +269,66 @@ extension View {
     }
 }
 ```
+
+---
+
+## HistoryStore Source Of Truth
+
+File: `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift`
+
+- Local-first JSON persistence remains primary.
+- Main local files are:
+  - `Application Support/OrionOrb/history.json`
+  - `Application Support/OrionOrb/history_pending_deletes.json`
+- Supabase sync remains secondary / best-effort.
+- Immediate best-effort sync now happens after:
+  - `add(_:)`
+  - `toggleFavorite(id:)`
+  - `rename(id:customName:)`
+- Launch-time sync now occurs if an authenticated Supabase session already exists.
+- Sync also responds to auth events:
+  - `.signedIn`
+  - `.tokenRefreshed`
+  - `.userUpdated`
+- On:
+  - `.signedOut`
+  - `.userDeleted`
+  local history state is cleared from memory and disk to prevent cross-user contamination.
+
+## Merge / Sync Behavior
+
+- Sync is two-way and last-write-wins based on `lastModified`.
+- Unsynced local records are upserted first.
+- Remote Supabase records are fetched after upload and then merged locally.
+- Delete propagation now exists and is part of sync behavior.
+- Pending delete IDs are persisted locally and retried on future sync attempts.
+
+## Delete Propagation
+
+- History deletes now propagate to Supabase.
+- Pending delete IDs are stored in `history_pending_deletes.json`.
+- If the app is offline or sync fails, deletes remain queued locally and retry on a later authenticated sync.
+- `remove(id:)` and `clearAll()` are part of delete propagation behavior.
+
+## Testing / Validation Status
+
+- Storage hardening code is improved and compiles.
+- `HistoryStore` now includes deterministic test seams/hooks used by validation:
+  - disable auth listener on init
+  - disable lifecycle observers
+  - inject session user ID provider
+  - inject sync executor
+- Unit test target now points to the real `OrionOrbTests` folder.
+- History tests use MainActor-safe polling.
+- `OrionOrbApp` has a test-mode bypass so unit tests do not bootstrap the full app environment.
+- Shared scheme no longer includes `Prompt28UITests` inside the main unit-test `TestAction`.
+- **Important truth:** automated validation completion is still pending unless `xcodebuild test` returns real pass/fail results. Do not claim Phase 2 hardening is fully validated yet.
+
+## Known Remaining Gaps
+
+- End-to-end automated validation is not yet fully complete.
+- The storage hardening implementation is in place, but `xcodebuild test` completion still needs to be proven with real pass/fail output.
+- Phase 2 hardening should not be marked complete until the history validation suite actually finishes successfully.
 
 ### PromptPremiumBackground (RootView.swift)
 

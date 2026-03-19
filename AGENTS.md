@@ -1,6 +1,6 @@
-# Prompt28 (Orion Orb) — AI Agent Guide (Phase 2 Clean)
+# Prompt28 (Orion Orb) — AI Agent Guide (Phase 2.5 Hardening)
 
-**Last updated: 2026-03-18 | Version v1.9 (Post-Phase-2 Cleanup)**
+**Last updated: 2026-03-18 | Version v2.0 (Phase 2 hardening / Phase 2.5)**
 
 This document provides essential information for AI coding agents working on the Prompt28 iOS project (marketed as "Orion Orb"). **SwiftData has been removed. CloudKit has been removed. Persistence is now Codable JSON + Supabase sync.**
 
@@ -16,6 +16,16 @@ Prompt28 is an AI-powered prompt generation iOS app built with SwiftUI. Users ca
 - **Bundle ID**: `com.prompt28.prompt28`
 - **Backend**: https://promptme-app-production.up.railway.app
 
+## Current State
+
+- **Current phase:** Phase 2 hardening / Phase 2.5
+- **Architecture:** native iOS 17+ SwiftUI app
+- **Persistence:** no SwiftData, no CloudKit
+- **Auth:** Supabase Auth integrated
+- **OAuth:** Google sign-in working; Apple sign-in flow exists in code
+- **Hybrid backend status:** Railway remains only for legacy endpoints during migration
+- **Validation truth:** implementation has improved, but Phase 2 hardening is not fully validated unless `xcodebuild test` has returned real pass/fail results
+
 ---
 
 ## Technology Stack
@@ -23,7 +33,7 @@ Prompt28 is an AI-powered prompt generation iOS app built with SwiftUI. Users ca
 | Component | Technology |
 |-----------|------------|
 | UI Framework | SwiftUI with Observation framework |
-| Persistence | **Codable JSON** (local @ `Application Support/OrionOrb/history.json`), **Supabase** (two-way sync, last-write-wins), UserDefaults (preferences), Keychain (auth tokens) |
+| Persistence | **Codable JSON** (local @ `Application Support/OrionOrb/history.json`), pending deletes @ `Application Support/OrionOrb/history_pending_deletes.json`, **Supabase** (two-way sync, last-write-wins, delete propagation), UserDefaults (preferences), Keychain (auth tokens) |
 | Authentication | **Supabase Auth** with JWT stored in Keychain; Google Sign-In, Apple Sign-In, Email/Password |
 | Database Backend | **Supabase PostgreSQL** (prompts, events, telemetry_errors tables) |
 | Legacy API | Railway backend (https://promptme-app-production.up.railway.app) — for plan info during bootstrap |
@@ -103,6 +113,10 @@ xcodebuild test -project Prompt28.xcodeproj -scheme OrionOrb -destination "platf
 xcodebuild test -project Prompt28.xcodeproj -scheme OrionOrb -destination "platform=iOS Simulator,name=iPhone 16" -only-testing:OrionOrbUITests
 ```
 
+Important current note:
+- The shared `OrionOrb` scheme is now focused on unit-test execution and no longer includes `Prompt28UITests` in the main `TestAction`.
+- Do not assume Phase 2 hardening is validated unless `xcodebuild test` completes and reports real pass/fail results.
+
 ### Clean Build
 ```bash
 xcodebuild clean -project Prompt28.xcodeproj -scheme OrionOrb
@@ -140,6 +154,32 @@ Access in views:
 ```
 
 **Rule**: Never instantiate stores directly in views. Always use environment injection.
+
+### HistoryStore Current Behavior
+
+`HistoryStore` is the source of truth for current prompt history persistence behavior:
+
+- Local-first JSON persistence remains primary.
+- Supabase sync remains secondary / best-effort.
+- Immediate best-effort sync now occurs after:
+  - `add(_:)`
+  - `toggleFavorite(id:)`
+  - `rename(id:customName:)`
+- Launch-time sync runs if an authenticated Supabase session already exists.
+- Sync also responds to:
+  - `.signedIn`
+  - `.tokenRefreshed`
+  - `.userUpdated`
+- On:
+  - `.signedOut`
+  - `.userDeleted`
+  local history state is cleared from memory and disk to prevent cross-user contamination.
+- Delete propagation now exists:
+  - pending delete IDs are persisted in `history_pending_deletes.json`
+  - pending deletes retry on future sync
+- Merge behavior is last-write-wins by `lastModified`:
+  - unsynced local records upsert first
+  - remote records fetch and merge after upload
 
 ### State Machine (RootView)
 ```
@@ -252,9 +292,28 @@ Key test suites:
 - `PromptModeTests` - Mode enum behavior
 - `PlanTypeTests` - Plan type handling
 - `SpeechErrorClassificationTests` - Speech recognition error handling
+- `HistoryStoreTests` - storage hardening, sync triggers, pending deletes, isolation behavior
 
 ### UI Tests (OrionOrbUITests/)
 Uses standard XCTest framework for end-to-end testing.
+
+## Testing / Validation Status
+
+- Unit test target now points to the real `OrionOrbTests` folder.
+- History tests use MainActor-safe polling.
+- `OrionOrbApp` includes a test-mode bypass so unit tests do not bootstrap the full app environment.
+- `HistoryStore` includes deterministic test seams/hooks for validation:
+  - disable auth listener on init
+  - disable automatic lifecycle observation
+  - inject session provider
+  - inject sync executor
+- Storage hardening code is improved and compiles.
+- Automated validation completion is still pending unless `xcodebuild test` has completed with real pass/fail output.
+
+## Known Remaining Gaps
+
+- Do not mark Phase 2 hardening as complete until history validation actually finishes end to end.
+- Current repo state supports more deterministic testing, but test-execution completion still needs to be proven in a clean run.
 
 ---
 
