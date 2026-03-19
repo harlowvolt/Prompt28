@@ -7,7 +7,7 @@ import UIKit
 enum AnalyticsEvent {
     case appOpen
     case generateTapped(mode: String)
-    case generateSuccess(mode: String, wordCount: Int)
+    case generateSuccess(mode: String, wordCount: Int, intentCategory: String? = nil, latencyMs: Int? = nil)
     case generateError(message: String)
     case generateRateLimited
     case copyPrompt
@@ -47,8 +47,11 @@ enum AnalyticsEvent {
         switch self {
         case .generateTapped(let mode):
             return ["mode": mode]
-        case .generateSuccess(let mode, let wordCount):
-            return ["mode": mode, "word_count": wordCount]
+        case .generateSuccess(let mode, let wordCount, let intentCategory, let latencyMs):
+            var props: [String: Any] = ["mode": mode, "word_count": wordCount]
+            if let intent = intentCategory { props["intent_category"] = intent }
+            if let latency = latencyMs     { props["latency_ms"]       = latency }
+            return props
         case .generateError(let msg):
             return ["error": msg]
         case .planUpgradeSuccess(let plan):

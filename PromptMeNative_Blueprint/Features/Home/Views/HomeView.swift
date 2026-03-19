@@ -100,6 +100,13 @@ struct HomeView: View {
                     transcriptSection(hPad: 24)
                         .padding(.top, 14)
 
+                    // Prompts-remaining pill — visible to starter plan users only when idle.
+                    if !hasResult, let remaining = generateViewModel.promptsRemaining {
+                        usagePill(remaining: remaining)
+                            .padding(.top, 10)
+                            .transition(.opacity.combined(with: .scale(scale: 0.92)))
+                    }
+
                     if hasResult {
                         resultSection(hPad: 0)
                             .frame(maxHeight: .infinity)
@@ -291,6 +298,48 @@ struct HomeView: View {
                 }
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Usage Pill
+
+    @ViewBuilder
+    private func usagePill(remaining: Int) -> some View {
+        let isCritical = remaining <= 2
+        let isExhausted = remaining == 0
+
+        Button {
+            // Tap navigates to paywall so users can upgrade
+            generateViewModel.showPaywall = true
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: isExhausted ? "lock.fill" : "sparkle")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(isCritical ? .yellow.opacity(0.90) : PromptTheme.softLilac.opacity(0.72))
+
+                Text(isExhausted
+                     ? "Upgrade for unlimited prompts"
+                     : "\(remaining) of \(UsageTracker.freeMonthlyLimit) free prompts left")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(isCritical ? .white.opacity(0.92) : PromptTheme.softLilac.opacity(0.78))
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 7)
+            .background(
+                Capsule()
+                    .fill(isCritical
+                          ? Color.yellow.opacity(0.10)
+                          : PromptTheme.glassFill)
+                    .overlay(
+                        Capsule()
+                            .stroke(isCritical
+                                    ? Color.yellow.opacity(0.30)
+                                    : Color.white.opacity(0.10),
+                                    lineWidth: 0.5)
+                    )
+            )
+        }
+        .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.2), value: remaining)
     }
 
     // MARK: - Orb + Transcript + Result

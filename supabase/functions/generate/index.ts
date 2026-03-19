@@ -1,6 +1,10 @@
 // Supabase Edge Function: generate
 // Receives a GenerateRequest from the iOS app and returns a GenerateResponse.
 //
+// Phase 5 additions:
+//   • Intent classifier — keyword-based, zero-latency, routes to specialized system prompts
+//   • Returns intent_category + latency_ms in every response for analytics + iOS display
+//
 // Required Supabase secret — set ONE of these:
 //   ANTHROPIC_API_KEY   — preferred (get from console.anthropic.com)
 //   OPENAI_API_KEY      — fallback  (get from platform.openai.com)
@@ -8,9 +12,6 @@
 // Built-in Supabase secrets (auto-available in Edge Functions):
 //   SUPABASE_URL
 //   SUPABASE_SERVICE_ROLE_KEY
-//
-// Set via CLI:
-//   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 //
 // Deploy:
 //   supabase functions deploy generate --no-verify-jwt
@@ -23,6 +24,153 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
 const FREE_MONTHLY_LIMIT = 10;
+
+// ── Intent categories ─────────────────────────────────────────────────────────
+
+type IntentCategory =
+  | "work"
+  | "school"
+  | "business"
+  | "fitness"
+  | "technical"
+  | "creative"
+  | "general";
+
+/**
+ * Keyword-based intent classifier.
+ * Zero LLM calls — runs in <1 ms on the Edge.
+ * Returns the highest-scored category, or "general" when no strong match.
+ */
+function classifyIntent(input: string): IntentCategory {
+  const text = input.toLowerCase();
+
+  const scores: Record<IntentCategory, number> = {
+    work: 0,
+    school: 0,
+    business: 0,
+    fitness: 0,
+    technical: 0,
+    creative: 0,
+    general: 0,
+  };
+
+  // Work / Professional communication
+  const workKeywords = [
+    "email", "meeting", "slack", "colleague", "boss", "manager", "team",
+    "report", "agenda", "presentation", "feedback", "performance review",
+    "project", "deadline", "stakeholder", "onboarding", "offboarding",
+    "hr", "resume", "cover letter", "linkedin", "salary", "promotion",
+  ];
+  // School / Academic
+  const schoolKeywords = [
+    "essay", "thesis", "research paper", "homework", "assignment", "exam",
+    "study", "lecture", "professor", "university", "college", "student",
+    "academic", "literature review", "citation", "bibliography", "grade",
+    "class", "syllabus", "dissertation", "coursework", "tutoring",
+  ];
+  // Business / Strategy / Marketing
+  const businessKeywords = [
+    "startup", "business plan", "pitch deck", "investor", "revenue", "profit",
+    "market", "customer", "sales", "marketing", "brand", "product launch",
+    "strategy", "growth", "acquisition", "valuation", "b2b", "b2c", "saas",
+    "executive", "board", "competitive analysis", "go-to-market", "gtm",
+  ];
+  // Fitness / Health / Nutrition
+  const fitnessKeywords = [
+    "workout", "exercise", "gym", "fitness", "weight loss", "muscle", "training",
+    "cardio", "nutrition", "diet", "calories", "protein", "supplements",
+    "running", "marathon", "yoga", "pilates", "hiit", "strength", "recovery",
+    "meal plan", "bulking", "cutting", "body", "health",
+  ];
+  // Technical / Code / Engineering
+  const technicalKeywords = [
+    "code", "programming", "function", "api", "database", "sql", "python",
+    "javascript", "swift", "typescript", "bug", "debug", "algorithm",
+    "system design", "architecture", "docker", "kubernetes", "cloud",
+    "server", "frontend", "backend", "fullstack", "devops", "git", "pull request",
+    "unit test", "refactor", "deploy", "ci/cd", "machine learning", "ai model",
+  ];
+  // Creative / Writing / Art
+  const creativeKeywords = [
+    "story", "poem", "script", "novel", "character", "plot", "dialogue",
+    "creative writing", "fiction", "blog post", "article", "social media",
+    "caption", "tweet", "copywriting", "ad copy", "headline", "tagline",
+    "song", "lyrics", "screenplay", "worldbuilding", "short story",
+  ];
+
+  const keywordSets: Array<[IntentCategory, string[]]> = [
+    ["work",      workKeywords],
+    ["school",    schoolKeywords],
+    ["business",  businessKeywords],
+    ["fitness",   fitnessKeywords],
+    ["technical", technicalKeywords],
+    ["creative",  creativeKeywords],
+  ];
+
+  for (const [category, keywords] of keywordSets) {
+    for (const kw of keywords) {
+      if (text.includes(kw)) {
+        scores[category] += kw.includes(" ") ? 2 : 1; // phrases score higher
+      }
+    }
+  }
+
+  // Pick highest-scoring category with a minimum threshold
+  let best: IntentCategory = "general";
+  let bestScore = 1; // minimum score to override "general"
+  for (const [cat, score] of Object.entries(scores) as [IntentCategory, number][]) {
+    if (cat !== "general" && score > bestScore) {
+      bestScore = score;
+      best = cat;
+    }
+  }
+  return best;
+}
+
+// ── Intent-specialized system prompts ─────────────────────────────────────────
+
+const intentSystemPrompts: Record<IntentCategory, Record<string, string>> = {
+  work: {
+    ai: "You are an expert professional communications coach and AI prompt engineer. Transform the user's rough idea into a precise, structured prompt optimised for AI language models in a workplace context. Emphasise clarity, professional tone, and actionable output.",
+    human: "You are an expert workplace communicator and executive coach. Transform the user's rough idea into polished, professional communication — whether email, slack message, performance feedback, or meeting agenda. Use clear, respectful, and empathetic language.",
+  },
+  school: {
+    ai: "You are an expert academic AI prompt engineer. Transform the user's rough idea into a rigorous, well-structured prompt designed for academic writing, research, or study assistance. Emphasise intellectual depth, citation awareness, and structured argumentation.",
+    human: "You are an expert academic writing tutor. Transform the user's rough idea into clear, well-structured academic communication — essay drafts, study guides, research summaries, or exam prep. Use precise language and scholarly tone.",
+  },
+  business: {
+    ai: "You are an expert business strategy and marketing AI prompt engineer. Transform the user's rough idea into a precise prompt for business planning, market analysis, go-to-market strategy, or pitch decks. Emphasise data-driven thinking, strategic clarity, and investor-ready language.",
+    human: "You are an expert business writer and strategist. Transform the user's rough idea into compelling, investor-ready business communication — pitch decks, executive summaries, market analyses, or sales copy. Be persuasive, concise, and metrics-focused.",
+  },
+  fitness: {
+    ai: "You are an expert fitness and nutrition AI prompt engineer. Transform the user's rough idea into a precise, evidence-based prompt for workout plans, nutrition guides, or health coaching programs. Emphasise safety, progressive overload principles, and personalisation.",
+    human: "You are an expert personal trainer and nutrition coach. Transform the user's rough idea into a motivating, safe, and science-backed fitness or nutrition plan. Use clear, encouraging language with specific sets, reps, and measurable goals.",
+  },
+  technical: {
+    ai: "You are an expert software engineering and technical AI prompt engineer. Transform the user's rough idea into a precise, unambiguous technical prompt for code generation, system design, debugging, or architecture review. Emphasise correctness, edge cases, and engineering best practices.",
+    human: "You are an expert software engineer and technical communicator. Transform the user's rough idea into clear, actionable technical documentation, code comments, PR descriptions, or engineering specs. Use precise technical terminology and structured formatting.",
+  },
+  creative: {
+    ai: "You are an expert creative director and AI prompt engineer. Transform the user's rough idea into a vivid, structured creative brief for AI-generated stories, scripts, art direction, or copywriting. Emphasise originality, emotional resonance, and sensory detail.",
+    human: "You are an expert creative writer, copywriter, and storyteller. Transform the user's rough idea into compelling, original creative content — whether fiction, poetry, blog posts, social captions, or ad copy. Prioritise voice, rhythm, and emotional impact.",
+  },
+  general: {
+    ai: "You are an expert AI prompt engineer. Transform the user's raw idea into a precise, structured prompt optimised for AI language models. Maximise clarity, specificity, and instructional detail.",
+    human: "You are an expert communicator and copywriter. Transform the user's raw idea into clear, compelling, human-centred communication. Use natural language, conversational tone, and emotional clarity.",
+  },
+};
+
+function resolveSystemPrompt(
+  intent: IntentCategory,
+  mode: string,
+  override?: string | null,
+): string {
+  if (override?.trim()) return override.trim();
+  const intentPrompts = intentSystemPrompts[intent] ?? intentSystemPrompts.general;
+  return intentPrompts[mode] ?? intentPrompts.ai;
+}
+
+// ── Request / Response interfaces ─────────────────────────────────────────────
 
 interface GenerateRequest {
   input: string;
@@ -37,13 +185,11 @@ interface GenerateResponse {
   prompts_used: number;
   prompts_remaining: number | null;
   plan: string;
+  intent_category: IntentCategory;  // Phase 5: returned to iOS for display + analytics
+  latency_ms: number;               // Phase 5: total generation latency in ms
 }
 
-const defaultSystemPrompts: Record<string, string> = {
-  ai: "You are an expert AI prompt engineer. Transform the user's raw idea into a precise, structured prompt optimised for AI language models. Maximise clarity, specificity, and instructional detail.",
-  human:
-    "You are an expert communicator and copywriter. Transform the user's raw idea into clear, compelling, human-centred communication. Use natural language, conversational tone, and emotional clarity.",
-};
+// ── Main handler ──────────────────────────────────────────────────────────────
 
 Deno.serve(async (req: Request) => {
   // ── CORS preflight ───────────────────────────────────────────────────────────
@@ -57,6 +203,8 @@ Deno.serve(async (req: Request) => {
     });
   }
 
+  const requestStart = Date.now();
+
   try {
     // ── Parse body ───────────────────────────────────────────────────────────────
     const body = (await req.json()) as GenerateRequest;
@@ -65,6 +213,9 @@ Deno.serve(async (req: Request) => {
     if (!input || input.trim().length < 3) {
       return errorResponse("Input too short.", 400);
     }
+
+    // ── Phase 5: Classify intent before hitting auth (fast, free) ────────────
+    const intentCategory = classifyIntent(input);
 
     // ── Auth: verify Supabase JWT & extract user ──────────────────────────────
     const authHeader = req.headers.get("Authorization");
@@ -85,17 +236,13 @@ Deno.serve(async (req: Request) => {
         return errorResponse("Invalid or expired session.", 401);
       }
 
-      // Plan override: App Store Server Notifications webhook (Phase 3.5+) can write
-      // plan = "pro" or "unlimited" into user_metadata so metering is bypassed.
+      // Plan override: StoreManager.syncPlanToSupabase() writes this after IAP
       const metaPlan = user.user_metadata?.plan as string | undefined;
       if (metaPlan === "pro" || metaPlan === "unlimited") {
         userPlan = metaPlan;
       }
 
       // ── Server-side usage metering (starter plan only) ─────────────────────
-      // Count prompts this calendar month. The iOS app writes to the `prompts`
-      // table after a successful generation, so this count = pre-generation total.
-      // Gate at FREE_MONTHLY_LIMIT before calling the AI to avoid wasted credits.
       if (userPlan === "starter") {
         const periodStart = new Date();
         periodStart.setUTCDate(1);
@@ -118,10 +265,10 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // ── Build prompts ─────────────────────────────────────────────────────────
-    const resolvedSystemPrompt =
-      systemPrompt?.trim() || defaultSystemPrompts[mode] || defaultSystemPrompts.ai;
+    // ── Resolve system prompt (intent-specialized) ─────────────────────────
+    const resolvedSystem = resolveSystemPrompt(intentCategory, mode, systemPrompt);
 
+    // ── Build user message ─────────────────────────────────────────────────
     let userMessage = input.trim();
     if (refinement?.trim()) {
       userMessage =
@@ -135,9 +282,9 @@ Deno.serve(async (req: Request) => {
     let rawContent: string;
 
     if (ANTHROPIC_API_KEY) {
-      rawContent = await callAnthropic(resolvedSystemPrompt, taskInstruction);
+      rawContent = await callAnthropic(resolvedSystem, taskInstruction);
     } else if (OPENAI_API_KEY) {
-      rawContent = await callOpenAI(resolvedSystemPrompt, taskInstruction);
+      rawContent = await callOpenAI(resolvedSystem, taskInstruction);
     } else {
       return errorResponse(
         "No AI API key configured. Set ANTHROPIC_API_KEY or OPENAI_API_KEY in Supabase secrets.",
@@ -146,7 +293,6 @@ Deno.serve(async (req: Request) => {
     }
 
     // ── Parse JSON from AI response ───────────────────────────────────────────
-    // Strip any markdown fences the model may have added despite instructions.
     const cleaned = rawContent
       .replace(/^```json\s*/i, "")
       .replace(/^```\s*/i, "")
@@ -157,7 +303,6 @@ Deno.serve(async (req: Request) => {
     try {
       parsed = JSON.parse(cleaned);
     } catch {
-      // If JSON parse fails entirely, use the raw text for both fields.
       parsed = { professional: cleaned, template: cleaned };
     }
 
@@ -168,11 +313,13 @@ Deno.serve(async (req: Request) => {
       return errorResponse("AI returned an empty result. Please try again.", 502);
     }
 
-    // ── Build usage metadata for iOS UsageTracker sync ───────────────────────
+    // ── Build response ─────────────────────────────────────────────────────────
     const promptsUsed = userPlan === "starter" ? promptsUsedBefore + 1 : 0;
     const promptsRemaining = userPlan === "starter"
       ? Math.max(0, FREE_MONTHLY_LIMIT - promptsUsed)
       : null;
+
+    const latencyMs = Date.now() - requestStart;
 
     const result: GenerateResponse = {
       professional,
@@ -180,6 +327,8 @@ Deno.serve(async (req: Request) => {
       prompts_used: promptsUsed,
       prompts_remaining: promptsRemaining,
       plan: userPlan,
+      intent_category: intentCategory,
+      latency_ms: latencyMs,
     };
 
     return new Response(JSON.stringify(result), {

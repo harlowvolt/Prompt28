@@ -17,6 +17,7 @@ struct AdminDashboardView: View {
 	@AppStorage(ExperimentFlags.RootBackground.trending) private var useRootBackgroundTrending = false
 	@AppStorage(ExperimentFlags.RootBackground.history) private var useRootBackgroundHistory = false
 	@AppStorage(ExperimentFlags.RootBackground.favorites) private var useRootBackgroundFavorites = false
+	@AppStorage(ExperimentFlags.Orb.metalOrb) private var useMetalOrb = false
 #endif
 	@State private var viewModel = AdminViewModel()
 	@State private var selection = 0
@@ -82,31 +83,48 @@ struct AdminDashboardView: View {
 
 #if DEBUG
 	private var experimentFlagsPanel: some View {
-		VStack(alignment: .leading, spacing: 12) {
-			Text("Root Background Flags")
-				.font(.headline)
+		VStack(alignment: .leading, spacing: 16) {
 
-			Text("Enable one flag at a time while running the background QA matrix.")
-				.font(.footnote)
-				.foregroundStyle(.secondary)
+            // MARK: Metal Orb
+            VStack(alignment: .leading, spacing: 8) {
+                Text("Orb Renderer")
+                    .font(.headline)
+                Text("Switches the HomeView orb from SwiftUI TimelineView to the Metal GPU shader (Orb.metal). Verify the shader on a physical device before shipping. Falls back to SwiftUI if Metal is unavailable.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+                Toggle("Metal GPU Orb (is_metal_orb_enabled)", isOn: $useMetalOrb)
+                    .tint(.purple)
+            }
 
-			Text("Active: \(activeRootBackgroundLabel)")
-				.font(.footnote)
-				.foregroundStyle(.secondary)
+            Divider()
 
-			Toggle("Home", isOn: $useRootBackgroundHome)
-			Toggle("Trending", isOn: $useRootBackgroundTrending)
-			Toggle("History", isOn: $useRootBackgroundHistory)
-			Toggle("Favorites", isOn: $useRootBackgroundFavorites)
+            // MARK: Root Background Flags
+			VStack(alignment: .leading, spacing: 8) {
+                Text("Root Background Flags")
+                    .font(.headline)
 
-			Button("Reset All Flags") {
-				useRootBackgroundHome = false
-				useRootBackgroundTrending = false
-				useRootBackgroundHistory = false
-				useRootBackgroundFavorites = false
-			}
-			.buttonStyle(.borderedProminent)
-			.tint(.red)
+                Text("Enable one flag at a time while running the background QA matrix.")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Text("Active: \(activeRootBackgroundLabel)")
+                    .font(.footnote)
+                    .foregroundStyle(.secondary)
+
+                Toggle("Home", isOn: $useRootBackgroundHome)
+                Toggle("Trending", isOn: $useRootBackgroundTrending)
+                Toggle("History", isOn: $useRootBackgroundHistory)
+                Toggle("Favorites", isOn: $useRootBackgroundFavorites)
+
+                Button("Reset All Flags") {
+                    useRootBackgroundHome = false
+                    useRootBackgroundTrending = false
+                    useRootBackgroundHistory = false
+                    useRootBackgroundFavorites = false
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.red)
+            }
 
 			Spacer(minLength: 0)
 		}

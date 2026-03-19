@@ -66,6 +66,18 @@ final class GenerateViewModel {
         latestResult?.professional.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
     }
 
+    /// Remaining free generations this calendar month.
+    /// Returns `nil` for paid plan users (unlimited) — callers should hide the counter.
+    var promptsRemaining: Int? {
+        guard activePlan == .starter else { return nil }
+        return max(0, UsageTracker.freeMonthlyLimit - usageTracker.count)
+    }
+
+    /// `true` if the user is at or past their monthly free limit (starter only).
+    var isAtFreeLimit: Bool {
+        promptsRemaining == 0
+    }
+
     /// Live favorite state — reads directly from historyStore (also @Observable),
     /// so any view reading this property re-renders automatically on store changes.
     var isLatestFavorite: Bool {
@@ -183,7 +195,12 @@ final class GenerateViewModel {
 
             // Analytics: track success
             let wordCount = promptText.split(separator: " ").count
-            AnalyticsService.shared.track(.generateSuccess(mode: selectedMode.rawValue, wordCount: wordCount))
+            AnalyticsService.shared.track(.generateSuccess(
+                mode: selectedMode.rawValue,
+                wordCount: wordCount,
+                intentCategory: response.intent_category,
+                latencyMs: response.latency_ms
+            ))
 
             // Haptics: success pulse
             HapticService.notification(.success)
@@ -333,7 +350,9 @@ final class GenerateViewModel {
             template: item.template,
             prompts_used: 0,
             prompts_remaining: nil,
-            plan: .starter
+            plan: .starter,
+            intent_category: nil,
+            latency_ms: nil
         )
         errorMessage = nil
     }
@@ -369,7 +388,9 @@ final class GenerateViewModel {
             template: raw.template,
             prompts_used: used,
             prompts_remaining: remaining,
-            plan: raw.plan ?? plan
+            plan: raw.plan ?? plan,
+            intent_category: raw.intent_category,
+            latency_ms: raw.latency_ms
         )
     }
 
@@ -453,14 +474,16 @@ final class GenerateViewModel {
 /// The Edge Function MUST return at minimum `{ professional, template }`.
 /// All other fields are optional and filled in locally when absent.
 ///
-/// Minimum Edge Function response shape (Deno / Node):
+/// Full Edge Function response shape (Phase 5):
 /// ```json
 /// {
 ///   "professional": "Refined prompt text…",
 ///   "template": "Template text…",
-///   "prompts_used": 1,           // optional
-///   "prompts_remaining": 9,      // optional (starter plan)
-///   "plan": "starter"            // optional
+///   "prompts_used": 1,               // optional
+///   "prompts_remaining": 9,          // optional (starter plan)
+///   "plan": "starter",               // optional
+///   "intent_category": "work",       // Phase 5: classifier output
+///   "latency_ms": 843                // Phase 5: total server-side latency
 /// }
 /// ```
 private struct EdgeGenerateResponse: Decodable, Sendable {
@@ -469,4 +492,7 @@ private struct EdgeGenerateResponse: Decodable, Sendable {
     let prompts_used: Int?
     let prompts_remaining: Int?
     let plan: PlanType?
+    // Phase 5 fields — both optional so older Edge Function versions still decode correctly
+    let intent_category: String?
+    let latency_ms: Int?
 }
