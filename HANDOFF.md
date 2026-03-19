@@ -12,8 +12,10 @@ Prompt28 (marketed as **Orion Orb**) is a SwiftUI iOS app (Swift 5.9+, **iOS 17+
 
 It uses a single shared `AppEnvironment` injected via `.environment()` at the root.
 
+> **Hybrid architecture note (v1.9):** Auth and history persistence run through Supabase (Phase 2). The `APIClient` pointing at the Railway backend is still present and used for legacy endpoints (plan metering, `prompts_used`/`prompts_remaining`). Both coexist intentionally. Phase 3 will migrate remaining Railway endpoints to Supabase Edge Functions and retire the Railway dependency entirely.
+
 ### Entry Point
-**App file**: `PromptMeNative_Blueprint/PromptMeNativeApp.swift` (struct `OrionOrbApp`)
+**App file**: `PromptMeNative_Blueprint/OrionOrbApp.swift` (struct `OrionOrbApp`)
 **Source root**: `PromptMeNative_Blueprint/` — all Swift source is here.
 
 ### State Machine (RootView)
@@ -98,7 +100,6 @@ PromptMeNative_Blueprint/
 │   │   └── NotificationService.swift
 │   └── Utils/
 │       ├── AnalyticsService.swift
-│       ├── BundleCatalogLoader.swift ← loads bundled trending_prompts.json for zero-latency launch
 │       ├── Date+Extensions.swift
 │       ├── HapticService.swift
 │       └── JSONCoding.swift
@@ -2011,7 +2012,7 @@ Verification:
 Direct `@Environment(AppEnvironment.self)` usage has now been eliminated from `RootView` and feature views touched in Phase 2.
 
 Current intentional usage:
-1. `PromptMeNative_Blueprint/PromptMeNativeApp.swift` (root container creation + scoped key injection source)
+1. `PromptMeNative_Blueprint/OrionOrbApp.swift` (root container creation + scoped key injection source)
 
 #### Phase 2 continuation — Home sheet routing moved into AppRouter
 

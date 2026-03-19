@@ -12,7 +12,7 @@ This roadmap separates **current working reality** from **next critical steps** 
 
 ### Architecture Foundations (✅ Complete)
 
-- **Entry point**: `PromptMeNativeApp.swift` (struct `OrionOrbApp`, marked `@main`)
+- **Entry point**: `OrionOrbApp.swift` (struct `OrionOrbApp`, marked `@main`)
 - **Dependency injection**: `AppEnvironment` (@Observable @MainActor) bootstraps all services
 - **State machine**: `RootView` gates privacy consent → auth → onboarding → main tabs
 - **UI framework**: SwiftUI with `@Observable` (no `@State` for models)
@@ -230,7 +230,7 @@ iOS app remains a "thin client" — handles audio input, UI, Metal rendering. Al
 
 ### Entry Point & Bootstrap
 
-**File**: `PromptMeNative_Blueprint/PromptMeNativeApp.swift`
+**File**: `PromptMeNative_Blueprint/OrionOrbApp.swift`
 
 ```swift
 @main struct OrionOrbApp: App {
@@ -309,7 +309,7 @@ All tokens in two files:
 
 | Path | Purpose |
 |------|---------|
-| `PromptMeNativeApp.swift` | App entry point, bootstraps environment |
+| `OrionOrbApp.swift` | App entry point, bootstraps environment |
 | `App/AppEnvironment.swift` | Dependency container |
 | `App/RootView.swift` | Root state machine, design tokens |
 | `Core/Auth/AuthManager.swift` | Supabase auth, JWT management |

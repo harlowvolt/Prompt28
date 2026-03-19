@@ -74,7 +74,7 @@ PromptMeNative_Blueprint/          # Source root
 ├── Resources/                     # Bundled resources
 │   ├── trending_prompts.json      # Bundled prompt catalog (44 prompts, 7 categories)
 │   └── PrivacyInfo.xcprivacy      # Apple privacy manifest
-└── PromptMeNativeApp.swift        # App entry point (@main) - OrionOrbApp
+└── OrionOrbApp.swift              # App entry point (@main) - OrionOrbApp
 
 Prompt28/                          # Xcode project configuration
 ├── Info.plist                     # App configuration, permissions, Google Sign-In
