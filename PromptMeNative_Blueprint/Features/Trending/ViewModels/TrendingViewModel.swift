@@ -49,6 +49,8 @@ final class TrendingViewModel {
 	/// Subsequent calls are no-ops unless `refresh` is called explicitly.
 	func loadIfNeeded(apiClient: any APIClientProtocol) async {
 		guard catalog == nil else { return }
+		// Seed from bundle first so the view renders immediately even if the API is slow.
+		loadBundledCatalog()
 		await refresh(apiClient: apiClient)
 	}
 
@@ -65,10 +67,21 @@ final class TrendingViewModel {
 			catalog = data
 		} catch {
 			// Only surface the error if we have nothing to show.
+			// The bundled catalog will already be showing thanks to loadBundledCatalog().
 			if catalog == nil {
-				errorMessage = error.localizedDescription
+				errorMessage = "Could not load trending prompts."
 			}
-			// If bundled/cached data is already showing, fail silently.
 		}
+	}
+
+	/// Synchronously loads `trending_prompts.json` from the app bundle.
+	/// Used as a zero-latency seed before the network request returns.
+	private func loadBundledCatalog() {
+		guard catalog == nil,
+			  let url = Bundle.main.url(forResource: "trending_prompts", withExtension: "json"),
+			  let data = try? Data(contentsOf: url),
+			  let loaded = try? JSONDecoder().decode(PromptCatalog.self, from: data)
+		else { return }
+		catalog = loaded
 	}
 }
