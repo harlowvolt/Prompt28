@@ -13,6 +13,10 @@
 		CCA100001122334455667712 /* ShareCardRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667702 /* ShareCardRenderer.swift */; };
 		CCA100001122334455667713 /* ShareCardFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667703 /* ShareCardFileStore.swift */; };
 		CCA100001122334455667714 /* PremiumTabScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667704 /* PremiumTabScreen.swift */; };
+		CCAA00001100000000000011 /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000001 /* SupabaseConfig.swift */; };
+		CCAA00001100000000000012 /* StorageProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000002 /* StorageProtocols.swift */; };
+		CCAA00001100000000000013 /* APIClientProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000003 /* APIClientProtocol.swift */; };
+		CCAA00001100000000000014 /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000004 /* TelemetryService.swift */; };
 		CCAB0BAD2F5D780200C29A7E /* TypePromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B862F5D780200C29A7E /* TypePromptView.swift */; };
 		CCAB0BAF2F5D780200C29A7E /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B7D2F5D780200C29A7E /* HistoryView.swift */; };
 		CCAB0BB02F5D780200C29A7E /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B7C2F5D780200C29A7E /* FavoritesView.swift */; };
@@ -28,7 +32,7 @@
 		CCAB0BBC2F5D780200C29A7E /* NetworkError.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B5F2F5D780200C29A7E /* NetworkError.swift */; };
 		CCAB0BBE2F5D780200C29A7E /* GenerateModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B972F5D780200C29A7E /* GenerateModels.swift */; };
 		CCAB0BBF2F5D780200C29A7E /* HistoryViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B7A2F5D780200C29A7E /* HistoryViewModel.swift */; };
-		CCAB0BC02F5D780200C29A7E /* OrionOrbApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0BAB2F5D780200C29A7E /* OrionOrbApp.swift */; };
+		CCAB0BC02F5D780200C29A7E /* PromptMeNativeApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0BAB2F5D780200C29A7E /* PromptMeNativeApp.swift */; };
 		CCAB0BC12F5D780200C29A7E /* OAuthCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B5B2F5D780200C29A7E /* OAuthCoordinator.swift */; };
 		CCAB0BC22F5D780200C29A7E /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B962F5D780200C29A7E /* AuthModels.swift */; };
 		CCAB0BC32F5D780200C29A7E /* SpeechRecognizerService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B572F5D780200C29A7E /* SpeechRecognizerService.swift */; };
@@ -74,10 +78,6 @@
 		CCDE00000000000000000019 /* UsageTracker.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE00000000000000000018 /* UsageTracker.swift */; };
 		CCDE0000000000000000001C /* PrivacyConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCDE0000000000000000001B /* PrivacyConsentView.swift */; };
 		CCE5A6052F6B190900F16A24 /* Supabase in Frameworks */ = {isa = PBXBuildFile; productRef = CCE5A6042F6B190900F16A24 /* Supabase */; };
-		CCAA00001100000000000011 /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000001 /* SupabaseConfig.swift */; };
-		CCAA00001100000000000012 /* StorageProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000002 /* StorageProtocols.swift */; };
-		CCAA00001100000000000013 /* APIClientProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000003 /* APIClientProtocol.swift */; };
-		CCAA00001100000000000014 /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000004 /* TelemetryService.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -102,6 +102,10 @@
 		CCA100001122334455667702 /* ShareCardRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardRenderer.swift; sourceTree = "<group>"; };
 		CCA100001122334455667703 /* ShareCardFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardFileStore.swift; sourceTree = "<group>"; };
 		CCA100001122334455667704 /* PremiumTabScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumTabScreen.swift; sourceTree = "<group>"; };
+		CCAA00001100000000000001 /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
+		CCAA00001100000000000002 /* StorageProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageProtocols.swift; sourceTree = "<group>"; };
+		CCAA00001100000000000003 /* APIClientProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientProtocol.swift; sourceTree = "<group>"; };
+		CCAA00001100000000000004 /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 		CCAB0B512F5D780200C29A7E /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
 		CCAB0B532F5D780200C29A7E /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
 		CCAB0B542F5D780200C29A7E /* RootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RootView.swift; sourceTree = "<group>"; };
@@ -152,7 +156,7 @@
 		CCAB0B9C2F5D780200C29A7E /* AppPreferences.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppPreferences.swift; sourceTree = "<group>"; };
 		CCAB0B9D2F5D780200C29A7E /* PromptHistoryItem.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptHistoryItem.swift; sourceTree = "<group>"; };
 		CCAB0BA12F5D780200C29A7E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		CCAB0BAB2F5D780200C29A7E /* OrionOrbApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrionOrbApp.swift; sourceTree = "<group>"; };
+		CCAB0BAB2F5D780200C29A7E /* PromptMeNativeApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptMeNativeApp.swift; sourceTree = "<group>"; };
 		CCAB0BF02F5D780200C29A7E /* AppUI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppUI.swift; sourceTree = "<group>"; };
 		CCD1CDF92F5C55F700566BCF /* Prompt28.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Prompt28.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CCD1CE082F5C55FC00566BCF /* Prompt28Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = Prompt28Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -166,10 +170,6 @@
 		CCDE00000000000000000015 /* NotificationService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationService.swift; sourceTree = "<group>"; };
 		CCDE00000000000000000018 /* UsageTracker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageTracker.swift; sourceTree = "<group>"; };
 		CCDE0000000000000000001B /* PrivacyConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrivacyConsentView.swift; sourceTree = "<group>"; };
-		CCAA00001100000000000001 /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
-		CCAA00001100000000000002 /* StorageProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageProtocols.swift; sourceTree = "<group>"; };
-		CCAA00001100000000000003 /* APIClientProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientProtocol.swift; sourceTree = "<group>"; };
-		CCAA00001100000000000004 /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -218,6 +218,15 @@
 			children = (
 			);
 			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		CCAA00001100000000000020 /* Protocols */ = {
+			isa = PBXGroup;
+			children = (
+				CCAA00001100000000000002 /* StorageProtocols.swift */,
+				CCAA00001100000000000003 /* APIClientProtocol.swift */,
+			);
+			path = Protocols;
 			sourceTree = "<group>";
 		};
 		CCAB0B522F5D780200C29A7E /* Routing */ = {
@@ -291,15 +300,6 @@
 				CCAA00001100000000000004 /* TelemetryService.swift */,
 			);
 			path = Utils;
-			sourceTree = "<group>";
-		};
-		CCAA00001100000000000020 /* Protocols */ = {
-			isa = PBXGroup;
-			children = (
-				CCAA00001100000000000002 /* StorageProtocols.swift */,
-				CCAA00001100000000000003 /* APIClientProtocol.swift */,
-			);
-			path = Protocols;
 			sourceTree = "<group>";
 		};
 		CCAB0B692F5D780200C29A7E /* Core */ = {
@@ -568,7 +568,7 @@
 				CCAB0B9F2F5D780200C29A7E /* Models */,
 				CCAB0BA22F5D780200C29A7E /* Resources */,
 				CCAB0BAA2F5D780200C29A7E /* UITests */,
-				CCAB0BAB2F5D780200C29A7E /* OrionOrbApp.swift */,
+				CCAB0BAB2F5D780200C29A7E /* PromptMeNativeApp.swift */,
 				CCDE00000000000000000007 /* PrivacyInfo.xcprivacy */,
 			);
 			path = PromptMeNative_Blueprint;
@@ -805,7 +805,7 @@
 				CCAB0BBC2F5D780200C29A7E /* NetworkError.swift in Sources */,
 				CCAB0BBE2F5D780200C29A7E /* GenerateModels.swift in Sources */,
 				CCAB0BBF2F5D780200C29A7E /* HistoryViewModel.swift in Sources */,
-				CCAB0BC02F5D780200C29A7E /* OrionOrbApp.swift in Sources */,
+				CCAB0BC02F5D780200C29A7E /* PromptMeNativeApp.swift in Sources */,
 				CCAB0BC12F5D780200C29A7E /* OAuthCoordinator.swift in Sources */,
 				CCAB0BC22F5D780200C29A7E /* AuthModels.swift in Sources */,
 				CCAB0BC32F5D780200C29A7E /* SpeechRecognizerService.swift in Sources */,
