@@ -324,6 +324,7 @@ File: `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift`
 - `HistoryStore` persistence now writes both visible `items` and deferred owned history during initial session resolution, so fast post-launch mutations do not accidentally overwrite the owned local cache before reconciliation finishes.
 - `HistoryStore` lifecycle observer registration is now deduped before re-registering, preventing duplicate foreground retry observers if observer setup runs more than once.
 - `HistoryStore` now treats unowned local history as ambiguous on signed-in reconciliation and clears it before binding cache ownership, favoring privacy/isolation over restoring potentially wrong-user legacy cache.
+- All authenticated sync entrypoints now route through the same owner-preparation + deferred-history-restore path before syncing, keeping launch-time sync, foreground retry, pull-to-refresh, and post-mutation sync behavior aligned.
 - `HistoryStore` also exposes an internal foreground-retry entry point for tests so lifecycle retry behavior can be invoked directly without depending on UIKit notification delivery in the hosted runner.
 - Unit test target now points to the real `OrionOrbTests` folder.
 - History tests use MainActor-safe polling.

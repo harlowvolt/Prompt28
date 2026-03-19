@@ -359,7 +359,7 @@ final class HistoryStore {
     /// session from Supabase so no `userId` parameter is needed at the call site.
     func forceSync() async {
         guard let session = try? await supabase.auth.session else { return }
-        await syncWithSupabase(userId: session.user.id)
+        await beginAuthenticatedSync(for: session.user.id)
     }
 
     // MARK: - Auth listener
@@ -374,8 +374,7 @@ final class HistoryStore {
                 switch event {
                 case .signedIn, .tokenRefreshed, .userUpdated:
                     if let userId = session?.user.id {
-                        prepareLocalState(for: userId)
-                        await self.syncWithSupabase(userId: userId)
+                        await self.beginAuthenticatedSync(for: userId)
                     }
                 case .signedOut, .userDeleted:
                     self.resetLocalStateForSignedOutUser()
@@ -394,9 +393,7 @@ final class HistoryStore {
 
     private func reconcileInitialSessionState() async {
         if let userId = await currentSessionUserID() {
-            prepareLocalState(for: userId)
-            restoreDeferredInitialHistoryIfNeeded()
-            await syncWithSupabase(userId: userId)
+            await beginAuthenticatedSync(for: userId)
         } else {
             resetLocalStateForSignedOutUser()
         }
@@ -409,8 +406,14 @@ final class HistoryStore {
             guard let self else { return }
             guard !self.isSyncing else { return }
             guard let userId = await self.currentSessionUserID() else { return }
-            await self.syncWithSupabase(userId: userId)
+            await self.beginAuthenticatedSync(for: userId)
         }
+    }
+
+    private func beginAuthenticatedSync(for userId: UUID) async {
+        prepareLocalState(for: userId)
+        restoreDeferredInitialHistoryIfNeeded()
+        await syncWithSupabase(userId: userId)
     }
 
     private func hasPendingSyncWork() -> Bool {

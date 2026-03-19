@@ -52,6 +52,7 @@ This roadmap separates **current working reality** from **next critical steps** 
 15. ✅ Deferred owned history is still persisted to disk during the initial reconciliation window, preventing early post-launch saves from overwriting the hidden owned cache
 16. ✅ Foreground lifecycle observer registration is deduped before re-registration, reducing duplicate retry observer risk in longer app sessions
 17. ✅ Ambiguous unowned local history is now cleared on signed-in reconciliation instead of being adopted for the current user, reducing legacy/wrong-user cache leakage risk
+18. ✅ All authenticated sync entrypoints now share the same owner-preparation + deferred-history-restore path before syncing
 
 ### What's NOT Fully Validated Yet
 
