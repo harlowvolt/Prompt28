@@ -1,5 +1,12 @@
 import Foundation
 
+@MainActor
+protocol PreferenceStoring: AnyObject {
+    var preferences: AppPreferences { get }
+    func update(_ transform: (inout AppPreferences) -> Void)
+    func setMode(_ mode: PromptMode)
+}
+
 @Observable
 @MainActor
 final class PreferencesStore {
@@ -36,5 +43,5 @@ final class PreferencesStore {
 }
 
 // MARK: - PreferenceStoring
-// Defined here (rather than Core/Protocols/StorageProtocols.swift) so it is
-
+// Defined here so the concrete store and its protocol stay aligned.
+extension PreferencesStore: PreferenceStoring {}

@@ -1,5 +1,20 @@
 import Foundation
 
+@MainActor
+protocol APIClientProtocol: AnyObject {
+    func settings() async throws -> AppSettings
+    func updatePlan(_ request: UpdatePlanRequest, token: String) async throws -> UpdatePlanResponse
+    func resetUsage(token: String) async throws -> SuccessResponse
+    func deleteUser(token: String) async throws -> SuccessResponse
+    func generate(_ request: GenerateRequest, token: String) async throws -> GenerateResponse
+    func promptsTrending() async throws -> PromptCatalog
+    func adminVerify(key: String) async throws -> AdminVerifyResponse
+    func adminSettings(key: String) async throws -> AppSettings
+    func adminPrompts(key: String) async throws -> PromptCatalog
+    func adminUpdateSettings(key: String, payload: [String: Any]) async throws -> SuccessResponse
+    func adminUpdatePrompts(key: String, catalog: PromptCatalog) async throws -> SuccessResponse
+}
+
 final class APIClient {
     private let session: URLSession
     private let builder: RequestBuilder
@@ -181,5 +196,4 @@ final class APIClient {
 }
 
 // MARK: - Conformance
-// APIClientProtocol is defined in Core/Protocols/APIClientProtocol.swift.
 extension APIClient: APIClientProtocol {}

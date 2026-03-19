@@ -1,6 +1,16 @@
 import Foundation
 @preconcurrency import Supabase
 
+@MainActor
+protocol HistoryStoring: AnyObject {
+    var items: [PromptHistoryItem] { get }
+    func add(_ item: PromptHistoryItem)
+    func remove(id: UUID)
+    func clearAll()
+    func toggleFavorite(id: UUID)
+    func rename(id: UUID, customName: String?)
+}
+
 // MARK: - Supabase DTO
 
 /// Snake_case–keyed Codable struct for inserting / selecting rows in the
@@ -64,6 +74,8 @@ private struct PromptRecord: Codable {
         )
     }
 }
+
+extension HistoryStore: HistoryStoring {}
 
 // MARK: - HistoryStore
 
