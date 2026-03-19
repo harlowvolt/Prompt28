@@ -157,6 +157,7 @@ final class HistoryStore {
         appDirectoryURL: URL,
         startAuthListenerOnInit: Bool,
         observeAppLifecycle: Bool = true,
+        reconcileInitialSessionOnInit: Bool = true,
         sessionUserIDProvider: (() async -> UUID?)? = nil,
         syncExecutor: ((UUID) async -> Void)? = nil
     ) {
@@ -179,8 +180,10 @@ final class HistoryStore {
         if observeAppLifecycle {
             startLifecycleObservers()
         }
-        Task { [weak self] in
-            await self?.reconcileInitialSessionState()
+        if reconcileInitialSessionOnInit {
+            Task { [weak self] in
+                await self?.reconcileInitialSessionState()
+            }
         }
     }
 

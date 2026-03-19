@@ -384,6 +384,7 @@ struct HistoryStoreTests {
             appDirectoryURL: appDirectory,
             startAuthListenerOnInit: false,
             observeAppLifecycle: true,
+            reconcileInitialSessionOnInit: false,
             sessionUserIDProvider: { currentUserID },
             syncExecutor: { id in syncCalls.append(id) }
         )
