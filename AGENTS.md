@@ -1,6 +1,6 @@
 # Prompt28 (Orion Orb) — AI Agent Guide (Phase 2.5 Hardening)
 
-**Last updated: 2026-03-19 | Version v2.1 (Phase 2 hardening / Phase 2.5)**
+**Last updated: 2026-03-19 | Version v2.2 (Phase 2 hardening / Phase 2.5)**
 
 This document provides essential information for AI coding agents working on the Prompt28 iOS project (marketed as "Orion Orb"). **SwiftData has been removed. CloudKit has been removed. Persistence is now Codable JSON + Supabase sync.**
 
@@ -308,8 +308,12 @@ Uses standard XCTest framework for end-to-end testing.
   - disable initial session reconciliation on init
   - inject session provider
   - inject sync executor
+- `HistoryStore` now withholds disk-loaded history from public `items` until initial auth/session reconciliation completes, to prevent stale wrong-user history from appearing during launch/sign-out/account switching.
 - `HistoryStore` also has an internal foreground-retry hook used only to make the foreground retry test deterministic without changing production notification behavior.
 - Storage hardening code is improved and compiles.
+- Simulator ambiguity is resolved by using only:
+  - `Prompt28-iPhone17`
+  - `06B488AD-877C-4EC1-A472-E2053BD31DB9`
 - Confirmed passing hosted test on simulator `Prompt28-iPhone17` (`06B488AD-877C-4EC1-A472-E2053BD31DB9`):
   - `Prompt28Tests/HistoryStoreTests/coldLaunchExistingSessionTriggersSync`
 - Current first validation blocker:
@@ -319,6 +323,8 @@ Uses standard XCTest framework for end-to-end testing.
   - lifecycle observation is now also disabled for that test, so it no longer depends on hosted app lifecycle behavior
   - hosted run still does not complete with a real pass/fail result
   - latest process inspection showed only `xcodebuild` alive after build/package handoff, with no visible `xctest`/`XCTRunner` process
+- Physical-device manual validation is now the primary short-term validation path.
+- Hosted simulator test execution remains useful but is now secondary while Phase 2 continues.
 - Automated validation completion is still pending unless `xcodebuild test` has completed with real pass/fail output.
 
 ## Known Remaining Gaps
@@ -329,7 +335,7 @@ Uses standard XCTest framework for end-to-end testing.
   - `xcodebuild test -project Prompt28.xcodeproj -scheme OrionOrb -destination 'id=06B488AD-877C-4EC1-A472-E2053BD31DB9' -derivedDataPath /tmp/Prompt28DerivedData -only-testing:Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork -resultBundlePath /tmp/prompt28-foregroundRetry-4.xcresult`
 - Latest result:
   - no real XCTest result returned
-- Next recommended move is to inspect the hosted test runner/process state specifically for `foregroundRetrySyncsPendingWork` after build/package handoff, then resume one-by-one `HistoryStoreTests` validation on the same simulator/UDID.
+- Next recommended move is to continue Phase 2 hardening work and validate on physical iPhone first; revisit the hosted simulator runner issue only if it becomes necessary again.
 
 ---
 

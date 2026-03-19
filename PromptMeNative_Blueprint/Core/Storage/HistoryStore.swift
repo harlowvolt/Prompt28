@@ -116,6 +116,7 @@ final class HistoryStore {
     private let pendingDeletesURL: URL
     private let maxItems = 200
     private var pendingDeletedIDs: Set<UUID> = []
+    private var deferredInitialItems: [PromptHistoryItem]?
     private let sessionUserIDProvider: (() async -> UUID?)?
     private let syncExecutor: ((UUID) async -> Void)?
     #if canImport(UIKit)
@@ -145,6 +146,7 @@ final class HistoryStore {
         loadFromDisk()
         loadPendingDeletes()
         migrateLegacyJSONIfNeeded()
+        deferInitialHistoryExposure()
         startAuthListener()
         startLifecycleObservers()
         Task { [weak self] in
@@ -174,6 +176,7 @@ final class HistoryStore {
         loadFromDisk()
         loadPendingDeletes()
         migrateLegacyJSONIfNeeded()
+        deferInitialHistoryExposure()
         if startAuthListenerOnInit {
             startAuthListener()
         }
@@ -384,6 +387,7 @@ final class HistoryStore {
 
     private func reconcileInitialSessionState() async {
         if let userId = await currentSessionUserID() {
+            restoreDeferredInitialHistoryIfNeeded()
             await syncWithSupabase(userId: userId)
         } else {
             resetLocalStateForSignedOutUser()
@@ -440,10 +444,29 @@ final class HistoryStore {
     }
 
     private func resetLocalStateForSignedOutUser() {
+        deferredInitialItems = nil
         items = []
         pendingDeletedIDs = []
         savePendingDeletes()
         saveToDisk()
+    }
+
+    private func deferInitialHistoryExposure() {
+        guard !items.isEmpty else { return }
+        deferredInitialItems = items
+        items = []
+    }
+
+    private func restoreDeferredInitialHistoryIfNeeded() {
+        guard let deferredInitialItems else { return }
+
+        var merged = Dictionary(uniqueKeysWithValues: deferredInitialItems.map { ($0.id, $0) })
+        for item in items {
+            merged[item.id] = item
+        }
+
+        items = merged.values.sorted { $0.createdAt > $1.createdAt }
+        self.deferredInitialItems = nil
     }
 
     private func copyFields(

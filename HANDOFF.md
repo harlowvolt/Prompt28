@@ -1,6 +1,6 @@
 # Prompt28 (Orion Orb) — AI Handoff Document (Phase 2.5 Hardening)
 
-**Last updated: 2026-03-19. Version v2.1 (Phase 2 hardening / Phase 2.5). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
+**Last updated: 2026-03-19. Version v2.2 (Phase 2 hardening / Phase 2.5). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
 
 ---
 
@@ -319,11 +319,15 @@ File: `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift`
   - disable initial session reconciliation on init
   - inject session user ID provider
   - inject sync executor
+- `HistoryStore` now defers exposing disk-backed local history until initial auth/session reconciliation completes, preventing stale wrong-user history from flashing during launch or account switching.
 - `HistoryStore` also exposes an internal foreground-retry entry point for tests so lifecycle retry behavior can be invoked directly without depending on UIKit notification delivery in the hosted runner.
 - Unit test target now points to the real `OrionOrbTests` folder.
 - History tests use MainActor-safe polling.
 - `OrionOrbApp` has a test-mode bypass so unit tests do not bootstrap the full app environment.
 - Shared scheme no longer includes `Prompt28UITests` inside the main unit-test `TestAction`.
+- Simulator ambiguity is solved by using only:
+  - `Prompt28-iPhone17`
+  - `06B488AD-877C-4EC1-A472-E2053BD31DB9`
 - Confirmed passing hosted history test on simulator `Prompt28-iPhone17` (`06B488AD-877C-4EC1-A472-E2053BD31DB9`):
   - `Prompt28Tests/HistoryStoreTests/coldLaunchExistingSessionTriggersSync`
 - Current first blocker:
@@ -333,6 +337,8 @@ File: `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift`
   - lifecycle observation was also disabled for this test so it is fully isolated from hosted app lifecycle behavior
   - despite that, the hosted run still does not return a real XCTest pass/fail result yet
   - latest process inspection showed `xcodebuild` still alive after build/package handoff with no active `xctest`/`XCTRunner` process visible, which points to hosted runner/process launch behavior rather than the test body itself
+- Physical iPhone manual validation is now the primary short-term validation path.
+- Hosted simulator validation remains useful secondary coverage, but it is no longer the main blocker for continuing Phase 2 hardening.
 - **Important truth:** automated validation completion is still pending unless `xcodebuild test` returns real pass/fail results. Do not claim Phase 2 hardening is fully validated yet.
 
 ## Known Remaining Gaps
@@ -345,11 +351,13 @@ File: `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift`
 - Latest result:
   - no real XCTest pass/fail result returned
   - run stopped after repeated quiet periods post-build/package handoff
+- Current practical validation path:
+  - manual verification on physical iPhone
 - Phase 2 hardening should not be marked complete until the history validation suite actually finishes successfully.
 - Recommended next step:
-  - inspect why hosted test launch is not producing an `xctest`/`XCTRunner` process for `foregroundRetrySyncsPendingWork` after build/package handoff
-  - determine whether the remaining stall is XCTest-host/process startup, not test-body logic
-  - only after that continue the rest of `HistoryStoreTests` one-by-one on the same simulator/UDID
+  - continue Phase 2 hardening work and validate behavior on physical iPhone first
+  - keep the hosted simulator issue documented, but do not spend more time on it unless it becomes necessary again
+  - use simulator-hosted testing as secondary validation only
 
 ### PromptPremiumBackground (RootView.swift)
 

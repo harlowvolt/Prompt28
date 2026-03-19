@@ -1,8 +1,8 @@
 # Orion Orb — Clean Roadmap (Post-Phase-2, v1.9)
 
 **Last updated: 2026-03-19**
-**Version**: v2.0 (Phase 2 hardening / Phase 2.5)
-**Status**: Phase 2 hardening in progress — native cleanup done, auth live, history hardening implemented, automated validation still in progress
+**Version**: v2.1 (Phase 2 hardening / Phase 2.5)
+**Status**: Phase 2 hardening in progress — native cleanup done, auth live, history hardening implemented, physical-device validation is the current practical path
 
 This roadmap separates **current working reality** from **next critical steps** from **long-term vision**. It is grounded in actual code, not aspirations.
 
@@ -47,20 +47,25 @@ This roadmap separates **current working reality** from **next critical steps** 
 10. ✅ Launch-time sync runs when a valid Supabase session already exists
 11. ✅ Delete propagation exists and pending delete IDs retry on future sync
 12. ✅ Signed-out/user-deleted state clears local history to avoid cross-user contamination
+13. ✅ Disk-backed history is withheld from public UI state until initial auth/session reconciliation completes, reducing stale wrong-user history exposure during launch and account switching
 
 ### What's NOT Fully Validated Yet
 
 1. ⏳ Automated validation of `HistoryStore` is not complete yet
-2. ⏳ Confirmed passing hosted test:
+2. ⏳ Physical iPhone manual validation is now the primary short-term validation path
+3. ⏳ Simulator ambiguity is solved:
+   - use only `Prompt28-iPhone17`
+   - UDID `06B488AD-877C-4EC1-A472-E2053BD31DB9`
+4. ⏳ Confirmed passing hosted test:
    - `Prompt28Tests/HistoryStoreTests/coldLaunchExistingSessionTriggersSync`
-3. ⏳ Current first blocker:
+5. ⏳ Current isolated hosted-test blocker:
    - `Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork`
    - init-time session reconciliation race already removed for this test
    - test no longer depends on `UIApplication.didBecomeActiveNotification`; it calls the foreground retry path directly
    - lifecycle observation is now also disabled for this test so it is fully isolated from hosted app lifecycle behavior
    - hosted run still does not return a real pass/fail result yet
    - latest process inspection showed only `xcodebuild` alive after build/package handoff, not an active `xctest`/`XCTRunner` process
-4. ⏳ Remaining `HistoryStoreTests` should continue one-by-one only after the foreground retry blocker is understood
+6. ⏳ Roadmap progress should continue despite the isolated hosted-test issue
 
 ### Build Info
 
@@ -78,19 +83,21 @@ This roadmap separates **current working reality** from **next critical steps** 
 
 ### Step 1: Finish Phase 2 History Validation
 
-1. Continue using the unique simulator only:
-   - `Prompt28-iPhone17`
-   - UDID `06B488AD-877C-4EC1-A472-E2053BD31DB9`
-2. Keep using the shared derived data path:
-   - `/tmp/Prompt28DerivedData`
-3. Resolve the remaining first blocker:
-   - `Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork`
-   - latest attempted command:
-     - `xcodebuild test -project Prompt28.xcodeproj -scheme OrionOrb -destination 'id=06B488AD-877C-4EC1-A472-E2053BD31DB9' -derivedDataPath /tmp/Prompt28DerivedData -only-testing:Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork -resultBundlePath /tmp/prompt28-foregroundRetry-4.xcresult`
-   - latest result:
-     - no real XCTest pass/fail result returned
-4. After that blocker is resolved, run remaining `HistoryStoreTests` one-by-one, not as a full suite first
-5. Do not mark Phase 2 hardening complete until `xcodebuild test` returns real pass/fail results for the history validation cases
+1. Use physical iPhone manual validation as the primary short-term validation path
+2. Verify History/Favorites behavior end to end on device:
+   - cold launch with existing session
+   - create prompt
+   - favorite toggle
+   - rename
+   - delete propagation
+   - offline mutation then reconnect
+   - sign out / sign in with different user isolation
+3. Keep hosted simulator validation as secondary:
+   - simulator ambiguity is solved via `Prompt28-iPhone17` / `06B488AD-877C-4EC1-A472-E2053BD31DB9`
+   - one hosted test passes
+   - one hosted test remains isolated/sticky
+4. Continue roadmap execution despite the isolated hosted-test issue
+5. Do not mark Phase 2 hardening complete until confidence is established through manual validation and/or eventual full automated pass/fail coverage
 
 ### Step 2: Verify Live Supabase Assumptions
 
