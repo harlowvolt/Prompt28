@@ -14,8 +14,6 @@
 		CCA100001122334455667713 /* ShareCardFileStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667703 /* ShareCardFileStore.swift */; };
 		CCA100001122334455667714 /* PremiumTabScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667704 /* PremiumTabScreen.swift */; };
 		CCAA00001100000000000011 /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000001 /* SupabaseConfig.swift */; };
-		CCAA00001100000000000012 /* StorageProtocols.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000002 /* StorageProtocols.swift */; };
-		CCAA00001100000000000013 /* APIClientProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000003 /* APIClientProtocol.swift */; };
 		CCAA00001100000000000014 /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000004 /* TelemetryService.swift */; };
 		CCAB0BAD2F5D780200C29A7E /* TypePromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B862F5D780200C29A7E /* TypePromptView.swift */; };
 		CCAB0BAF2F5D780200C29A7E /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B7D2F5D780200C29A7E /* HistoryView.swift */; };
@@ -103,8 +101,6 @@
 		CCA100001122334455667703 /* ShareCardFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardFileStore.swift; sourceTree = "<group>"; };
 		CCA100001122334455667704 /* PremiumTabScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumTabScreen.swift; sourceTree = "<group>"; };
 		CCAA00001100000000000001 /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
-		CCAA00001100000000000002 /* StorageProtocols.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StorageProtocols.swift; sourceTree = "<group>"; };
-		CCAA00001100000000000003 /* APIClientProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClientProtocol.swift; sourceTree = "<group>"; };
 		CCAA00001100000000000004 /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 		CCAB0B512F5D780200C29A7E /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
 		CCAB0B532F5D780200C29A7E /* AppEnvironment.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppEnvironment.swift; sourceTree = "<group>"; };
@@ -223,8 +219,6 @@
 		CCAA00001100000000000020 /* Protocols */ = {
 			isa = PBXGroup;
 			children = (
-				CCAA00001100000000000002 /* StorageProtocols.swift */,
-				CCAA00001100000000000003 /* APIClientProtocol.swift */,
 			);
 			path = Protocols;
 			sourceTree = "<group>";
@@ -850,8 +844,6 @@
 				CCDE00000000000000000016 /* NotificationService.swift in Sources */,
 				CCDE0000000000000000001C /* PrivacyConsentView.swift in Sources */,
 				CCAA00001100000000000011 /* SupabaseConfig.swift in Sources */,
-				CCAA00001100000000000012 /* StorageProtocols.swift in Sources */,
-				CCAA00001100000000000013 /* APIClientProtocol.swift in Sources */,
 				CCAA00001100000000000014 /* TelemetryService.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
