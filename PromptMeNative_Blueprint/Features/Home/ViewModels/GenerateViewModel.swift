@@ -327,9 +327,8 @@ final class GenerateViewModel {
         historyStore.add(item)
         latestHistoryItemID = item.id
     }
-}
 
-// MARK: - Edge Function error extraction
+    // MARK: - Edge Function error extraction
 
     /// Extracts a human-readable error message from a Supabase `FunctionsError`.
     ///
@@ -363,6 +362,7 @@ final class GenerateViewModel {
         // Fallback: try as plain string.
         return String(data: data, encoding: .utf8)
     }
+}
 
 // MARK: - Edge Function DTO
 
