@@ -76,7 +76,9 @@ final class GenerateViewModel {
             return
         }
 
-        await authManager.refreshMe()
+        // Note: refreshMe() is NOT called here. The Railway /me endpoint rejects Supabase
+        // JWTs, so a blocking pre-flight call would silently fail and add network latency
+        // before the gate check. Plan data is synced after a successful generation instead.
 
         guard let token = authManager.token else {
             errorMessage = "Please sign in to generate prompts."

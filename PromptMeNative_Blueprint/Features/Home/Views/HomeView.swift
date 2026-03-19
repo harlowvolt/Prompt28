@@ -172,7 +172,12 @@ struct HomeView: View {
             }
         }
         .onChange(of: generateViewModel.showPaywall) { _, show in
-            if show { router.presentHomeSheet(.upgrade) }
+            if show {
+                router.presentHomeSheet(.upgrade)
+                // Reset immediately so the next generate attempt can re-trigger the paywall.
+                // Without this, showPaywall stays true and .onChange never fires again.
+                generateViewModel.showPaywall = false
+            }
         }
         .onChange(of: generateViewModel.errorMessage) { _, message in
             guard let message else { return }

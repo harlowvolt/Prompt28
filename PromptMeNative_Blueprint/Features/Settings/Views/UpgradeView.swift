@@ -5,6 +5,7 @@ struct UpgradeView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.storeManager) private var scopedStoreManager
     @Environment(\.authManager) private var scopedAuthManager
+    @Environment(\.usageTracker) private var scopedUsageTracker
     @Bindable var viewModel: SettingsViewModel
 
     // MARK: - Body
@@ -138,6 +139,18 @@ struct UpgradeView: View {
             Text("Dev Plan (internal)")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
                 .foregroundStyle(PromptTheme.softLilac.opacity(0.55))
+
+            // DEBUG-only: resets the local Keychain usage counter without touching Railway.
+            // Use this when the free-tier gate fires during development before plan sync
+            // with Railway is operational on Supabase JWTs.
+            if let tracker = scopedUsageTracker {
+                Button("Reset Usage Counter (Dev)") {
+                    tracker.reset()
+                }
+                .font(.system(size: 13, weight: .medium, design: .rounded))
+                .foregroundStyle(.orange.opacity(0.85))
+                .buttonStyle(.plain)
+            }
 
             SecureField("Admin key", text: $viewModel.devAdminKey)
                 .font(.system(size: 14, design: .monospaced))
