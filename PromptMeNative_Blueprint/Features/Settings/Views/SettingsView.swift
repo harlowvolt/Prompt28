@@ -6,6 +6,7 @@ struct SettingsView: View {
     @Environment(\.appRouter) private var scopedRouter
     @Environment(\.apiClient) private var scopedAPIClient
     @Environment(\.preferencesStore) private var scopedPreferencesStore
+    @Environment(\.storeManager) private var scopedStoreManager
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = SettingsViewModel()
     @State private var showUpgrade = false
@@ -17,6 +18,13 @@ struct SettingsView: View {
     private var router: AppRouter? { scopedRouter }
     private var apiClient: (any APIClientProtocol)? { scopedAPIClient }
     private var preferencesStore: (any PreferenceStoring)? { scopedPreferencesStore }
+    private var storeManager: StoreManager? { scopedStoreManager }
+
+    /// The real plan tier — prefers StoreKit receipt-backed plan so paid users
+    /// aren't shown "Starter" when Railway plan sync has failed.
+    private var effectivePlan: PlanType {
+        storeManager?.activePlan ?? authManager?.currentUser?.plan ?? .starter
+    }
 
     var body: some View {
         GeometryReader { proxy in
@@ -189,11 +197,11 @@ struct SettingsView: View {
             sectionHeader("Subscription")
             VStack(spacing: 14) {
                 HStack {
-                    Text(authManager?.currentUser?.plan.rawValue.capitalized ?? "Starter")
+                    Text(effectivePlan.rawValue.capitalized)
                         .font(PromptTheme.Typography.rounded(16, .semibold))
                         .foregroundStyle(PromptTheme.paleLilacWhite)
                     Spacer()
-                    Text((authManager?.currentUser?.plan.rawValue ?? "starter").uppercased())
+                    Text(effectivePlan.rawValue.uppercased())
                         .font(.system(size: 10, weight: .bold, design: .rounded))
                         .foregroundStyle(PromptTheme.softLilac)
                         .padding(.horizontal, 12)
