@@ -334,6 +334,7 @@ Uses standard XCTest framework for end-to-end testing.
 - Prompt generation still uses the legacy Railway `/api/generate` endpoint in the current repo state.
 - StoreKit product loading does not gate free-tier generation in `GenerateViewModel`.
 - `GenerateViewModel` now refreshes the Supabase session before generate and retries once on a legacy 401/session-expired response.
+- `APIClient` now exposes raw backend/body text for `/api/generate` failure paths when possible, instead of collapsing them into generic decode/server messages.
 - Automated validation completion is still pending unless `xcodebuild test` has completed with real pass/fail output.
 
 ## Known Remaining Gaps

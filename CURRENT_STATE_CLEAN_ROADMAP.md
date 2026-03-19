@@ -55,6 +55,7 @@ This roadmap separates **current working reality** from **next critical steps** 
 18. ✅ All authenticated sync entrypoints now share the same owner-preparation + deferred-history-restore path before syncing
 19. ✅ Pending deletes are filtered out of deferred-history restore/persistence, preventing deleted items from resurfacing during the reconciliation window
 20. ✅ Generation path now refreshes the Supabase session token before calling the legacy Railway `/api/generate` endpoint and retries once on session-expired responses
+21. ✅ Generate failure surfacing now includes raw backend/body text when the legacy Railway response is non-JSON or decodes unexpectedly
 
 ### What's NOT Fully Validated Yet
 
@@ -111,7 +112,8 @@ This roadmap separates **current working reality** from **next critical steps** 
 1. Generation is still routed through the legacy Railway `/api/generate` path in Phase 2
 2. StoreKit product loading failure should not block free-tier generation
 3. The app now refreshes the Supabase session token before generate and retries once on legacy 401/session-expired responses
-4. Validate on physical iPhone before doing more monetization hardening:
+4. Generate failures should now surface real backend/body text on device when possible
+5. Validate on physical iPhone before doing more monetization hardening:
    - signed-in generate from Home
    - typed generate from sheet
    - relaunch then generate immediately

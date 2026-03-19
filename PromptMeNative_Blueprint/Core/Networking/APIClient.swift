@@ -63,12 +63,19 @@ final class APIClient {
             do {
                 return try decoder.decode(type, from: data)
             } catch {
+                let responseSnippet = responseBodySnippet(from: data)
                 Task { @MainActor in
                     TelemetryService.shared.logAPIError(
                         code: "DECODE_ERROR",
-                        message: "Failed to decode response: \(error.localizedDescription)",
+                        message: "Failed to decode response: \(error.localizedDescription). Body: \(responseSnippet ?? "<empty>")",
                         endpoint: request.url?.path
                     )
+                }
+                if endpoint.path == "/api/generate" {
+                    let message = responseSnippet.map {
+                        "Generation failed: server returned an unexpected response. \($0)"
+                    } ?? "Generation failed: server returned an unexpected response."
+                    throw NetworkError.server(message: message)
                 }
                 throw NetworkError.decoding
             }
@@ -76,7 +83,7 @@ final class APIClient {
 
         let apiError = try? decoder.decode(APIErrorResponse.self, from: data)
         let fallbackMessage = HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)
-        let message = apiError?.error ?? fallbackMessage
+        let message = apiError?.error ?? responseBodySnippet(from: data) ?? fallbackMessage
 
         // Log API-level errors by status code.
         Task { @MainActor in
@@ -94,7 +101,7 @@ final class APIClient {
                 ? "Session expired. Please sign in again."
                 : "Invalid email or password."
             throw NetworkError.unauthorized(
-                message: apiError?.error ?? defaultMessage,
+                message: apiError?.error ?? responseBodySnippet(from: data) ?? defaultMessage,
                 sessionExpired: isSessionScoped
             )
         case 403:
@@ -192,6 +199,22 @@ final class APIClient {
 
     func adminUpdatePrompts(key: String, catalog: PromptCatalog) async throws -> SuccessResponse {
         try await send(.adminUpdatePrompts(catalog), adminKey: key, as: SuccessResponse.self)
+    }
+
+    private func responseBodySnippet(from data: Data) -> String? {
+        guard let raw = String(data: data, encoding: .utf8)?
+            .trimmingCharacters(in: .whitespacesAndNewlines),
+              !raw.isEmpty
+        else {
+            return nil
+        }
+
+        if raw.count <= 220 {
+            return raw
+        }
+
+        let index = raw.index(raw.startIndex, offsetBy: 220)
+        return String(raw[..<index]) + "..."
     }
 }
 

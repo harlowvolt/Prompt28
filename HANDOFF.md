@@ -348,6 +348,7 @@ File: `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift`
 - Generation remains on the legacy Railway `/api/generate` path during Phase 2.
 - StoreKit product loading failure is not the generation gate in the current app flow.
 - `GenerateViewModel` now refreshes the Supabase session token before generation and retries once on legacy 401/session-expired responses instead of immediately logging the user out.
+- `APIClient` now surfaces raw backend/body text for `/api/generate` failures when the Railway response is non-JSON or decodes unexpectedly, so device testing can distinguish auth rejection, bad response shape, and backend errors.
 - **Important truth:** automated validation completion is still pending unless `xcodebuild test` returns real pass/fail results. Do not claim Phase 2 hardening is fully validated yet.
 
 ## Known Remaining Gaps
