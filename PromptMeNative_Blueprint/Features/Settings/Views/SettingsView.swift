@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(\.apiClient) private var scopedAPIClient
     @Environment(\.preferencesStore) private var scopedPreferencesStore
     @Environment(\.storeManager) private var scopedStoreManager
+    @Environment(\.supabase) private var scopedSupabase
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = SettingsViewModel()
     @State private var showUpgrade = false
@@ -89,7 +90,8 @@ struct SettingsView: View {
                 apiClient: apiClient,
                 authManager: authManager,
                 preferencesStore: preferencesStore,
-                historyStore: historyStore
+                historyStore: historyStore,
+                supabase: scopedSupabase
             )
             viewModel.syncFromStores()
             await viewModel.loadRemoteSettings()

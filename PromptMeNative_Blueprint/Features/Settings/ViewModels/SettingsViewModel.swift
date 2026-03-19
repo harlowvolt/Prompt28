@@ -1,4 +1,5 @@
 import Foundation
+@preconcurrency import Supabase
 
 @Observable
 @MainActor
@@ -17,6 +18,7 @@ final class SettingsViewModel {
 	private var authManager: AuthManager?
 	private var preferencesStore: (any PreferenceStoring)?
 	private var historyStore: (any HistoryStoring)?
+	private var supabase: SupabaseClient?
 
 	init() {}
 
@@ -24,13 +26,15 @@ final class SettingsViewModel {
 		apiClient: any APIClientProtocol,
 		authManager: AuthManager,
 		preferencesStore: any PreferenceStoring,
-		historyStore: any HistoryStoring
+		historyStore: any HistoryStoring,
+		supabase: SupabaseClient? = nil
 	) {
 		guard self.apiClient == nil else { return }
 		self.apiClient = apiClient
 		self.authManager = authManager
 		self.preferencesStore = preferencesStore
 		self.historyStore = historyStore
+		self.supabase = supabase
 		syncFromStores()
 	}
 
@@ -124,13 +128,25 @@ final class SettingsViewModel {
 		errorMessage = nil
 		defer { isSaving = false }
 
-		// Note: The Railway /api/user DELETE endpoint rejects Supabase JWTs.
-		// Phase 3 will add a Supabase Edge Function for server-side account deletion
-		// (removing auth.users row requires service role). For now:
-		//   1. Clear all local history (local + Supabase prompts table via RLS)
-		//   2. Sign out via Supabase — invalidates the session
-		// The Supabase auth user record itself persists until Phase 3 deletion function
-		// is deployed, but the user cannot sign back in to access their data.
+		// Phase 3: call the `delete-account` Edge Function which deletes the
+		// auth.users row (requires service role) and all associated prompts.
+		// Falls back to local-only clear + logout if the function is unavailable.
+		if let sb = supabase {
+			do {
+				struct DeleteResponse: Decodable { let success: Bool? }
+				let _: DeleteResponse = try await sb.functions.invoke(
+					"delete-account",
+					options: FunctionInvokeOptions()
+				)
+			} catch {
+				// If the Edge Function call fails, surface the error so the user
+				// can try again rather than silently leaving their account intact.
+				errorMessage = "Account deletion failed. Please try again."
+				return false
+			}
+		}
+
+		// Clear local state and sign out regardless of Edge Function outcome.
 		historyStore.clearAll()
 		authManager.logout()
 		return true
