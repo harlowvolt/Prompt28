@@ -1,5 +1,6 @@
 import StoreKit
 import Foundation
+@preconcurrency import Supabase
 
 @Observable
 @MainActor
@@ -19,8 +20,14 @@ final class StoreManager {
     /// server-side plan tier (fixes the post-purchase plan sync bug).
     private let authManager: AuthManager
 
-    init(authManager: AuthManager) {
+    /// Injected to write `user_metadata.plan` immediately after a verified purchase,
+    /// so the Edge Function's server-side metering bypass activates right away
+    /// without requiring an App Store Server Notifications webhook.
+    private let supabase: SupabaseClient?
+
+    init(authManager: AuthManager, supabase: SupabaseClient? = nil) {
         self.authManager = authManager
+        self.supabase = supabase
         updateListenerTask = listenForTransactions()
         Task { await loadProducts() }
     }
@@ -56,9 +63,14 @@ final class StoreManager {
                 let transaction = try checkVerified(verification)
                 purchasedProductIDs.insert(transaction.productID)
                 await transaction.finish()
-                // Sync the server-side plan tier immediately after the receipt is
-                // finished so the UI reflects the new plan without requiring a
-                // manual refresh or app restart.
+                // Push plan tier to Supabase user_metadata immediately so the
+                // Edge Function metering bypass activates without waiting for
+                // an App Store Server Notifications webhook.
+                if let planTier = planType(for: transaction.productID) {
+                    await syncPlanToSupabase(planTier)
+                }
+                // Best-effort Railway plan sync (silently fails — plan is read
+                // from StoreKit receipts via activePlan in all user-facing gates).
                 await authManager.refreshMe()
                 AnalyticsService.shared.track(.planUpgradeSuccess(plan: product.id))
                 return true
@@ -117,6 +129,25 @@ final class StoreManager {
             return .unlimited
         default:
             return nil
+        }
+    }
+
+    /// Writes the purchased plan tier to `user_metadata.plan` in Supabase Auth,
+    /// so the Edge Function's server-side metering bypass activates immediately.
+    ///
+    /// This is a best-effort write — failure is silent. The client-side
+    /// `activePlan` property is always the authoritative gate for UI/generation;
+    /// this call exists only to keep the Edge Function's server-side metering
+    /// in sync without needing an App Store Server Notifications webhook.
+    private func syncPlanToSupabase(_ plan: PlanType) async {
+        guard let supabase else { return }
+        do {
+            try await supabase.auth.update(user: UserAttributes(data: ["plan": .string(plan.rawValue)]))
+        } catch {
+            TelemetryService.shared.logStorageError(
+                code: "PLAN_METADATA_SYNC_FAILED",
+                message: "Failed to write plan to Supabase user_metadata: \(error.localizedDescription)"
+            )
         }
     }
 

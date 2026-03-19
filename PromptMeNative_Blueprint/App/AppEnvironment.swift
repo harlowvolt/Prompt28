@@ -71,7 +71,7 @@ final class AppEnvironment {
 
         // ── Usage & Store ────────────────────────────────────────────────────
         self.usageTracker = UsageTracker(keychain: keychain)
-        self.storeManager = StoreManager(authManager: authManager)
+        self.storeManager = StoreManager(authManager: authManager, supabase: supabase)
 
         // ── Navigation ───────────────────────────────────────────────────────
         self.router = AppRouter()
