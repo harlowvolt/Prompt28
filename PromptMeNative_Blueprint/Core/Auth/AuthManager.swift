@@ -62,7 +62,9 @@ final class AuthManager {
             let session = try await supabase.auth.session
             await handleSuccessfulAuth(session: session)
         } catch {
-            // No valid session found
+            // No valid session found — also clear the SDK's internal session so it
+            // doesn't attach the expired token to subsequent sign-in requests.
+            try? await supabase.auth.signOut()
             clearSession()
         }
     }
