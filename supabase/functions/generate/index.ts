@@ -170,6 +170,40 @@ function resolveSystemPrompt(
   return intentPrompts[mode] ?? intentPrompts.ai;
 }
 
+// ── Temporal context ──────────────────────────────────────────────────────────
+
+/**
+ * Returns a concise temporal context string injected into every generation.
+ * Gives the model awareness of "now" so time-sensitive prompts (weekly plans,
+ * seasonal recipes, upcoming holidays, etc.) produce relevant output without
+ * the user having to specify the date themselves.
+ *
+ * Example: "Today is Thursday, 19 March 2026 (week 12). Season: Spring (Northern Hemisphere)."
+ */
+function buildTemporalContext(): string {
+  const now = new Date();
+
+  const dayName  = now.toLocaleDateString("en-US", { weekday: "long",  timeZone: "UTC" });
+  const dayNum   = now.toLocaleDateString("en-US", { day: "numeric",   timeZone: "UTC" });
+  const month    = now.toLocaleDateString("en-US", { month: "long",    timeZone: "UTC" });
+  const year     = now.getUTCFullYear();
+
+  // ISO week number
+  const startOfYear = new Date(Date.UTC(year, 0, 1));
+  const weekNum  = Math.ceil(
+    ((now.getTime() - startOfYear.getTime()) / 86_400_000 + startOfYear.getUTCDay() + 1) / 7,
+  );
+
+  // Northern Hemisphere seasons
+  const m = now.getUTCMonth(); // 0-based
+  const season =
+    m < 2 || m === 11 ? "Winter" :
+    m < 5             ? "Spring" :
+    m < 8             ? "Summer" : "Autumn";
+
+  return `[Context: Today is ${dayName}, ${dayNum} ${month} ${year} (week ${weekNum}). Season: ${season} (Northern Hemisphere).]`;
+}
+
 // ── Request / Response interfaces ─────────────────────────────────────────────
 
 interface GenerateRequest {
@@ -269,10 +303,16 @@ Deno.serve(async (req: Request) => {
     const resolvedSystem = resolveSystemPrompt(intentCategory, mode, systemPrompt);
 
     // ── Build user message ─────────────────────────────────────────────────
+    // Phase 5: prepend temporal context so the model knows "now" without the
+    // user having to state the date — useful for weekly plans, seasonal queries, etc.
+    const temporalContext = buildTemporalContext();
+
     let userMessage = input.trim();
     if (refinement?.trim()) {
       userMessage =
-        `Original prompt:\n${input.trim()}\n\nRefinement request:\n${refinement.trim()}\n\nRefine the original prompt based on the refinement request.`;
+        `${temporalContext}\n\nOriginal prompt:\n${input.trim()}\n\nRefinement request:\n${refinement.trim()}\n\nRefine the original prompt based on the refinement request.`;
+    } else {
+      userMessage = `${temporalContext}\n\n${input.trim()}`;
     }
 
     const taskInstruction =

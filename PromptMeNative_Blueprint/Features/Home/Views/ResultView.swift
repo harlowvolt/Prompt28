@@ -112,11 +112,22 @@ struct ResultView: View {
     private func expertPromptCard(result: GenerateResponse) -> some View {
         VStack(alignment: .leading, spacing: PromptTheme.Spacing.s) {
             // Header
-            HStack {
+            HStack(spacing: 8) {
                 Text("Expert Prompt")
                     .font(PromptTheme.Typography.rounded(18, .semibold))
                     .foregroundStyle(PromptTheme.paleLilacWhite)
                 Spacer()
+                // Phase 5: intent category badge — shown when classifier returns a non-general result
+                if let intent = result.intent_category, intent != "general" {
+                    Text(intent.capitalized)
+                        .font(PromptTheme.Typography.rounded(11, .semibold))
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(intentBadgeColor(for: intent).opacity(0.18), in: Capsule())
+                        .overlay(Capsule().stroke(intentBadgeColor(for: intent).opacity(0.38), lineWidth: 0.5))
+                        .foregroundStyle(intentBadgeColor(for: intent))
+                        .transition(.opacity.combined(with: .scale(scale: 0.88)))
+                }
                 Text(viewModel.selectedMode == .ai ? "AI" : "Human")
                     .font(PromptTheme.Typography.rounded(12, .semibold))
                     .padding(.horizontal, PromptTheme.Spacing.xs)
@@ -277,6 +288,21 @@ struct ResultView: View {
         .padding(PromptTheme.Spacing.s)
         .background { PromptTheme.glassCard(cornerRadius: PromptTheme.Radius.large) }
         .shadow(color: .black.opacity(0.50), radius: 20, y: 14)
+    }
+
+    // MARK: - Intent Badge Color
+
+    /// Returns a distinct accent color per intent category for the Phase 5 badge.
+    private func intentBadgeColor(for intent: String) -> Color {
+        switch intent {
+        case "work":       return Color(hex: "#7EB8F7")   // soft blue
+        case "school":     return Color(hex: "#A8E6CF")   // mint green
+        case "business":   return Color(hex: "#F7C59F")   // warm amber
+        case "fitness":    return Color(hex: "#F97E7E")   // coral red
+        case "technical":  return Color(hex: "#C9A9F5")   // lavender
+        case "creative":   return Color(hex: "#FFD97D")   // golden yellow
+        default:           return PromptTheme.softLilac
+        }
     }
 
     // MARK: - Empty Card

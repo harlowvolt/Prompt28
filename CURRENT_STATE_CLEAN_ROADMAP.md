@@ -420,11 +420,13 @@ When implementing Phase 3+ features:
 
 When you pick up this project:
 
-1. **Read this file first** — It's the ground truth
-2. **Check HANDOFF.md** — Deep technical reference (much longer)
+1. **Read this file first** — It's the ground truth for current state
+2. **Check HANDOFF.md** — Deep technical reference (much longer), always kept in sync
 3. **Check AGENTS.md** — Agent-focused rules and patterns
-4. **Verify Supabase config** — Is the anon key correct? Are tables created?
-5. **Run a smoke test** — Can you sign in? Does JSON persist?
-6. **Then start Phase 3** — Generation, metering, IAP
+4. **Verify Supabase config** — Is the anon key correct? Have the two new migrations been run?
+5. **Redeploy the Edge Function** — `supabase functions deploy generate --no-verify-jwt` picks up Phase 5 intent + context changes
+6. **Phase 3 + 4 are DONE** — Do not re-implement them. Read v3.0 status above.
+7. **Phase 5 remaining** — MCP web-context integration, App Store Connect IAP products, Apple Sign In, TestFlight submission
+8. **Device testing** — Build on physical iPhone, validate generation → metering → paywall → upgrade → deletion end-to-end
 
 Good luck building Orion Orb! 🌌

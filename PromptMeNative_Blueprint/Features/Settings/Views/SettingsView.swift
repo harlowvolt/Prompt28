@@ -7,6 +7,7 @@ struct SettingsView: View {
     @Environment(\.apiClient) private var scopedAPIClient
     @Environment(\.preferencesStore) private var scopedPreferencesStore
     @Environment(\.storeManager) private var scopedStoreManager
+    @Environment(\.usageTracker) private var scopedUsageTracker
     @Environment(\.supabase) private var scopedSupabase
     @Environment(\.dismiss) private var dismiss
     @State private var viewModel = SettingsViewModel()
@@ -215,9 +216,13 @@ struct SettingsView: View {
                         )
                 }
 
-                if let user = authManager?.currentUser, let remaining = user.prompts_remaining {
-                    let total = Double(user.prompts_used + remaining)
-                    let fraction = total > 0 ? Double(user.prompts_used) / total : 0.0
+                // Usage bar — only shown for starter plan; reads from UsageTracker
+                // (authoritative local source, synced after each generation).
+                if effectivePlan == .starter, let tracker = scopedUsageTracker {
+                    let used      = tracker.count
+                    let limit     = UsageTracker.freeMonthlyLimit
+                    let remaining = max(0, limit - used)
+                    let fraction  = Double(used) / Double(limit)
 
                     VStack(spacing: 8) {
                         GeometryReader { geo in
@@ -228,24 +233,29 @@ struct SettingsView: View {
                                 Capsule()
                                     .fill(
                                         LinearGradient(
-                                            colors: [PromptTheme.mutedViolet, PromptTheme.softLilac.opacity(0.80)],
+                                            colors: fraction >= 0.8
+                                                ? [Color.yellow.opacity(0.80), Color.orange.opacity(0.70)]
+                                                : [PromptTheme.mutedViolet, PromptTheme.softLilac.opacity(0.80)],
                                             startPoint: .leading,
                                             endPoint: .trailing
                                         )
                                     )
                                     .frame(width: max(8, geo.size.width * fraction), height: 8)
+                                    .animation(.easeInOut(duration: 0.4), value: fraction)
                             }
                         }
                         .frame(height: 8)
 
                         HStack {
-                            Text("\(user.prompts_used) used")
+                            Text("\(used) of \(limit) used")
                                 .font(PromptTheme.Typography.rounded(12, .medium))
                                 .foregroundStyle(PromptTheme.softLilac.opacity(0.58))
                             Spacer()
                             Text("\(remaining) remaining")
                                 .font(PromptTheme.Typography.rounded(12, .medium))
-                                .foregroundStyle(PromptTheme.softLilac.opacity(0.58))
+                                .foregroundStyle(remaining <= 2
+                                    ? Color.yellow.opacity(0.85)
+                                    : PromptTheme.softLilac.opacity(0.58))
                         }
                     }
                 }

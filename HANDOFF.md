@@ -1,33 +1,54 @@
-# Prompt28 (Orion Orb) — AI Handoff Document (Phase 3 Active)
+# Prompt28 (Orion Orb) — AI Handoff Document (v3.0, Phase 5 Active)
 
-**Last updated: 2026-03-19. Version v2.5 (Phase 3 active — generation live end-to-end). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
+**Last updated: 2026-03-19. Version v3.0 (Phase 4 complete, Phase 5 foundations active). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
 
 ---
 
-## ⚡ Current Status: Phase 3 Active — Generation Is Working
+## ⚡ Current Status: Phase 5 Active — Intent Routing + Context-Aware Generation
 
-The Supabase Edge Function `generate` is deployed and active. Generation routes through Supabase (not Railway). **The iOS app is unblocked.**
+Phases 3 and 4 are fully complete. Phase 5 foundations (intent classifier, temporal context, result metadata) are live in the Edge Function.
 
-### What's done (Phase 3)
+### What's done (Phase 3 — Generation)
 - ✅ `supabase/functions/generate/index.ts` deployed to project `jzwerkqoczhtkyhigigf`
 - ✅ Uses **Anthropic Claude** (`claude-haiku-4-5-20251001`) as primary AI, OpenAI GPT-4o-mini as fallback
 - ✅ Verifies Supabase JWT server-side, extracts `user.id` for metering
 - ✅ **Server-side usage metering**: counts `prompts` table rows this calendar month; returns HTTP 429 at 10 for starter plan
 - ✅ Returns `{ professional, template, prompts_used, prompts_remaining, plan }` — iOS `UsageTracker` syncs from this
-- ✅ `SUPABASE_GENERATE_FUNCTION = "generate"` set in `Info.plist` — iOS routes to Edge Function
-- ✅ `StoreManager.activePlan` — reads StoreKit receipts, bypasses Railway plan sync failure
+- ✅ `SUPABASE_GENERATE_FUNCTION = "generate"` set in `Info.plist`
+- ✅ `StoreManager.syncPlanToSupabase()` writes `user_metadata.plan` after IAP — Edge Function reads it to bypass metering
 - ✅ Edge Function 429 triggers iOS paywall + `generateRateLimited` analytics event
-- ✅ All Railway calls either silenced (cosmetic) or removed (delete account)
+- ✅ All Railway calls silenced or removed
+
+### What's done (Phase 4 — Experience)
+- ✅ **Thumbs up/down feedback** in `ResultView` → Supabase `prompt_feedback` table
+- ✅ **Metal Orb GPU renderer** (`MetalOrbView.swift` + `Orb.metal`) behind `is_metal_orb_enabled` flag
+- ✅ **Supabase Realtime Trending** — `TrendingViewModel` subscribes to INSERT/UPDATE on `trending_prompts`
+- ✅ **Shareable cards** — `ShareCardView` + `ImageRenderer` + `ShareLink` with PNG preview
+- ✅ `TypePromptView` glass design system rewrite; `HomeView` double-NavigationStack fixed
+- ✅ **Usage pill** on `HomeView` — live prompts-remaining counter for starter plan users
+- ✅ **SettingsView usage bar** now reads from `UsageTracker` (not stale Railway User model)
+- ✅ **AdminDashboard** — Metal Orb toggle added to Experiments panel
+
+### What's done (Phase 5 — Intelligence)
+- ✅ **Intent classifier** (`classifyIntent()`) — keyword scoring across 6 categories (work / school / business / fitness / technical / creative), runs in <1 ms, zero LLM calls
+- ✅ **Intent-specialized system prompts** — 12 tailored prompts (6 categories × 2 modes), selected automatically
+- ✅ **Temporal context injection** — every generation is prefixed with current date, week number, and season; no user input required
+- ✅ `intent_category` + `latency_ms` returned in every response; decoded on iOS, logged to analytics
+- ✅ **Intent badge** in `ResultView` header — color-coded per category (blue=work, mint=school, amber=business, coral=fitness, lavender=technical, gold=creative)
+- ✅ `AnalyticsEvent.generateSuccess` now carries `intentCategory` + `latencyMs`
 
 ### What still needs to be done manually (by you, on Mac)
 1. `git pull` on your Mac and rebuild in Xcode
-2. **Redeploy Edge Function** to pick up server-side metering changes:
+2. **Redeploy Edge Function** to pick up Phase 5 intent + context changes:
    ```bash
    cd ~/Desktop/Prompt28
    supabase functions deploy generate --no-verify-jwt
    ```
-3. Apple Sign In: Apple Developer Portal → create Services ID + .p8 Key → paste into Supabase Dashboard → Authentication → Providers → Apple
-4. App Store Connect: create 4 IAP subscription products (`com.prompt28.pro.monthly`, `.pro.yearly`, `.unlimited.monthly`, `.unlimited.yearly`)
+3. **Run SQL migrations** in Supabase Dashboard → SQL Editor:
+   - `supabase/migrations/20240601000000_prompt_feedback.sql` (RLHF feedback table)
+   - `supabase/migrations/20240602000000_trending_prompts.sql` (trending + Realtime)
+4. Apple Sign In: Apple Developer Portal → create Services ID + .p8 Key → paste into Supabase Dashboard → Authentication → Providers → Apple
+5. App Store Connect: create 4 IAP subscription products (`com.prompt28.pro.monthly`, `.pro.yearly`, `.unlimited.monthly`, `.unlimited.yearly`)
 
 ### Edge Function: Request & Response shapes
 
@@ -36,14 +57,16 @@ The Supabase Edge Function `generate` is deployed and active. Generation routes 
 { "input": "string", "refinement": "string|null", "mode": "ai|human", "systemPrompt": "string|null" }
 ```
 
-**Success response** (`EdgeGenerateResponse` on iOS):
+**Success response** (`EdgeGenerateResponse` on iOS) — Phase 5 shape:
 ```json
 {
-  "professional": "Full polished prompt text…",
-  "template":     "Template with [PLACEHOLDER] tokens…",
-  "prompts_used": 3,
+  "professional":    "Full polished prompt text…",
+  "template":        "Template with [PLACEHOLDER] tokens…",
+  "prompts_used":    3,
   "prompts_remaining": 7,
-  "plan": "starter"
+  "plan":            "starter",
+  "intent_category": "work",
+  "latency_ms":      843
 }
 ```
 
@@ -83,15 +106,16 @@ It uses a single shared `AppEnvironment` injected via `.environment()` at the ro
 
 ## Current State
 
-- **Current phase:** Phase 3 active
+- **Current phase:** Phase 5 active (Phases 3 + 4 complete)
 - **Platform direction:** native iOS 17+ SwiftUI app
 - **Persistence direction:** no SwiftData, no CloudKit — Codable JSON + Supabase only
 - **Auth direction:** Supabase Auth is live; Apple Sign In code exists but not yet configured in dashboard
 - **OAuth status:** Google sign-in working; Apple sign-in needs Apple Developer + Supabase config
-- **Generation backend:** Supabase Edge Function (`generate`) — Anthropic API primary, OpenAI fallback
-- **Railway status:** retired as primary — only dev-admin endpoints remain; all user-facing calls removed or silenced
-- **Metering:** server-side (Edge Function counts `prompts` table rows) + client-side (`UsageTracker` Keychain)
+- **Generation backend:** Supabase Edge Function (`generate`) — Anthropic API primary, OpenAI fallback; Phase 5 intent classifier + temporal context active
+- **Railway status:** fully retired for user-facing calls; `APIClient` may be deleted in a future cleanup
+- **Metering:** server-side (Edge Function counts `prompts` table rows) + client-side (`UsageTracker` Keychain, synced after each generation)
 - **History direction:** local-first JSON + Supabase two-way sync (last-write-wins); pull-to-refresh available
+- **Feedback direction:** RLHF thumbs up/down → Supabase `prompt_feedback` table; `intent_category` + `latency_ms` logged per generation
 
 ### Entry Point
 **App file**: `PromptMeNative_Blueprint/OrionOrbApp.swift` (struct `OrionOrbApp`)
