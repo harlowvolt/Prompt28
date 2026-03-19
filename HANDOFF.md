@@ -1,55 +1,64 @@
-# Prompt28 (Orion Orb) — AI Handoff Document (Phase 3 Foundation)
+# Prompt28 (Orion Orb) — AI Handoff Document (Phase 3 Active)
 
-**Last updated: 2026-03-19. Version v2.5 (Phase 3 Edge Function foundation). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
+**Last updated: 2026-03-19. Version v2.5 (Phase 3 active — generation live end-to-end). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
 
 ---
 
-## ⚡ Phase 3: Edge Function Deployment (NEXT IMMEDIATE ACTION)
+## ⚡ Current Status: Phase 3 Active — Generation Is Working
 
-Generation is currently blocked because Railway rejects Supabase JWTs with 401. The iOS app is fully wired for the Edge Function path — it just needs the function deployed and the flag flipped.
+The Supabase Edge Function `generate` is deployed and active. Generation routes through Supabase (not Railway). **The iOS app is unblocked.**
 
-### Step-by-step (do this on your Mac)
+### What's done (Phase 3)
+- ✅ `supabase/functions/generate/index.ts` deployed to project `jzwerkqoczhtkyhigigf`
+- ✅ Uses **Anthropic Claude** (`claude-haiku-4-5-20251001`) as primary AI, OpenAI GPT-4o-mini as fallback
+- ✅ Verifies Supabase JWT server-side, extracts `user.id` for metering
+- ✅ **Server-side usage metering**: counts `prompts` table rows this calendar month; returns HTTP 429 at 10 for starter plan
+- ✅ Returns `{ professional, template, prompts_used, prompts_remaining, plan }` — iOS `UsageTracker` syncs from this
+- ✅ `SUPABASE_GENERATE_FUNCTION = "generate"` set in `Info.plist` — iOS routes to Edge Function
+- ✅ `StoreManager.activePlan` — reads StoreKit receipts, bypasses Railway plan sync failure
+- ✅ Edge Function 429 triggers iOS paywall + `generateRateLimited` analytics event
+- ✅ All Railway calls either silenced (cosmetic) or removed (delete account)
 
-**1. Set the OPENAI_API_KEY secret in Supabase:**
-```bash
-supabase secrets set OPENAI_API_KEY=sk-...your-key-here...
-```
+### What still needs to be done manually (by you, on Mac)
+1. `git pull` on your Mac and rebuild in Xcode
+2. **Redeploy Edge Function** to pick up server-side metering changes:
+   ```bash
+   cd ~/Desktop/Prompt28
+   supabase functions deploy generate --no-verify-jwt
+   ```
+3. Apple Sign In: Apple Developer Portal → create Services ID + .p8 Key → paste into Supabase Dashboard → Authentication → Providers → Apple
+4. App Store Connect: create 4 IAP subscription products (`com.prompt28.pro.monthly`, `.pro.yearly`, `.unlimited.monthly`, `.unlimited.yearly`)
 
-**2. Deploy the Edge Function:**
-```bash
-cd ~/Desktop/Prompt28
-supabase functions deploy generate --no-verify-jwt
-```
-This deploys `supabase/functions/generate/index.ts` (already committed to repo).
+### Edge Function: Request & Response shapes
 
-**3. Test the function in the Supabase Dashboard:**
-- Go to Supabase Dashboard → Edge Functions → `generate` → Test
-- POST body: `{"input": "write a poem about the ocean", "mode": "ai"}`
-- Expected response: `{"professional": "...", "template": "..."}`
-
-**4. Activate in the iOS app — set Info.plist flag:**
-In Xcode, open `Prompt28/Info.plist`, find `SUPABASE_GENERATE_FUNCTION`, change the value from `""` to `"generate"`.
-
-**5. Rebuild and test on device.** Generation should now work end-to-end via Supabase.
-
-### Edge Function location
-`supabase/functions/generate/index.ts`
-
-### Request shape (from iOS GenerateRequest)
+**Request** (from iOS `GenerateRequest`):
 ```json
 { "input": "string", "refinement": "string|null", "mode": "ai|human", "systemPrompt": "string|null" }
 ```
 
-### Minimum response shape (iOS reads EdgeGenerateResponse)
+**Success response** (`EdgeGenerateResponse` on iOS):
 ```json
-{ "professional": "string", "template": "string" }
+{
+  "professional": "Full polished prompt text…",
+  "template":     "Template with [PLACEHOLDER] tokens…",
+  "prompts_used": 3,
+  "prompts_remaining": 7,
+  "plan": "starter"
+}
 ```
-Optional: `prompts_used`, `prompts_remaining`, `plan` — filled in locally on device if absent.
 
-### What the function does
-1. Verifies the Supabase JWT from the Authorization header
-2. Calls OpenAI `gpt-4o-mini` with `response_format: { type: "json_object" }`
-3. Returns `{ professional, template }` — both derived from a single OpenAI call
+**Error response** (any non-2xx):
+```json
+{ "error": "Human-readable message" }
+```
+Decoded by `GenerateViewModel.edgeFunctionErrorMessage(from:)` via Mirror.
+429 additionally triggers `showPaywall = true` via `edgeFunctionHTTPStatus(from:)`.
+
+### Re-deploy command (run after any Edge Function change)
+```bash
+cd ~/Desktop/Prompt28
+supabase functions deploy generate --no-verify-jwt
+```
 
 ### If supabase CLI is not installed
 ```bash
@@ -57,7 +66,6 @@ brew install supabase/tap/supabase
 supabase login
 supabase link --project-ref jzwerkqoczhtkyhigigf
 ```
-Then follow steps 1–5 above.
 
 ---
 
@@ -71,17 +79,19 @@ Prompt28 (marketed as **Orion Orb**) is a SwiftUI iOS app (Swift 5.9+, **iOS 17+
 
 It uses a single shared `AppEnvironment` injected via `.environment()` at the root.
 
-> **Hybrid architecture note (v1.9):** Auth and history persistence run through Supabase (Phase 2). The `APIClient` pointing at the Railway backend is still present and used for legacy endpoints (plan metering, `prompts_used`/`prompts_remaining`). Both coexist intentionally. Phase 3 will migrate remaining Railway endpoints to Supabase Edge Functions and retire the Railway dependency entirely.
+> **Architecture note (v2.5):** Auth and history persistence run through Supabase. Generation runs through a Supabase Edge Function (Anthropic API). The `APIClient` pointing at Railway is still present but all user-facing calls have been removed or silenced — only dev-admin endpoints remain. `APIClient` can be removed entirely in a future cleanup pass.
 
 ## Current State
 
-- **Current phase:** Phase 2 hardening / Phase 2.5
+- **Current phase:** Phase 3 active
 - **Platform direction:** native iOS 17+ SwiftUI app
-- **Persistence direction:** no SwiftData, no CloudKit, no reintroduction of either
-- **Auth direction:** Supabase Auth is live
-- **OAuth status:** Google sign-in is working; Apple sign-in flow exists in code
-- **Backend status:** Railway remains only for legacy endpoints during migration
-- **History direction:** local-first JSON remains the primary source of resilience; Supabase sync is secondary and best-effort
+- **Persistence direction:** no SwiftData, no CloudKit — Codable JSON + Supabase only
+- **Auth direction:** Supabase Auth is live; Apple Sign In code exists but not yet configured in dashboard
+- **OAuth status:** Google sign-in working; Apple sign-in needs Apple Developer + Supabase config
+- **Generation backend:** Supabase Edge Function (`generate`) — Anthropic API primary, OpenAI fallback
+- **Railway status:** retired as primary — only dev-admin endpoints remain; all user-facing calls removed or silenced
+- **Metering:** server-side (Edge Function counts `prompts` table rows) + client-side (`UsageTracker` Keychain)
+- **History direction:** local-first JSON + Supabase two-way sync (last-write-wins); pull-to-refresh available
 
 ### Entry Point
 **App file**: `PromptMeNative_Blueprint/OrionOrbApp.swift` (struct `OrionOrbApp`)
