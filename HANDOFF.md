@@ -320,6 +320,7 @@ File: `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift`
   - inject session user ID provider
   - inject sync executor
 - `HistoryStore` now defers exposing disk-backed local history until initial auth/session reconciliation completes, preventing stale wrong-user history from flashing during launch or account switching.
+- `HistoryStore` now also persists the signed-in local history owner (`history_owner.txt`) and clears/ignores cached local history when a different user session is detected.
 - `HistoryStore` also exposes an internal foreground-retry entry point for tests so lifecycle retry behavior can be invoked directly without depending on UIKit notification delivery in the hosted runner.
 - Unit test target now points to the real `OrionOrbTests` folder.
 - History tests use MainActor-safe polling.

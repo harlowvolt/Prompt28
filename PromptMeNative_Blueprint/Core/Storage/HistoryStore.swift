@@ -114,9 +114,11 @@ final class HistoryStore {
     private let supabase: SupabaseClient
     private let fileURL: URL
     private let pendingDeletesURL: URL
+    private let ownerURL: URL
     private let maxItems = 200
     private var pendingDeletedIDs: Set<UUID> = []
     private var deferredInitialItems: [PromptHistoryItem]?
+    private var localOwnerUserID: UUID?
     private let sessionUserIDProvider: (() async -> UUID?)?
     private let syncExecutor: ((UUID) async -> Void)?
     #if canImport(UIKit)
@@ -142,9 +144,11 @@ final class HistoryStore {
         )
         self.fileURL = appDir.appendingPathComponent("history.json")
         self.pendingDeletesURL = appDir.appendingPathComponent("history_pending_deletes.json")
+        self.ownerURL = appDir.appendingPathComponent("history_owner.txt")
 
         loadFromDisk()
         loadPendingDeletes()
+        loadOwnerUserID()
         migrateLegacyJSONIfNeeded()
         deferInitialHistoryExposure()
         startAuthListener()
@@ -172,9 +176,11 @@ final class HistoryStore {
         )
         self.fileURL = appDirectoryURL.appendingPathComponent("history.json")
         self.pendingDeletesURL = appDirectoryURL.appendingPathComponent("history_pending_deletes.json")
+        self.ownerURL = appDirectoryURL.appendingPathComponent("history_owner.txt")
 
         loadFromDisk()
         loadPendingDeletes()
+        loadOwnerUserID()
         migrateLegacyJSONIfNeeded()
         deferInitialHistoryExposure()
         if startAuthListenerOnInit {
@@ -368,6 +374,7 @@ final class HistoryStore {
                 switch event {
                 case .signedIn, .tokenRefreshed, .userUpdated:
                     if let userId = session?.user.id {
+                        prepareLocalState(for: userId)
                         await self.syncWithSupabase(userId: userId)
                     }
                 case .signedOut, .userDeleted:
@@ -387,6 +394,7 @@ final class HistoryStore {
 
     private func reconcileInitialSessionState() async {
         if let userId = await currentSessionUserID() {
+            prepareLocalState(for: userId)
             restoreDeferredInitialHistoryIfNeeded()
             await syncWithSupabase(userId: userId)
         } else {
@@ -445,8 +453,10 @@ final class HistoryStore {
 
     private func resetLocalStateForSignedOutUser() {
         deferredInitialItems = nil
+        localOwnerUserID = nil
         items = []
         pendingDeletedIDs = []
+        saveOwnerUserID()
         savePendingDeletes()
         saveToDisk()
     }
@@ -467,6 +477,21 @@ final class HistoryStore {
 
         items = merged.values.sorted { $0.createdAt > $1.createdAt }
         self.deferredInitialItems = nil
+    }
+
+    private func prepareLocalState(for userId: UUID) {
+        if let localOwnerUserID, localOwnerUserID != userId {
+            deferredInitialItems = nil
+            items = []
+            pendingDeletedIDs = []
+            savePendingDeletes()
+            saveToDisk()
+        }
+
+        if localOwnerUserID != userId {
+            localOwnerUserID = userId
+            saveOwnerUserID()
+        }
     }
 
     private func copyFields(
@@ -522,6 +547,21 @@ final class HistoryStore {
         }
     }
 
+    private func saveOwnerUserID() {
+        do {
+            if let localOwnerUserID {
+                try localOwnerUserID.uuidString.write(to: ownerURL, atomically: true, encoding: .utf8)
+            } else if FileManager.default.fileExists(atPath: ownerURL.path) {
+                try FileManager.default.removeItem(at: ownerURL)
+            }
+        } catch {
+            TelemetryService.shared.logStorageError(
+                code: "SAVE_HISTORY_OWNER_FAILED",
+                message: "Failed to save history owner: \(error.localizedDescription)"
+            )
+        }
+    }
+
     private func loadFromDisk() {
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             items = []
@@ -540,6 +580,17 @@ final class HistoryStore {
                 message: "Failed to load history: \(error.localizedDescription)"
             )
         }
+    }
+
+    private func loadOwnerUserID() {
+        guard FileManager.default.fileExists(atPath: ownerURL.path),
+              let contents = try? String(contentsOf: ownerURL, encoding: .utf8)
+        else {
+            localOwnerUserID = nil
+            return
+        }
+
+        localOwnerUserID = UUID(uuidString: contents.trimmingCharacters(in: .whitespacesAndNewlines))
     }
 
     private func loadPendingDeletes() {

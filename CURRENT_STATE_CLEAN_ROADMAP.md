@@ -48,6 +48,7 @@ This roadmap separates **current working reality** from **next critical steps** 
 11. ✅ Delete propagation exists and pending delete IDs retry on future sync
 12. ✅ Signed-out/user-deleted state clears local history to avoid cross-user contamination
 13. ✅ Disk-backed history is withheld from public UI state until initial auth/session reconciliation completes, reducing stale wrong-user history exposure during launch and account switching
+14. ✅ Local history cache is now explicitly bound to the signed-in owner via `history_owner.txt`, so wrong-user cached history is cleared if a different account session appears
 
 ### What's NOT Fully Validated Yet
 
