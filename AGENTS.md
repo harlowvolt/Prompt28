@@ -310,6 +310,7 @@ Uses standard XCTest framework for end-to-end testing.
   - inject sync executor
 - `HistoryStore` now withholds disk-loaded history from public `items` until initial auth/session reconciliation completes, to prevent stale wrong-user history from appearing during launch/sign-out/account switching.
 - `HistoryStore` also persists a local history owner file (`history_owner.txt`) and resets cached local history if a different signed-in user is detected.
+- `HistoryStore` persistence now includes deferred owned history during the initial reconciliation window, so early post-launch saves do not drop cached history before it is restored.
 - `HistoryStore` also has an internal foreground-retry hook used only to make the foreground retry test deterministic without changing production notification behavior.
 - Storage hardening code is improved and compiles.
 - Simulator ambiguity is resolved by using only:

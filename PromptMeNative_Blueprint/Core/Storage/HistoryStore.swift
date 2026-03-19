@@ -494,6 +494,17 @@ final class HistoryStore {
         }
     }
 
+    private var itemsForPersistence: [PromptHistoryItem] {
+        guard let deferredInitialItems else { return items }
+
+        var merged = Dictionary(uniqueKeysWithValues: deferredInitialItems.map { ($0.id, $0) })
+        for item in items {
+            merged[item.id] = item
+        }
+
+        return merged.values.sorted { $0.createdAt > $1.createdAt }
+    }
+
     private func copyFields(
         from source: PromptHistoryItem,
         to destination: PromptHistoryItem
@@ -519,10 +530,10 @@ final class HistoryStore {
 
     private func saveToDisk() {
         do {
-            let data = try JSONEncoder().encode(items)
+            let data = try JSONEncoder().encode(itemsForPersistence)
             try data.write(to: fileURL, options: [.atomic])
             #if DEBUG
-            print("💾 [HistoryStore] Saved \(items.count) item(s) to disk")
+            print("💾 [HistoryStore] Saved \(itemsForPersistence.count) item(s) to disk")
             #endif
         } catch {
             TelemetryService.shared.logStorageError(
