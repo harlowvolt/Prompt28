@@ -20,6 +20,7 @@ enum AnalyticsEvent {
     case paywallShown
     case onboardingCompleted
     case modeSwitched(to: String)
+    case promptFeedback(thumbsUp: Bool, historyItemID: String)
 
     var name: String {
         switch self {
@@ -38,6 +39,7 @@ enum AnalyticsEvent {
         case .paywallShown:          return "paywall_shown"
         case .onboardingCompleted:   return "onboarding_completed"
         case .modeSwitched:          return "mode_switched"
+        case .promptFeedback:        return "prompt_feedback"
         }
     }
 
@@ -55,6 +57,8 @@ enum AnalyticsEvent {
             return ["provider": provider]
         case .modeSwitched(let to):
             return ["to": to]
+        case .promptFeedback(let thumbsUp, let historyItemID):
+            return ["thumbs_up": thumbsUp ? "true" : "false", "history_item_id": historyItemID]
         default:
             return [:]
         }

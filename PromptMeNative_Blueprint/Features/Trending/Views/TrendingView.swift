@@ -3,6 +3,7 @@ import SwiftUI
 struct TrendingView: View {
     @Environment(\.appRouter) private var appRouter
     @Environment(\.apiClient) private var scopedAPIClient
+    @Environment(\.supabase) private var scopedSupabase
     @AppStorage(ExperimentFlags.RootBackground.trending) private var useRootBackgroundExperiment = false
     @State private var viewModel = TrendingViewModel()
     @State private var searchQuery = ""
@@ -94,6 +95,14 @@ struct TrendingView: View {
             .toolbar(.hidden, for: .navigationBar)
             .task {
                 await loadIfPossible()
+                // Start Realtime subscription after initial load so the tab stays
+                // up-to-date whenever admins publish new trending prompts server-side.
+                if let supabase = scopedSupabase, let apiClient = scopedAPIClient {
+                    viewModel.subscribeToRealtime(supabase: supabase, apiClient: apiClient)
+                }
+            }
+            .onDisappear {
+                viewModel.unsubscribeFromRealtime()
             }
             .refreshable {
                 await refreshIfPossible()

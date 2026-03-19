@@ -5,11 +5,22 @@ struct OrbView: View {
     var engine: OrbEngine
     let onTranscript: (String) -> Void
     @Environment(\.openURL) private var openURL
+    @AppStorage(ExperimentFlags.Orb.metalOrb) private var useMetalOrb = false
     @State private var orbState: OrbTapState = .idle
 
     private var engineCommands: any OrbEngineProtocol { engine }
 
     var body: some View {
+        if useMetalOrb {
+            MetalOrbView(engine: engine, onTranscript: onTranscript)
+        } else {
+            swiftUIOrb
+        }
+    }
+
+    // MARK: - SwiftUI Orb (default)
+
+    private var swiftUIOrb: some View {
         VStack(spacing: PromptTheme.Spacing.s) {
             GeometryReader { proxy in
                 let size = min(proxy.size.width, proxy.size.height)
@@ -314,14 +325,15 @@ struct OrbView: View {
 
 }
 
-private enum OrbVisualState {
+// Internal so MetalOrbView (in the same module) can share the same type.
+enum OrbVisualState {
     case idle
     case listening
     case processing
     case error
 }
 
-private enum OrbTapState {
+enum OrbTapState {
     case idle
     case listening
     case processing

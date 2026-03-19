@@ -264,6 +264,58 @@ final class GenerateViewModel {
         AnalyticsService.shared.track(.sharePrompt)
     }
 
+    /// Records thumbs up/down feedback for the most recently generated prompt.
+    /// Writes to the Supabase `prompt_feedback` table (Phase 4 RLHF data flywheel)
+    /// and fires the `prompt_feedback` analytics event.
+    ///
+    /// Table schema (run once in Supabase SQL editor):
+    /// ```sql
+    /// create table prompt_feedback (
+    ///   id              uuid primary key default gen_random_uuid(),
+    ///   user_id         uuid references auth.users(id) on delete cascade,
+    ///   history_item_id uuid,
+    ///   input           text,
+    ///   professional    text,
+    ///   thumbs_up       boolean not null,
+    ///   created_at      timestamptz default now()
+    /// );
+    /// alter table prompt_feedback enable row level security;
+    /// create policy "Users own their feedback"
+    ///   on prompt_feedback for all using (auth.uid() = user_id);
+    /// ```
+    func submitFeedback(thumbsUp: Bool) async {
+        guard let result = latestResult else { return }
+        let itemID = latestHistoryItemID?.uuidString ?? "unknown"
+        HapticService.impact(thumbsUp ? .medium : .light)
+        AnalyticsService.shared.track(.promptFeedback(thumbsUp: thumbsUp, historyItemID: itemID))
+
+        guard let sb = supabase,
+              let session = try? await sb.auth.session else { return }
+
+        struct FeedbackRow: Encodable {
+            let user_id: String
+            let history_item_id: String?
+            let input: String
+            let professional: String
+            let thumbs_up: Bool
+        }
+        let row = FeedbackRow(
+            user_id: session.user.id.uuidString,
+            history_item_id: latestHistoryItemID?.uuidString,
+            input: latestInput,
+            professional: result.professional,
+            thumbs_up: thumbsUp
+        )
+        do {
+            try await sb.from("prompt_feedback").insert(row).execute()
+        } catch {
+            TelemetryService.shared.logStorageError(
+                code: "FEEDBACK_INSERT_FAILED",
+                message: error.localizedDescription
+            )
+        }
+    }
+
     func triggerCopiedToast() {
         withAnimation(.easeInOut(duration: 0.2)) { showCopiedToast = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.4) { [weak self] in

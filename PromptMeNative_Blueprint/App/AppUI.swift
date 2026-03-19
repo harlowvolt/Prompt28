@@ -7,6 +7,13 @@ enum ExperimentFlags {
         static let history = "experiment.useRootBackground.history"
         static let favorites = "experiment.useRootBackground.favorites"
     }
+
+    enum Orb {
+        /// When true, OrbView renders the Metal GPU shader variant instead of the SwiftUI fallback.
+        /// Enable via Supabase remote config or local @AppStorage override in AdminDashboard.
+        /// Key matches the remote feature flag name checked server-side.
+        static let metalOrb = "is_metal_orb_enabled"
+    }
 }
 
 enum AppSpacing {

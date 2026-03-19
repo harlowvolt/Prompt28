@@ -7,6 +7,7 @@ struct ResultView: View {
     @State private var copiedPrompt = false
     @State private var shareImage: UIImage?
     @State private var shareURL: URL?
+    @State private var feedbackSubmitted: Bool? = nil  // nil = no feedback, true = 👍, false = 👎
 
     var body: some View {
         Group {
@@ -24,6 +25,7 @@ struct ResultView: View {
             }
         }
         .onChange(of: viewModel.latestPromptText) { _, newPrompt in
+            feedbackSubmitted = nil
             Task { @MainActor in
                 regenerateShareCard(using: newPrompt)
             }
@@ -191,6 +193,46 @@ struct ResultView: View {
                 .buttonStyle(.bordered)
                 .tint(viewModel.isLatestFavorite ? PromptTheme.softLilac : PromptTheme.softLilac.opacity(0.86))
             }
+
+            // Feedback row
+            HStack(spacing: 12) {
+                Text(feedbackSubmitted == nil ? "Was this helpful?" : (feedbackSubmitted == true ? "Thanks for the feedback!" : "Got it, we'll improve."))
+                    .font(PromptTheme.Typography.rounded(13, .regular))
+                    .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
+                    .animation(.easeInOut(duration: 0.2), value: feedbackSubmitted)
+
+                Spacer()
+
+                Button {
+                    guard feedbackSubmitted == nil else { return }
+                    feedbackSubmitted = true
+                    HapticService.impact(.medium)
+                    Task { await viewModel.submitFeedback(thumbsUp: true) }
+                } label: {
+                    Image(systemName: feedbackSubmitted == true ? "hand.thumbsup.fill" : "hand.thumbsup")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(feedbackSubmitted == true ? PromptTheme.softLilac : PromptTheme.softLilac.opacity(0.55))
+                        .frame(width: 36, height: 36)
+                }
+                .buttonStyle(.plain)
+                .animation(.easeInOut(duration: 0.15), value: feedbackSubmitted)
+
+                Button {
+                    guard feedbackSubmitted == nil else { return }
+                    feedbackSubmitted = false
+                    HapticService.impact(.light)
+                    Task { await viewModel.submitFeedback(thumbsUp: false) }
+                } label: {
+                    Image(systemName: feedbackSubmitted == false ? "hand.thumbsdown.fill" : "hand.thumbsdown")
+                        .font(.system(size: 18, weight: .medium))
+                        .foregroundStyle(feedbackSubmitted == false ? .yellow.opacity(0.80) : PromptTheme.softLilac.opacity(0.55))
+                        .frame(width: 36, height: 36)
+                }
+                .buttonStyle(.plain)
+                .animation(.easeInOut(duration: 0.15), value: feedbackSubmitted)
+            }
+
+            Divider().overlay(PromptTheme.softLilac.opacity(0.22))
 
             // Refine row — styled to match the glass design system
             HStack(spacing: 10) {

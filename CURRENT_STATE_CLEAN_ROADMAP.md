@@ -1,8 +1,8 @@
-# Orion Orb — Clean Roadmap (Phase 3 Active, v2.5)
+# Orion Orb — Clean Roadmap (Phase 4 Complete, v3.0)
 
 **Last updated: 2026-03-19**
-**Version**: v2.5 (Phase 3 active — Supabase Edge Function live, generation working end-to-end)
-**Status**: Supabase Edge Function deployed (`generate`), Anthropic API wired, iOS routing active via Info.plist flag, pull-to-refresh sync added. Generation is fully unblocked. Next: Apple Sign In + App Store Connect IAP setup.
+**Version**: v3.0 (Phase 4 complete — feedback flywheel, Metal Orb GPU, Realtime Trending, shareable cards)
+**Status**: All Phase 3 + Phase 4 features implemented. Phase 5 (MCP intent routing) is the next horizon. Device validation and App Store Connect IAP setup are the remaining blockers before TestFlight.
 
 This roadmap separates **current working reality** from **next critical steps** from **long-term vision**. It is grounded in actual code, not aspirations.
 
@@ -77,6 +77,16 @@ This roadmap separates **current working reality** from **next critical steps** 
 36. ✅ `HistoryStoring` protocol extended with `isSyncing: Bool` and `func forceSync() async`.
 37. ✅ `HistoryViewModel` exposes `isSyncing` and `syncWithRemote()` forwarding to the store.
 38. ✅ Pull-to-refresh added to `HistoryView` — calls `viewModel.syncWithRemote()` for manual Supabase sync validation.
+
+**Phase 4 (complete as of v3.0):**
+
+39. ✅ **Thumbs up/down feedback** in `ResultView` — `feedbackSubmitted: Bool?` state drives icon/label animation. Both buttons call `viewModel.submitFeedback(thumbsUp:)` which fires the `promptFeedback` analytics event and inserts to Supabase `prompt_feedback` table. Resets on every new generation.
+40. ✅ `prompt_feedback` Supabase table SQL migration (`supabase/migrations/20240601000000_prompt_feedback.sql`) — RLS enforced, user_id FK, history_item_id link, indexed.
+41. ✅ **Shareable cards** — `ShareCardView`, `ShareCardRenderer`, `ShareCardFileStore` fully implemented. `ResultView` generates a PNG via `ImageRenderer`, stores to temp file, exposes via `ShareLink` with social preview.
+42. ✅ **Metal Orb GPU renderer** — `ExperimentFlags.Orb.metalOrb` (`is_metal_orb_enabled`) flag added to `AppUI.swift`. `OrbView` branches on `@AppStorage` flag: Metal path → `MetalOrbView` → `OrbMTKViewRepresentable` → `OrbMetalRenderer` (MTKViewDelegate). Full `Orb.metal` fragment shader with state-dependent colors, breathing animation, specular highlight, and glow ring. Falls back to SwiftUI orb if Metal unavailable. Enable the flag in AdminDashboard to roll out.
+43. ✅ **Supabase Realtime Trending** — `TrendingViewModel` now subscribes to `trending_prompts` Postgres channel via `supabase-swift` Realtime v2. INSERT and UPDATE events trigger a catalog refresh. `TrendingView` passes supabase + apiClient, subscribes on `.task`, unsubscribes on `.onDisappear`. `trending_prompts` table migration at `supabase/migrations/20240602000000_trending_prompts.sql`.
+44. ✅ `TypePromptView` glass design system rewrite — custom mode segmented control, TextEditor with glassFill + focus ring animation, gradient Generate button, `.presentationDetents([.medium, .large])`.
+45. ✅ `HomeView` double-NavigationStack fix — `TypePromptView` now owns its own NavigationStack; `HomeView` no longer wraps it.
 
 ### What's NOT Fully Validated Yet
 
@@ -390,7 +400,9 @@ When implementing Phase 3+ features:
 | Apple Sign In not configured | ⏳ Requires Apple Developer setup + Supabase dashboard config | See Step 2 in Part 2 |
 | IAP products not available | ⏳ Awaiting App Store Connect setup | Create products in App Store Connect |
 | Account deletion (server-side) | ✅ `delete-account` Edge Function deployed; iOS calls it via SettingsViewModel | Needs device test |
-| Metal Orb not rolling out | ✅ Ready | Enable `is_metal_orb_enabled` feature flag |
+| Metal Orb not rolling out | ✅ Ready — `MetalOrbView` + `Orb.metal` implemented | Set `is_metal_orb_enabled = true` in AdminDashboard AppStorage |
+| Trending not realtime | ✅ Fixed — Supabase Realtime channel subscribed to `trending_prompts` INSERT/UPDATE | Run `20240602000000_trending_prompts.sql` migration |
+| Feedback not captured | ✅ Fixed — thumbs UI in ResultView, inserts to `prompt_feedback` | Run `20240601000000_prompt_feedback.sql` migration |
 
 ---
 
@@ -400,6 +412,7 @@ When implementing Phase 3+ features:
 - **v1.8** (2026-03-18): Phase 2 Supabase SDK integration, SwiftData removed, JSON + sync functional
 - **v1.9** (2026-03-18 cleanup): Documentation cleaned, roadmap clarified, post-Phase-2 state documented
 - **v2.5** (2026-03-19): Phase 3 foundation complete — Supabase Edge Function deployed (Anthropic API), Railway retired as primary, StoreManager.activePlan, error surface improvements, settings/delete fixes, trending offline fallback, pull-to-refresh history sync
+- **v3.0** (2026-03-19): Phase 4 complete — thumbs up/down RLHF feedback (ResultView + Supabase insert), Metal Orb GPU renderer (MetalOrbView + Orb.metal + feature flag), Supabase Realtime Trending (INSERT/UPDATE channel subscription), shareable card UI polished, TypePromptView glass rewrite, analytics gaps closed
 
 ---
 
