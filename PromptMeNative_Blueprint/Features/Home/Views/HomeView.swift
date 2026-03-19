@@ -389,7 +389,7 @@ struct HomeView: View {
         if orbEngine.isRecording, !live.isEmpty { return live }
         let finalized = orbEngine.finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
         if !finalized.isEmpty { return finalized }
-        if generateViewModel.isGenerating { return "Sending to Prompt28..." }
+        if generateViewModel.isGenerating { return "Sending to Orion Orb..." }
         let latest = generateViewModel.latestInput.trimmingCharacters(in: .whitespacesAndNewlines)
         if !latest.isEmpty { return latest }
         if orbEngine.isRecording || orbEngine.state == .listening { return "Listening..." }

@@ -1,4 +1,6 @@
 import Foundation
+import UIKit
+@preconcurrency import Supabase
 
 // MARK: - Events
 
@@ -59,19 +61,85 @@ enum AnalyticsEvent {
     }
 }
 
+// MARK: - Cached Event
+
+/// Codable envelope stored in UserDefaults until drained to the Supabase `events` table.
+struct CachedAnalyticsEvent: Codable, Identifiable {
+    let id: UUID
+    let name: String
+    let properties: [String: String]   // stringified for Codable conformance
+    let timestamp: Date
+    let userId: String?
+
+    enum CodingKeys: String, CodingKey {
+        case id
+        case name
+        case properties
+        case timestamp
+        case userId = "user_id"
+    }
+
+    init(event: AnalyticsEvent, userId: String?) {
+        self.id = UUID()
+        self.name = event.name
+        self.properties = event.properties.reduce(into: [:]) { $0[$1.key] = "\($1.value)" }
+        self.timestamp = Date()
+        self.userId = userId
+    }
+}
+
 // MARK: - Service
 
-/// Lightweight analytics wrapper. Replace the `track` body with
-/// Mixpanel / Amplitude / Firebase when ready — callers stay the same.
+/// Phase 2 analytics service.
+///
+/// Events are fired into a local UserDefaults cache (max 100, FIFO) and
+/// batch-uploaded to the Supabase `events` table via `uploadToSupabase()`.
+/// Upload is triggered automatically when the app enters background.
+///
+/// Call `configure(supabase:)` once from `AppEnvironment.init()`.
+@MainActor
 final class AnalyticsService {
     static let shared = AnalyticsService()
-    private init() {}
+
+    private let userDefaults = UserDefaults.standard
+    private let cacheKey = "orion.orb.analytics.cache"
+    private let maxCacheSize = 100
+    private var cachedEvents: [CachedAnalyticsEvent] = []
+    private var userId: String?
+    private var supabase: SupabaseClient?
+
+    private init() {
+        loadCachedEvents()
+        setupBackgroundFlush()
+    }
+
+    // MARK: - Configuration
+
+    /// Inject the live Supabase client. Call once from `AppEnvironment.init()`.
+    func configure(supabase: SupabaseClient) {
+        self.supabase = supabase
+    }
+
+    // MARK: - User identity
+
+    func setUserId(_ id: String?) {
+        userId = id
+    }
+
+    // MARK: - Track
 
     func track(_ event: AnalyticsEvent) {
         #if DEBUG
         let props = event.properties.isEmpty ? "" : " \(event.properties)"
         print("📊 [Analytics] \(event.name)\(props)")
         #endif
+
+        let cached = CachedAnalyticsEvent(event: event, userId: userId)
+        cachedEvents.append(cached)
+        if cachedEvents.count > maxCacheSize {
+            cachedEvents.removeFirst(cachedEvents.count - maxCacheSize)
+        }
+        persistCache()
 
         // ── Drop-in replacement examples ──────────────────────────────────
         // Mixpanel:
@@ -81,5 +149,77 @@ final class AnalyticsService {
         // Firebase:
         //   Analytics.logEvent(event.name, parameters: event.properties)
         // ─────────────────────────────────────────────────────────────────
+    }
+
+    // MARK: - Cache inspection
+
+    func getPendingEvents() -> [CachedAnalyticsEvent] { cachedEvents }
+    var pendingEventCount: Int { cachedEvents.count }
+
+    func clearUploadedEvents(_ ids: [UUID]) {
+        cachedEvents.removeAll { ids.contains($0.id) }
+        persistCache()
+    }
+
+    func clearAllEvents() {
+        cachedEvents.removeAll()
+        userDefaults.removeObject(forKey: cacheKey)
+    }
+
+    // MARK: - Private
+
+    private func loadCachedEvents() {
+        guard let data = userDefaults.data(forKey: cacheKey),
+              let events = try? JSONDecoder().decode([CachedAnalyticsEvent].self, from: data) else {
+            cachedEvents = []
+            return
+        }
+        cachedEvents = events
+    }
+
+    private func persistCache() {
+        guard let data = try? JSONEncoder().encode(cachedEvents) else { return }
+        userDefaults.set(data, forKey: cacheKey)
+    }
+
+    private func setupBackgroundFlush() {
+        NotificationCenter.default.addObserver(
+            forName: UIApplication.didEnterBackgroundNotification,
+            object: nil, queue: .main
+        ) { [weak self] _ in
+            Task { @MainActor [weak self] in
+                await self?.uploadToSupabase()
+            }
+        }
+    }
+}
+
+// MARK: - Supabase Upload
+
+extension AnalyticsService {
+    /// Drains the local cache to the Supabase `events` table.
+    /// Called automatically on app-background; also callable on demand.
+    func uploadToSupabase() async {
+        guard let supabase, !cachedEvents.isEmpty else { return }
+
+        let pending = cachedEvents
+
+        do {
+            try await supabase
+                .from("events")
+                .insert(pending)
+                .execute()
+
+            let uploadedIDs = pending.map(\.id)
+            clearUploadedEvents(uploadedIDs)
+
+            #if DEBUG
+            print("📊 [Analytics] Uploaded \(pending.count) events to Supabase")
+            #endif
+        } catch {
+            #if DEBUG
+            print("📊 [Analytics] Upload failed: \(error.localizedDescription)")
+            #endif
+        }
     }
 }

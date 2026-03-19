@@ -15,7 +15,12 @@ final class StoreManager {
     @ObservationIgnored
     nonisolated(unsafe) private var updateListenerTask: Task<Void, Error>?
 
-    init() {
+    /// Injected so that a successful purchase immediately refreshes the
+    /// server-side plan tier (fixes the post-purchase plan sync bug).
+    private let authManager: AuthManager
+
+    init(authManager: AuthManager) {
+        self.authManager = authManager
         updateListenerTask = listenForTransactions()
         Task { await loadProducts() }
     }
@@ -51,6 +56,10 @@ final class StoreManager {
                 let transaction = try checkVerified(verification)
                 purchasedProductIDs.insert(transaction.productID)
                 await transaction.finish()
+                // Sync the server-side plan tier immediately after the receipt is
+                // finished so the UI reflects the new plan without requiring a
+                // manual refresh or app restart.
+                await authManager.refreshMe()
                 AnalyticsService.shared.track(.planUpgradeSuccess(plan: product.id))
                 return true
             case .pending:
@@ -114,6 +123,9 @@ final class StoreManager {
                         _ = self.purchasedProductIDs.insert(transaction.productID)
                     }
                     await transaction.finish()
+                    // Sync server plan tier for background transaction updates
+                    // (renewals, cross-device restores, family sharing, etc.).
+                    await self.authManager.refreshMe()
                 } catch {}
             }
         }

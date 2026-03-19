@@ -26,6 +26,14 @@ final class APIClient {
             (data, response) = try await session.data(for: request)
         } catch {
             let nsError = error as NSError
+            // Log transport errors to telemetry (fire-and-forget, main-actor hop).
+            Task { @MainActor in
+                TelemetryService.shared.logNetworkError(
+                    code: "\(nsError.code)",
+                    message: error.localizedDescription,
+                    url: request.url?.absoluteString
+                )
+            }
             if nsError.domain == NSURLErrorDomain && nsError.code == NSURLErrorTimedOut {
                 throw NetworkError.transport(message: "The server took too long to respond. Please try again.")
             }
@@ -40,6 +48,13 @@ final class APIClient {
             do {
                 return try decoder.decode(type, from: data)
             } catch {
+                Task { @MainActor in
+                    TelemetryService.shared.logAPIError(
+                        code: "DECODE_ERROR",
+                        message: "Failed to decode response: \(error.localizedDescription)",
+                        endpoint: request.url?.path
+                    )
+                }
                 throw NetworkError.decoding
             }
         }
@@ -47,6 +62,15 @@ final class APIClient {
         let apiError = try? decoder.decode(APIErrorResponse.self, from: data)
         let fallbackMessage = HTTPURLResponse.localizedString(forStatusCode: httpResponse.statusCode)
         let message = apiError?.error ?? fallbackMessage
+
+        // Log API-level errors by status code.
+        Task { @MainActor in
+            TelemetryService.shared.logAPIError(
+                code: "HTTP_\(httpResponse.statusCode)",
+                message: message,
+                endpoint: request.url?.path
+            )
+        }
 
         switch httpResponse.statusCode {
         case 401:
@@ -156,33 +180,6 @@ final class APIClient {
     }
 }
 
-// MARK: - APIClientProtocol
-// Defined here (rather than a separate Protocols/ file) so it is always compiled
-// as part of the Networking group — no manual Xcode target membership required.
-
-protocol APIClientProtocol: AnyObject {
-    // Auth
-    func register(_ request: RegisterRequest) async throws -> AuthResponse
-    func login(_ request: LoginRequest) async throws -> AuthResponse
-    func googleAuth(_ request: GoogleAuthRequest) async throws -> AuthResponse
-    func appleAuth(_ request: AppleAuthRequest) async throws -> AuthResponse
-    // User
-    func me(token: String) async throws -> User
-    func updatePlan(_ request: UpdatePlanRequest, token: String) async throws -> UpdatePlanResponse
-    func deleteUser(token: String) async throws -> SuccessResponse
-    func resetUsage(token: String) async throws -> SuccessResponse
-    // Generation
-    func generate(_ request: GenerateRequest, token: String) async throws -> GenerateResponse
-    // Config
-    func config() async throws -> AppConfigResponse
-    func settings() async throws -> AppSettings
-    func promptsTrending() async throws -> PromptCatalog
-    // Admin
-    func adminVerify(key: String) async throws -> AdminVerifyResponse
-    func adminSettings(key: String) async throws -> AppSettings
-    func adminUpdateSettings(key: String, payload: [String: Any]) async throws -> SuccessResponse
-    func adminPrompts(key: String) async throws -> PromptCatalog
-    func adminUpdatePrompts(key: String, catalog: PromptCatalog) async throws -> SuccessResponse
-}
-
+// MARK: - Conformance
+// APIClientProtocol is defined in Core/Protocols/APIClientProtocol.swift.
 extension APIClient: APIClientProtocol {}

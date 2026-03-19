@@ -1,8 +1,8 @@
-# Prompt28 — AI Agent Guide
+# Prompt28 (Orion Orb) — AI Agent Guide (Phase 2 Clean)
 
-**Last updated: 2026-03-18**
+**Last updated: 2026-03-18 | Version v1.9 (Post-Phase-2 Cleanup)**
 
-This document provides essential information for AI coding agents working on the Prompt28 iOS project.
+This document provides essential information for AI coding agents working on the Prompt28 iOS project (marketed as "Orion Orb"). **SwiftData has been removed. CloudKit has been removed. Persistence is now Codable JSON + Supabase sync.**
 
 ---
 
@@ -10,9 +10,9 @@ This document provides essential information for AI coding agents working on the
 
 Prompt28 is an AI-powered prompt generation iOS app built with SwiftUI. Users can speak or type their ideas, and the app generates professional prompts using AI. The app features a freemium subscription model, prompt history with favorites, trending prompts catalog, and voice input capabilities.
 
-- **Platform**: iOS 26.2+ (Swift 5.0+)
+- **Platform**: iOS 17.0+ (Swift 5.0+)
 - **Architecture**: SwiftUI with Observation framework (`@Observable`)
-- **Minimum Deployment**: iOS 17+
+- **App Name**: Orion Orb (display name), Prompt28 (project name)
 - **Bundle ID**: `com.prompt28.prompt28`
 - **Backend**: https://promptme-app-production.up.railway.app
 
@@ -23,12 +23,14 @@ Prompt28 is an AI-powered prompt generation iOS app built with SwiftUI. Users ca
 | Component | Technology |
 |-----------|------------|
 | UI Framework | SwiftUI with Observation framework |
-| Persistence | JSON file (`history.json`), UserDefaults (preferences), Keychain (auth tokens) |
-| Authentication | JWT tokens stored in Keychain; Google Sign-In, Apple Sign-In, Email/Password |
+| Persistence | **Codable JSON** (local @ `Application Support/OrionOrb/history.json`), **Supabase** (two-way sync, last-write-wins), UserDefaults (preferences), Keychain (auth tokens) |
+| Authentication | **Supabase Auth** with JWT stored in Keychain; Google Sign-In, Apple Sign-In, Email/Password |
+| Database Backend | **Supabase PostgreSQL** (prompts, events, telemetry_errors tables) |
+| Legacy API | Railway backend (https://promptme-app-production.up.railway.app) — for plan info during bootstrap |
 | Networking | URLSession with async/await |
 | Audio | Speech framework (SFSpeechRecognizer), AVFoundation |
 | In-App Purchases | StoreKit 2 |
-| External Dependencies | GoogleSignIn (via Swift Package Manager) |
+| External Dependencies | GoogleSignIn (9.1.0) via Swift Package Manager |
 
 ---
 
@@ -38,42 +40,49 @@ Prompt28 is an AI-powered prompt generation iOS app built with SwiftUI. Users ca
 PromptMeNative_Blueprint/          # Source root
 ├── App/                           # App-level components
 │   ├── AppEnvironment.swift       # Dependency container (@Observable)
-│   ├── AppUI.swift                # Design tokens, reusable UI components
+│   ├── AppUI.swift                # Design tokens, reusable UI components, spacing constants
+│   ├── OrionMainContainer.swift   # Main container view
 │   ├── PremiumTabScreen.swift     # Tab screen wrapper
 │   ├── RootView.swift             # Root state machine, PromptTheme, PromptPremiumBackground
 │   └── Routing/
-│       └── AppRouter.swift        # Navigation enums (RootRoute, MainTab)
+│       └── AppRouter.swift        # Navigation enums (RootRoute, MainTab, HomeSheet)
+├── Components/                    # Reusable UI components
+│   └── Glassmorphism.swift        # GlassContainer, GlassButton, GlassCard, GlassOrb
 ├── Core/                          # Core business logic
 │   ├── Auth/                      # Authentication (AuthManager, KeychainService, OAuthCoordinator)
 │   ├── Networking/                # API layer (APIClient, APIEndpoint, NetworkError, RequestBuilder)
 │   ├── Storage/                   # Data persistence (HistoryStore, PreferencesStore, SecureStore)
 │   ├── Store/                     # IAP (StoreConfig, StoreManager, UsageTracker)
 │   ├── Audio/                     # Voice input (OrbEngine, SpeechRecognizerService)
-│   ├── Notifications/             # Push notifications
-│   └── Utils/                     # Utilities (Analytics, Haptics, JSONCoding, Date extensions)
+│   ├── Notifications/             # Push notifications (NotificationService)
+│   ├── Protocols/                 # Protocol definitions (APIClientProtocol, StorageProtocols)
+│   └── Utils/                     # Utilities (Analytics, Haptics, JSONCoding, Date extensions, Telemetry)
 ├── Features/                      # Feature modules (MVVM pattern)
-│   ├── Admin/                     # Dev-only admin panel
-│   ├── Auth/                      # Login/signup flows
-│   ├── History/                   # Prompt history and favorites
+│   ├── Admin/                     # Dev-only admin panel (AdminDashboardView, AdminPromptsView, etc.)
+│   ├── Auth/                      # Login/signup flows (AuthFlowView, EmailAuthView, AuthViewModel)
+│   ├── History/                   # Prompt history and favorites (HistoryView, FavoritesView, HistoryViewModel)
 │   ├── Home/                      # Main generation screen with orb UI
-│   ├── Onboarding/                # First-time user onboarding
-│   ├── Privacy/                   # Privacy consent (GDPR/App Store compliance)
-│   ├── Settings/                  # User settings and upgrade
-│   └── Trending/                  # Trending prompts catalog
+│   │   ├── Views/                 # HomeView, OrbView, ResultView, TypePromptView, ShareCardView, etc.
+│   │   └── ViewModels/            # GenerateViewModel, HomeViewModel
+│   ├── Onboarding/                # First-time user onboarding (OnboardingView)
+│   ├── Privacy/                   # Privacy consent (PrivacyConsentView)
+│   ├── Settings/                  # User settings and upgrade (SettingsView, UpgradeView, SettingsViewModel)
+│   └── Trending/                  # Trending prompts catalog (TrendingView, PromptDetailView, TrendingViewModel)
 ├── Models/                        # Data models
-│   ├── API/                       # Server response models (User, AuthModels, GenerateModels, etc.)
+│   ├── API/                       # Server response models (User, AuthModels, GenerateModels, PromptCatalogModels, SettingsModels)
 │   └── Local/                     # Local storage models (PromptHistoryItem, AppPreferences)
 ├── Resources/                     # Bundled resources
-│   └── trending_prompts.json      # Bundled prompt catalog (44 prompts, 6 categories)
-├── PrivacyInfo.xcprivacy          # Apple privacy manifest
-└── OrionOrbApp.swift              # App entry point (@main)
+│   ├── trending_prompts.json      # Bundled prompt catalog (44 prompts, 7 categories)
+│   └── PrivacyInfo.xcprivacy      # Apple privacy manifest
+└── PromptMeNativeApp.swift        # App entry point (@main) - OrionOrbApp
 
 Prompt28/                          # Xcode project configuration
 ├── Info.plist                     # App configuration, permissions, Google Sign-In
+├── PrivacyInfo.xcprivacy          # Privacy manifest
 └── Prompt28.entitlements          # App entitlements
 
-Prompt28Tests/                     # Unit tests (Swift Testing framework)
-Prompt28UITests/                   # UI tests (XCTest)
+OrionOrbTests/                     # Unit tests (Swift Testing framework)
+OrionOrbUITests/                   # UI tests (XCTest)
 ```
 
 ---
@@ -82,21 +91,21 @@ Prompt28UITests/                   # UI tests (XCTest)
 
 ### Build
 ```bash
-xcodebuild -project Prompt28.xcodeproj -scheme Prompt28 -destination "platform=iOS Simulator,name=iPhone 17" build
+xcodebuild -project Prompt28.xcodeproj -scheme OrionOrb -destination "platform=iOS Simulator,name=iPhone 16" build
 ```
 
 ### Test
 ```bash
 # Run unit tests
-xcodebuild test -project Prompt28.xcodeproj -scheme Prompt28 -destination "platform=iOS Simulator,name=iPhone 17" -only-testing:Prompt28Tests
+xcodebuild test -project Prompt28.xcodeproj -scheme OrionOrb -destination "platform=iOS Simulator,name=iPhone 16" -only-testing:OrionOrbTests
 
 # Run UI tests
-xcodebuild test -project Prompt28.xcodeproj -scheme Prompt28 -destination "platform=iOS Simulator,name=iPhone 17" -only-testing:Prompt28UITests
+xcodebuild test -project Prompt28.xcodeproj -scheme OrionOrb -destination "platform=iOS Simulator,name=iPhone 16" -only-testing:OrionOrbUITests
 ```
 
 ### Clean Build
 ```bash
-xcodebuild clean -project Prompt28.xcodeproj -scheme Prompt28
+xcodebuild clean -project Prompt28.xcodeproj -scheme OrionOrb
 ```
 
 ---
@@ -108,14 +117,18 @@ All dependencies are centralized in `AppEnvironment` and injected via SwiftUI's 
 
 ```swift
 @Observable @MainActor final class AppEnvironment {
-    let apiClient: APIClient
+    let supabase: SupabaseClient              // Live Supabase auth & database
+    let apiClient: APIClient                  // Legacy Railway API (for bootstrap user plan info)
     let keychain: KeychainService
-    let authManager: AuthManager
-    let historyStore: HistoryStore
+    let authManager: AuthManager              // Supabase Auth
+    let historyStore: HistoryStore            // JSON + Supabase sync
     let preferencesStore: PreferencesStore
     let router: AppRouter
-    let storeManager: StoreManager
+    let storeManager: StoreManager            // StoreKit 2
     let usageTracker: UsageTracker
+    let telemetryService: TelemetryService    // Uploads to Supabase telemetry_errors
+    let speechRecognizerFactory: SpeechRecognizerFactoryProtocol
+    let orbEngineFactory: OrbEngineFactoryProtocol
 }
 ```
 
@@ -217,7 +230,7 @@ Use the single source of truth for glass cards:
 
 ## Testing Strategy
 
-### Unit Tests (Prompt28Tests/)
+### Unit Tests (OrionOrbTests/)
 Uses the Swift Testing framework (modern replacement for XCTest):
 
 ```swift
@@ -240,7 +253,7 @@ Key test suites:
 - `PlanTypeTests` - Plan type handling
 - `SpeechErrorClassificationTests` - Speech recognition error handling
 
-### UI Tests (Prompt28UITests/)
+### UI Tests (OrionOrbUITests/)
 Uses standard XCTest framework for end-to-end testing.
 
 ---
@@ -310,11 +323,10 @@ struct User: Decodable, Identifiable, Equatable {
 }
 ```
 
-### PromptHistoryItem (Local Model)
+### PromptHistoryItem (Codable Local Model with Supabase Sync)
 ```swift
-@Model
-final class PromptHistoryItem {
-    @Attribute(.unique) var id: UUID
+final class PromptHistoryItem: Codable, Identifiable {
+    var id: UUID
     var createdAt: Date
     var mode: PromptMode  // ai, human
     var input: String
@@ -322,6 +334,8 @@ final class PromptHistoryItem {
     var template: String
     var favorite: Bool
     var customName: String?
+    var lastModified: Date        // Drives last-write-wins merge
+    var isSynced: Bool            // false = queued for Supabase upsert
 }
 ```
 
@@ -347,7 +361,7 @@ Base URL: `https://promptme-app-production.up.railway.app`
 | `/api/auth/login` | POST | None |
 | `/api/auth/google` | POST | None |
 | `/api/auth/apple` | POST | None |
-| `/api/auth/me` | GET | Bearer |
+| `/api/me` | GET | Bearer |
 | `/api/generate` | POST | Bearer |
 | `/api/config` | GET | None |
 | `/api/settings` | GET | None |
@@ -355,8 +369,24 @@ Base URL: `https://promptme-app-production.up.railway.app`
 
 ---
 
+## Freemium Model
+
+The app uses a freemium model with the following rules:
+
+- **Starter Plan**: 10 free generations per calendar month
+- **Pro/Unlimited/Dev Plans**: Unlimited generations
+- Usage is tracked client-side in Keychain (`UsageTracker`) and synced with server
+- Counter resets monthly based on calendar month
+
+---
+
 ## Resources
 
-- **HANDOFF.md**: Comprehensive developer handoff document with detailed architecture
-- **trending_prompts.json**: Bundled catalog with 44 prompts across 6 categories (email, content, career, creative, coding, research)
+- **trending_prompts.json**: Bundled catalog with 44 prompts across 7 categories:
+  - Email & Outreach (8 prompts)
+  - Content & Social (7 prompts)
+  - Career & Resume (7 prompts)
+  - Business & Strategy (7 prompts)
+  - Creative Writing (6 prompts)
+  - Productivity & Planning (7 prompts)
 - **PrivacyInfo.xcprivacy**: Apple privacy manifest for App Store compliance
