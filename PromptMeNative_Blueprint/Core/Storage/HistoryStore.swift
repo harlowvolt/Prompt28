@@ -405,6 +405,11 @@ final class HistoryStore {
         items.contains(where: { !$0.isSynced }) || !pendingDeletedIDs.isEmpty
     }
 
+    func handleAppBecameActiveForSyncRetry() {
+        guard hasPendingSyncWork() else { return }
+        triggerBestEffortSyncIfAuthenticated()
+    }
+
     private func startLifecycleObservers() {
         #if canImport(UIKit)
         let notificationNames: [Notification.Name] = [
@@ -419,9 +424,7 @@ final class HistoryStore {
                 queue: .main
             ) { [weak self] _ in
                 Task { @MainActor [weak self] in
-                    guard let self else { return }
-                    guard self.hasPendingSyncWork() else { return }
-                    self.triggerBestEffortSyncIfAuthenticated()
+                    self?.handleAppBecameActiveForSyncRetry()
                 }
             }
             lifecycleObserverTokens.append(token)

@@ -1,8 +1,8 @@
 # Orion Orb — Clean Roadmap (Post-Phase-2, v1.9)
 
-**Last updated: 2026-03-18**
-**Version**: v1.9 (Post-Phase-2 cleanup)
-**Status**: Ready for Phase 3 — all SwiftData/CloudKit removed, Supabase SDK integrated, JSON + Supabase sync operational
+**Last updated: 2026-03-19**
+**Version**: v2.0 (Phase 2 hardening / Phase 2.5)
+**Status**: Phase 2 hardening in progress — native cleanup done, auth live, history hardening implemented, automated validation still in progress
 
 This roadmap separates **current working reality** from **next critical steps** from **long-term vision**. It is grounded in actual code, not aspirations.
 
@@ -17,9 +17,9 @@ This roadmap separates **current working reality** from **next critical steps** 
 - **State machine**: `RootView` gates privacy consent → auth → onboarding → main tabs
 - **UI framework**: SwiftUI with `@Observable` (no `@State` for models)
 - **Design system**: Unified `PromptTheme` colors, `AppUI` spacing/radii, `PromptPremiumBackground` backgrounds
-- **Persistence**: Codable JSON at `Application Support/OrionOrb/history.json` + **Supabase two-way sync** (last-write-wins)
+- **Persistence**: Codable JSON at `Application Support/OrionOrb/history.json` + **Supabase two-way sync** (last-write-wins) with pending delete queue at `Application Support/OrionOrb/history_pending_deletes.json`
 - **Authentication**: Supabase Auth (JWT stored in Keychain) with OAuth support (Google, Apple, email/password)
-- **Database**: Supabase PostgreSQL (prompts table, events table, telemetry_errors table) with RLS
+- **Database**: Supabase PostgreSQL (prompts table, events table, telemetry_errors table) with RLS assumptions wired in code
 - **Analytics**: `TelemetryService` (errors) and `AnalyticsService` (events) — both upload to Supabase
 - **Freemium metering**: `UsageTracker` (Keychain-backed) tracks monthly generation quota; enforced client-side
 - **In-app purchases**: StoreKit 2 wired (`StoreManager`) — awaiting App Store Connect setup
@@ -35,25 +35,30 @@ This roadmap separates **current working reality** from **next critical steps** 
 
 ### What's Working
 
-1. ✅ App boots, `RootView` renders with correct state machine
-2. ✅ Privacy consent gate blocks auth flows
-3. ✅ Auth UI displays (Google, Apple, email signin buttons present)
-4. ✅ Supabase SDK initializes from `Info.plist` config
-5. ✅ JSON persistence loads/saves to disk
-6. ✅ History `items` array observable in-memory
-7. ✅ All 4 main tabs render (Home, Trending, History, Favorites)
-8. ✅ Glass card design system consistent across screens
-9. ✅ Float tab bar renders with correct appearance
+1. ✅ App builds and launches
+2. ✅ `RootView` renders with correct native state machine
+3. ✅ Privacy consent gate blocks auth flows
+4. ✅ Google Sign-In works with Supabase Auth
+5. ✅ Apple Sign-In flow exists in code
+6. ✅ Supabase SDK initializes from `Info.plist` config
+7. ✅ JSON persistence loads/saves to disk
+8. ✅ History `items` array is observable in-memory
+9. ✅ Best-effort signed-in sync now triggers immediately after `add`, `toggleFavorite`, and `rename`
+10. ✅ Launch-time sync runs when a valid Supabase session already exists
+11. ✅ Delete propagation exists and pending delete IDs retry on future sync
+12. ✅ Signed-out/user-deleted state clears local history to avoid cross-user contamination
 
-### What's NOT Working Yet
+### What's NOT Fully Validated Yet
 
-1. ⏳ **Actual sign-in fails** — `SUPABASE_ANON_KEY` in `Info.plist` is a valid test key but for wrong project
-   - **Fix**: Replace with correct anon key from your Supabase dashboard
-2. ⏳ **Supabase sync disabled** — until auth succeeds, `authStateChanges` listener never fires
-   - **Implication**: JSON persists locally, but remote sync doesn't happen
-   - **Workaround**: Local-only history works fine for manual testing
-3. ⏳ **User plan info incomplete** — `AuthManager.bootstrap()` fetches plan from Railway API, but endpoint may not match current user schema
-4. ⏳ **Supabase tables may not exist** — `prompts`, `events`, `telemetry_errors` tables must be created in your Supabase project
+1. ⏳ Automated validation of `HistoryStore` is not complete yet
+2. ⏳ Confirmed passing hosted test:
+   - `Prompt28Tests/HistoryStoreTests/coldLaunchExistingSessionTriggersSync`
+3. ⏳ Current first blocker:
+   - `Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork`
+   - init-time session reconciliation race already removed for this test
+   - test no longer depends on `UIApplication.didBecomeActiveNotification`; it calls the foreground retry path directly
+   - hosted run still does not return a real pass/fail result yet
+4. ⏳ Remaining `HistoryStoreTests` should continue one-by-one only after the foreground retry blocker is understood
 
 ### Build Info
 
@@ -69,25 +74,21 @@ This roadmap separates **current working reality** from **next critical steps** 
 
 ## Part 2: Immediate Next Steps (Before Phase 3)
 
-### Step 1: Fix Supabase Configuration
+### Step 1: Finish Phase 2 History Validation
 
-**File**: `Prompt28/Info.plist` (lines 42-45)
+1. Continue using the unique simulator only:
+   - `Prompt28-iPhone17`
+   - UDID `06B488AD-877C-4EC1-A472-E2053BD31DB9`
+2. Keep using the shared derived data path:
+   - `/tmp/Prompt28DerivedData`
+3. Resolve the remaining first blocker:
+   - `Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork`
+4. After that blocker is resolved, run remaining `HistoryStoreTests` one-by-one, not as a full suite first
+5. Do not mark Phase 2 hardening complete until `xcodebuild test` returns real pass/fail results for the history validation cases
 
-1. Log into your Supabase dashboard (https://supabase.com)
-2. Open your project → Settings → API → Copy the `anon` (public) key
-3. Replace the current value:
-   ```xml
-   <key>SUPABASE_ANON_KEY</key>
-   <string>sb_publishable_LECnrvYUeR10rudfadkS_w_V05</string>
-   ```
-   with your real key
-4. Build and test sign-in flow
+### Step 2: Verify Live Supabase Assumptions
 
-**Verification**: After sign-in, `authManager.currentUser` should be non-nil and match the Supabase user.
-
-### Step 2: Create Supabase Tables
-
-If not already created, execute these SQL statements in your Supabase SQL editor:
+If not already created or confirmed, execute/verify these SQL statements in your Supabase SQL editor:
 
 ```sql
 -- prompts table (history sync)
@@ -136,7 +137,7 @@ create policy "Users can read their errors"
 
 **Verification**: Query each table in Supabase dashboard to confirm existence.
 
-### Step 3: Verify Sync Flow
+### Step 3: Verify Signed-In Sync Flow
 
 1. Sign in to the app
 2. Create a new prompt (Home tab)

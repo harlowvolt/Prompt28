@@ -1,6 +1,6 @@
 # Prompt28 (Orion Orb) — AI Handoff Document (Phase 2.5 Hardening)
 
-**Last updated: 2026-03-18. Version v2.0 (Phase 2 hardening / Phase 2.5). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
+**Last updated: 2026-03-19. Version v2.1 (Phase 2 hardening / Phase 2.5). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
 
 ---
 
@@ -316,19 +316,33 @@ File: `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift`
 - `HistoryStore` now includes deterministic test seams/hooks used by validation:
   - disable auth listener on init
   - disable lifecycle observers
+  - disable initial session reconciliation on init
   - inject session user ID provider
   - inject sync executor
+- `HistoryStore` also exposes an internal foreground-retry entry point for tests so lifecycle retry behavior can be invoked directly without depending on UIKit notification delivery in the hosted runner.
 - Unit test target now points to the real `OrionOrbTests` folder.
 - History tests use MainActor-safe polling.
 - `OrionOrbApp` has a test-mode bypass so unit tests do not bootstrap the full app environment.
 - Shared scheme no longer includes `Prompt28UITests` inside the main unit-test `TestAction`.
+- Confirmed passing hosted history test on simulator `Prompt28-iPhone17` (`06B488AD-877C-4EC1-A472-E2053BD31DB9`):
+  - `Prompt28Tests/HistoryStoreTests/coldLaunchExistingSessionTriggersSync`
+- Current first blocker:
+  - `Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork`
+  - initial session reconciliation race was removed for this test
+  - UIKit notification dependency was removed for this test by calling the foreground retry path directly
+  - despite that, the hosted run still does not return a real XCTest pass/fail result yet
 - **Important truth:** automated validation completion is still pending unless `xcodebuild test` returns real pass/fail results. Do not claim Phase 2 hardening is fully validated yet.
 
 ## Known Remaining Gaps
 
 - End-to-end automated validation is not yet fully complete.
 - The storage hardening implementation is in place, but `xcodebuild test` completion still needs to be proven with real pass/fail output.
+- The first remaining validation blocker is still `Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork`.
 - Phase 2 hardening should not be marked complete until the history validation suite actually finishes successfully.
+- Recommended next step:
+  - inspect the hosted test runner state for `foregroundRetrySyncsPendingWork` after build/package handoff
+  - determine whether the remaining stall is XCTest-host/process startup, not test-body logic
+  - only after that continue the rest of `HistoryStoreTests` one-by-one on the same simulator/UDID
 
 ### PromptPremiumBackground (RootView.swift)
 

@@ -1,6 +1,6 @@
 # Prompt28 (Orion Orb) — AI Agent Guide (Phase 2.5 Hardening)
 
-**Last updated: 2026-03-18 | Version v2.0 (Phase 2 hardening / Phase 2.5)**
+**Last updated: 2026-03-19 | Version v2.1 (Phase 2 hardening / Phase 2.5)**
 
 This document provides essential information for AI coding agents working on the Prompt28 iOS project (marketed as "Orion Orb"). **SwiftData has been removed. CloudKit has been removed. Persistence is now Codable JSON + Supabase sync.**
 
@@ -305,15 +305,25 @@ Uses standard XCTest framework for end-to-end testing.
 - `HistoryStore` includes deterministic test seams/hooks for validation:
   - disable auth listener on init
   - disable automatic lifecycle observation
+  - disable initial session reconciliation on init
   - inject session provider
   - inject sync executor
+- `HistoryStore` also has an internal foreground-retry hook used only to make the foreground retry test deterministic without changing production notification behavior.
 - Storage hardening code is improved and compiles.
+- Confirmed passing hosted test on simulator `Prompt28-iPhone17` (`06B488AD-877C-4EC1-A472-E2053BD31DB9`):
+  - `Prompt28Tests/HistoryStoreTests/coldLaunchExistingSessionTriggersSync`
+- Current first validation blocker:
+  - `Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork`
+  - initial session reconciliation race already removed for that test
+  - direct invocation seam added so the test no longer depends on UIKit foreground notification delivery
+  - hosted run still does not complete with a real pass/fail result
 - Automated validation completion is still pending unless `xcodebuild test` has completed with real pass/fail output.
 
 ## Known Remaining Gaps
 
 - Do not mark Phase 2 hardening as complete until history validation actually finishes end to end.
 - Current repo state supports more deterministic testing, but test-execution completion still needs to be proven in a clean run.
+- Next recommended move is to inspect the hosted test runner/process state specifically for `foregroundRetrySyncsPendingWork` after build/package handoff, then resume one-by-one `HistoryStoreTests` validation on the same simulator/UDID.
 
 ---
 

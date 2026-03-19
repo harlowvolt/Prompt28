@@ -396,7 +396,7 @@ struct HistoryStoreTests {
         #expect(syncCalls.isEmpty)
 
         currentUserID = userID
-        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        store.handleAppBecameActiveForSyncRetry()
 
         let retried = await waitUntil { syncCalls == [userID] }
         #expect(retried)
