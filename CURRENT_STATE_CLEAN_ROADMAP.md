@@ -68,7 +68,11 @@ This roadmap separates **current working reality** from **next critical steps** 
 31. ✅ `StoreManager.activePlan` added — reads StoreKit receipt-backed `purchasedProductIDs` directly, bypassing Railway plan sync failure. Paid users are no longer gated as `.starter`.
 32. ✅ `GenerateViewModel.edgeFunctionErrorMessage(from:)` — Mirror-based extraction of `FunctionsError.httpError` data payload, decodes `{ "error": "..." }` JSON body. Meaningful errors shown instead of raw status codes.
 33. ✅ Settings red error banner silenced — `loadRemoteSettings()` Railway 401 now logs silently via TelemetryService. AppSettings is cosmetic only.
-34. ✅ `deleteAccount()` Railway call removed — now calls `historyStore.clearAll() + authManager.logout()` directly (Supabase Edge Function for full server-side deletion is a Phase 3 TODO).
+34. ✅ `deleteAccount()` now calls `delete-account` Edge Function (deletes auth.users row + prompts via service role), then clears local state + logs out. Falls back to local-only clear if function is unreachable.
+35-new. ✅ `StoreManager.syncPlanToSupabase()` — writes `user_metadata.plan` immediately after a verified purchase or background transaction update, so Edge Function metering bypass activates without an App Store Server Notifications webhook.
+36-new. ✅ `FavoritesView` pull-to-refresh — mirrors HistoryView, calls `viewModel.syncWithRemote()`.
+37-new. ✅ Analytics gaps fixed: `generate()` typed path now fires `generateTapped`; `copyPrompt` and `sharePrompt` events wired in `ResultView`.
+38-new. ✅ Both Edge Functions (`generate`, `delete-account`) deployed to Supabase project `jzwerkqoczhtkyhigigf`.
 35. ✅ `TrendingViewModel` bundled JSON fallback — loads `trending_prompts.json` from app bundle before API attempt, so trending tab never shows blank screen offline.
 36. ✅ `HistoryStoring` protocol extended with `isSyncing: Bool` and `func forceSync() async`.
 37. ✅ `HistoryViewModel` exposes `isSyncing` and `syncWithRemote()` forwarding to the store.
@@ -79,7 +83,7 @@ This roadmap separates **current working reality** from **next critical steps** 
 1. ⏳ Physical iPhone end-to-end generation validation — build and run on device with `SUPABASE_GENERATE_FUNCTION=generate` active
 2. ⏳ Apple Sign In — Supabase dashboard Apple provider not yet configured (requires Apple Developer Services ID + .p8 key)
 3. ⏳ App Store Connect IAP products not yet created (`com.prompt28.pro.monthly`, `.pro.yearly`, `.unlimited.monthly`, `.unlimited.yearly`)
-4. ⏳ Supabase Edge Function for account deletion (server-side user delete requires service role — Phase 3 TODO)
+4. ⏳ Supabase Edge Function for account deletion — code written and deployed ✅; iOS wired ✅; needs device test
 5. ⏳ Simulator validation: use only `Prompt28-iPhone17` / UDID `06B488AD-877C-4EC1-A472-E2053BD31DB9`
 
 ### Build Info
@@ -385,7 +389,7 @@ When implementing Phase 3+ features:
 | UpgradeView "Loading plans…" forever | ✅ Fixed — `productsLoaded` state + fallback UI | `UpgradeView.swift` |
 | Apple Sign In not configured | ⏳ Requires Apple Developer setup + Supabase dashboard config | See Step 2 in Part 2 |
 | IAP products not available | ⏳ Awaiting App Store Connect setup | Create products in App Store Connect |
-| Account deletion (server-side) | ⏳ Phase 3 — requires Edge Function with service role | Supabase Edge Function TODO |
+| Account deletion (server-side) | ✅ `delete-account` Edge Function deployed; iOS calls it via SettingsViewModel | Needs device test |
 | Metal Orb not rolling out | ✅ Ready | Enable `is_metal_orb_enabled` feature flag |
 
 ---
