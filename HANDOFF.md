@@ -1,6 +1,6 @@
-# Prompt28 (Orion Orb) — AI Handoff Document (v3.0, Phase 5 Active)
+# Prompt28 (Orion Orb) — AI Handoff Document (v3.1, Phase 5 Active)
 
-**Last updated: 2026-03-19. Version v3.0 (Phase 4 complete, Phase 5 foundations active). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
+**Last updated: 2026-03-19. Version v3.1 (Phase 4 complete + Trending Supabase-direct, Phase 5 foundations active). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**
 
 ---
 
@@ -23,6 +23,7 @@ Phases 3 and 4 are fully complete. Phase 5 foundations (intent classifier, tempo
 - ✅ **Thumbs up/down feedback** in `ResultView` → Supabase `prompt_feedback` table
 - ✅ **Metal Orb GPU renderer** (`MetalOrbView.swift` + `Orb.metal`) behind `is_metal_orb_enabled` flag
 - ✅ **Supabase Realtime Trending** — `TrendingViewModel` subscribes to INSERT/UPDATE on `trending_prompts`
+- ✅ **Trending Supabase-direct fetch** — `TrendingViewModel.refreshFromSupabase()` queries `trending_prompts` table directly (WHERE `is_active=true`, ORDER BY `use_count DESC`), maps rows → `PromptCatalog`. Railway `promptsTrending()` retained as silent fallback only. Realtime-triggered refreshes also use the Supabase path.
 - ✅ **Shareable cards** — `ShareCardView` + `ImageRenderer` + `ShareLink` with PNG preview
 - ✅ `TypePromptView` glass design system rewrite; `HomeView` double-NavigationStack fixed
 - ✅ **Usage pill** on `HomeView` — live prompts-remaining counter for starter plan users

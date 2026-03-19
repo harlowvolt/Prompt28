@@ -1,7 +1,7 @@
-# Orion Orb — Clean Roadmap (Phase 4 Complete, v3.0)
+# Orion Orb — Clean Roadmap (Phase 4 Complete + Trending Supabase-Direct, v3.1)
 
 **Last updated: 2026-03-19**
-**Version**: v3.0 (Phase 4 complete — feedback flywheel, Metal Orb GPU, Realtime Trending, shareable cards)
+**Version**: v3.1 (Phase 4 complete + Trending now fetches directly from Supabase `trending_prompts` table — Railway fully retired as data source)
 **Status**: All Phase 3 + Phase 4 features implemented. Phase 5 (MCP intent routing) is the next horizon. Device validation and App Store Connect IAP setup are the remaining blockers before TestFlight.
 
 This roadmap separates **current working reality** from **next critical steps** from **long-term vision**. It is grounded in actual code, not aspirations.
@@ -87,6 +87,7 @@ This roadmap separates **current working reality** from **next critical steps** 
 43. ✅ **Supabase Realtime Trending** — `TrendingViewModel` now subscribes to `trending_prompts` Postgres channel via `supabase-swift` Realtime v2. INSERT and UPDATE events trigger a catalog refresh. `TrendingView` passes supabase + apiClient, subscribes on `.task`, unsubscribes on `.onDisappear`. `trending_prompts` table migration at `supabase/migrations/20240602000000_trending_prompts.sql`.
 44. ✅ `TypePromptView` glass design system rewrite — custom mode segmented control, TextEditor with glassFill + focus ring animation, gradient Generate button, `.presentationDetents([.medium, .large])`.
 45. ✅ `HomeView` double-NavigationStack fix — `TypePromptView` now owns its own NavigationStack; `HomeView` no longer wraps it.
+46. ✅ **Trending fetches directly from Supabase** — `TrendingViewModel` now queries `trending_prompts` table (WHERE `is_active = true`, ORDER BY `use_count DESC`) via `supabase-swift`. Groups rows by `category` into the existing `PromptCatalog → PromptCategory → PromptItem` hierarchy. Supabase is tried first; Railway `promptsTrending()` is the fallback if Supabase fails. `TrendingView` passes `scopedSupabase` to both `loadIfNeeded` and `refresh`. Realtime-triggered refreshes also use the Supabase path. Railway is no longer the primary data source for Trending.
 
 ### What's NOT Fully Validated Yet
 

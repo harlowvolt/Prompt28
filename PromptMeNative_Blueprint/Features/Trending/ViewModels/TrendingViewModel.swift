@@ -24,6 +24,9 @@ final class TrendingViewModel {
 
     private var realtimeTask: Task<Void, Never>?
 
+    /// Retained so Realtime-triggered refreshes can skip Railway entirely.
+    private var storedSupabase: SupabaseClient?
+
 	// MARK: - Derived
 
 	var categories: [PromptCategory] {
@@ -56,34 +59,98 @@ final class TrendingViewModel {
 
 	/// Loads content for display. On the first call:
 	///   1. Immediately populates the catalog from the bundled JSON (zero-latency).
-	///   2. Fires a background API refresh to pull the latest server-side prompts.
+	///   2. Fires a background refresh: Supabase table first, Railway as fallback.
 	/// Subsequent calls are no-ops unless `refresh` is called explicitly.
-	func loadIfNeeded(apiClient: any APIClientProtocol) async {
+    func loadIfNeeded(apiClient: any APIClientProtocol, supabase: SupabaseClient? = nil) async {
 		guard catalog == nil else { return }
-		// Seed from bundle first so the view renders immediately even if the API is slow.
+        if let supabase { storedSupabase = supabase }
+		// Seed from bundle first so the view renders immediately even if the network is slow.
 		loadBundledCatalog()
-		await refresh(apiClient: apiClient)
+        await refresh(apiClient: apiClient, supabase: supabase)
 	}
 
-	/// Fetches the latest trending catalog from the server.
-	/// Updates `catalog` on success; preserves the existing (bundled or cached)
-	/// catalog on failure so the view remains functional offline.
-	func refresh(apiClient: any APIClientProtocol) async {
+	/// Fetches the latest trending catalog.
+	/// Priority: Supabase `trending_prompts` table → Railway API → silent fail (preserves bundle).
+    func refresh(apiClient: any APIClientProtocol, supabase: SupabaseClient? = nil) async {
 		isLoading = true
 		errorMessage = nil
 		defer { isLoading = false }
 
+        let client = supabase ?? storedSupabase
+
+        if let client {
+            do {
+                try await refreshFromSupabase(client)
+                return   // ✅ Supabase succeeded — skip Railway entirely
+            } catch {
+                #if DEBUG
+                print("⚠️ [Trending] Supabase fetch failed, falling back to Railway: \(error)")
+                #endif
+            }
+        }
+
+        // Fallback: Railway / bundle
 		do {
 			let data = try await apiClient.promptsTrending()
 			catalog = data
 		} catch {
 			// Only surface the error if we have nothing to show.
-			// The bundled catalog will already be showing thanks to loadBundledCatalog().
 			if catalog == nil {
 				errorMessage = "Could not load trending prompts."
 			}
 		}
 	}
+
+    // MARK: - Supabase Direct Fetch
+
+    /// Decodable shape for a single `trending_prompts` row.
+    private struct TrendingRow: Decodable {
+        let id: UUID
+        let category: String
+        let title: String
+        let prompt: String
+        let use_count: Int
+    }
+
+    /// Queries `trending_prompts` (WHERE is_active = true, ORDER BY use_count DESC)
+    /// and rebuilds the `PromptCatalog` hierarchy in memory.
+    private func refreshFromSupabase(_ supabase: SupabaseClient) async throws {
+        let rows: [TrendingRow] = try await supabase
+            .from("trending_prompts")
+            .select("id, category, title, prompt, use_count")
+            .eq("is_active", value: true)
+            .order("use_count", ascending: false)
+            .execute()
+            .value
+
+        // Group rows into categories, preserving server-side order.
+        var categoryOrder: [String] = []
+        var grouped: [String: [PromptItem]] = [:]
+
+        for row in rows {
+            let item = PromptItem(id: row.id.uuidString, title: row.title, prompt: row.prompt)
+            let key = row.category.lowercased()
+            if grouped[key] == nil {
+                categoryOrder.append(key)
+                grouped[key] = []
+            }
+            grouped[key]!.append(item)
+        }
+
+        let categories = categoryOrder.map { key in
+            PromptCategory(
+                key: key,
+                name: key.prefix(1).uppercased() + key.dropFirst(),
+                items: grouped[key] ?? []
+            )
+        }
+
+        catalog = PromptCatalog(categories: categories)
+
+        #if DEBUG
+        print("✅ [Trending] Loaded \(rows.count) prompt(s) from Supabase across \(categories.count) category/categories")
+        #endif
+    }
 
 	/// Synchronously loads `trending_prompts.json` from the app bundle.
 	/// Used as a zero-latency seed before the network request returns.
@@ -99,13 +166,14 @@ final class TrendingViewModel {
     // MARK: - Supabase Realtime
 
     /// Subscribes to the `trending_prompts` Supabase channel.
-    /// When any INSERT or UPDATE arrives, triggers a `refresh` so the UI
-    /// reflects new curated prompts without requiring a manual pull-to-refresh.
+    /// When any INSERT or UPDATE arrives, re-fetches directly from the Supabase
+    /// table (no Railway round-trip needed).
     ///
     /// - Parameters:
     ///   - supabase: The live SupabaseClient from `AppEnvironment`.
-    ///   - apiClient: Used to re-fetch the catalog on change events.
+    ///   - apiClient: Railway fallback — used only if the Supabase re-fetch fails.
     func subscribeToRealtime(supabase: SupabaseClient, apiClient: any APIClientProtocol) {
+        storedSupabase = supabase
         // Cancel any previous subscription before creating a new one
         realtimeTask?.cancel()
 
@@ -115,7 +183,6 @@ final class TrendingViewModel {
             let channel = supabase.channel("trending_prompts_live")
 
             // Listen for INSERT and UPDATE events on the trending_prompts table.
-            // We don't need the payload — any change is enough to re-fetch.
             let insertions = channel.postgresChange(
                 InsertAction.self,
                 schema: "public",
@@ -136,15 +203,15 @@ final class TrendingViewModel {
             print("📡 [Trending] Realtime channel subscribed to trending_prompts")
             #endif
 
-            // Fan-in both streams into one refresh trigger
+            // Fan-in both streams — re-fetch from Supabase on any change
             await withTaskGroup(of: Void.self) { group in
                 group.addTask {
                     for await _ in insertions {
                         await MainActor.run {
-                            Task { await self.refresh(apiClient: apiClient) }
+                            Task { await self.refresh(apiClient: apiClient, supabase: supabase) }
                         }
                         #if DEBUG
-                        print("📡 [Trending] Realtime INSERT detected — refreshing catalog")
+                        print("📡 [Trending] Realtime INSERT — refreshing from Supabase")
                         #endif
                     }
                 }
@@ -152,10 +219,10 @@ final class TrendingViewModel {
                 group.addTask {
                     for await _ in updates {
                         await MainActor.run {
-                            Task { await self.refresh(apiClient: apiClient) }
+                            Task { await self.refresh(apiClient: apiClient, supabase: supabase) }
                         }
                         #if DEBUG
-                        print("📡 [Trending] Realtime UPDATE detected — refreshing catalog")
+                        print("📡 [Trending] Realtime UPDATE — refreshing from Supabase")
                         #endif
                     }
                 }

@@ -39,7 +39,7 @@ struct TrendingView: View {
             }
             return
         }
-        await viewModel.loadIfNeeded(apiClient: scopedAPIClient)
+        await viewModel.loadIfNeeded(apiClient: scopedAPIClient, supabase: scopedSupabase)
     }
 
     private func refreshIfPossible() async {
@@ -49,7 +49,7 @@ struct TrendingView: View {
             }
             return
         }
-        await viewModel.refresh(apiClient: scopedAPIClient)
+        await viewModel.refresh(apiClient: scopedAPIClient, supabase: scopedSupabase)
     }
 
     var body: some View {
