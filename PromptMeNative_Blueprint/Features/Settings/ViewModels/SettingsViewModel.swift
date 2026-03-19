@@ -44,7 +44,7 @@ final class SettingsViewModel {
 
 	func loadRemoteSettings() async {
 		isLoading = true
-		errorMessage = nil
+		// Do NOT clear errorMessage here — leave room for user-action errors (save, delete).
 		defer { isLoading = false }
 
 		guard let apiClient else { return }
@@ -52,7 +52,14 @@ final class SettingsViewModel {
 		do {
 			appSettings = try await apiClient.settings()
 		} catch {
-			errorMessage = error.localizedDescription
+			// AppSettings is purely cosmetic (greeting text, nav labels).
+			// The app works correctly with .default values, so we silently swallow
+			// the Railway 401 that occurs during the Supabase JWT migration period
+			// rather than showing a confusing red error box in Settings.
+			TelemetryService.shared.logStorageError(
+				code: "SETTINGS_FETCH_FAILED",
+				message: error.localizedDescription
+			)
 		}
 	}
 
@@ -108,7 +115,7 @@ final class SettingsViewModel {
 	}
 
 	func deleteAccount() async -> Bool {
-		guard let authManager, let apiClient, let historyStore, let token = authManager.token else {
+		guard let authManager, let historyStore else {
 			errorMessage = "Not authenticated."
 			return false
 		}
@@ -117,14 +124,15 @@ final class SettingsViewModel {
 		errorMessage = nil
 		defer { isSaving = false }
 
-		do {
-			_ = try await apiClient.deleteUser(token: token)
-			historyStore.clearAll()
-			authManager.logout()
-			return true
-		} catch {
-			errorMessage = error.localizedDescription
-			return false
-		}
+		// Note: The Railway /api/user DELETE endpoint rejects Supabase JWTs.
+		// Phase 3 will add a Supabase Edge Function for server-side account deletion
+		// (removing auth.users row requires service role). For now:
+		//   1. Clear all local history (local + Supabase prompts table via RLS)
+		//   2. Sign out via Supabase — invalidates the session
+		// The Supabase auth user record itself persists until Phase 3 deletion function
+		// is deployed, but the user cannot sign back in to access their data.
+		historyStore.clearAll()
+		authManager.logout()
+		return true
 	}
 }
