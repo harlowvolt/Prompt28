@@ -144,20 +144,9 @@ struct HomeView: View {
         )) { sheet in
             switch sheet {
             case .typePrompt:
-                NavigationStack {
-                    TypePromptView(viewModel: generateViewModel)
-                        .navigationTitle("Type Prompt")
-                        .navigationBarTitleDisplayMode(.inline)
-                        .toolbar {
-                            ToolbarItem(placement: .cancellationAction) {
-                                Button("Done") { router.dismissHomeSheet() }
-                            }
-                        }
-                }
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
-                .presentationBackground(.regularMaterial)
-                .presentationCornerRadius(32)
+                // TypePromptView owns its own NavigationStack, title, toolbar,
+                // presentationDetents, and PromptPremiumBackground.
+                TypePromptView(viewModel: generateViewModel)
 
             case .settings:
                 SettingsView {
