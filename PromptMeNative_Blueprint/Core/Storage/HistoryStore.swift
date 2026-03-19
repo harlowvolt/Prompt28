@@ -150,6 +150,7 @@ final class HistoryStore {
         }
         saveToDisk()
         pruneIfNeeded()
+        triggerBestEffortSyncIfAuthenticated()
     }
 
     func remove(id: UUID) {
@@ -167,6 +168,7 @@ final class HistoryStore {
         item.favorite.toggle()
         item.markModified()
         saveToDisk()
+        triggerBestEffortSyncIfAuthenticated()
     }
 
     func rename(id: UUID, customName: String?) {
@@ -174,6 +176,7 @@ final class HistoryStore {
         item.customName = customName
         item.markModified()
         saveToDisk()
+        triggerBestEffortSyncIfAuthenticated()
     }
 
     // MARK: - Supabase Sync
@@ -278,6 +281,17 @@ final class HistoryStore {
 
     private func fetchByID(_ id: UUID) -> PromptHistoryItem? {
         items.first { $0.id == id }
+    }
+
+    private func triggerBestEffortSyncIfAuthenticated() {
+        guard !isSyncing else { return }
+
+        Task { [weak self] in
+            guard let self else { return }
+            guard !self.isSyncing else { return }
+            guard let session = try? await self.supabase.auth.session else { return }
+            await self.syncWithSupabase(userId: session.user.id)
+        }
     }
 
     private func copyFields(
