@@ -331,6 +331,9 @@ Uses standard XCTest framework for end-to-end testing.
   - latest process inspection showed only `xcodebuild` alive after build/package handoff, with no visible `xctest`/`XCTRunner` process
 - Physical-device manual validation is now the primary short-term validation path.
 - Hosted simulator test execution remains useful but is now secondary while Phase 2 continues.
+- Prompt generation still uses the legacy Railway `/api/generate` endpoint in the current repo state.
+- StoreKit product loading does not gate free-tier generation in `GenerateViewModel`.
+- `GenerateViewModel` now refreshes the Supabase session before generate and retries once on a legacy 401/session-expired response.
 - Automated validation completion is still pending unless `xcodebuild test` has completed with real pass/fail output.
 
 ## Known Remaining Gaps

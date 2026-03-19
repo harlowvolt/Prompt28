@@ -54,6 +54,7 @@ This roadmap separates **current working reality** from **next critical steps** 
 17. ✅ Ambiguous unowned local history is now cleared on signed-in reconciliation instead of being adopted for the current user, reducing legacy/wrong-user cache leakage risk
 18. ✅ All authenticated sync entrypoints now share the same owner-preparation + deferred-history-restore path before syncing
 19. ✅ Pending deletes are filtered out of deferred-history restore/persistence, preventing deleted items from resurfacing during the reconciliation window
+20. ✅ Generation path now refreshes the Supabase session token before calling the legacy Railway `/api/generate` endpoint and retries once on session-expired responses
 
 ### What's NOT Fully Validated Yet
 
@@ -104,6 +105,17 @@ This roadmap separates **current working reality** from **next critical steps** 
    - one hosted test remains isolated/sticky
 4. Continue roadmap execution despite the isolated hosted-test issue
 5. Do not mark Phase 2 hardening complete until confidence is established through manual validation and/or eventual full automated pass/fail coverage
+
+### Step 1.5: Validate Prompt Generation On Device
+
+1. Generation is still routed through the legacy Railway `/api/generate` path in Phase 2
+2. StoreKit product loading failure should not block free-tier generation
+3. The app now refreshes the Supabase session token before generate and retries once on legacy 401/session-expired responses
+4. Validate on physical iPhone before doing more monetization hardening:
+   - signed-in generate from Home
+   - typed generate from sheet
+   - relaunch then generate immediately
+   - confirm paywall only appears when usage is actually exhausted
 
 ### Step 2: Verify Live Supabase Assumptions
 

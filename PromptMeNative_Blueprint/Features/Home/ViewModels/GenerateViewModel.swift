@@ -76,6 +76,8 @@ final class GenerateViewModel {
             return
         }
 
+        await authManager.refreshMe()
+
         guard let token = authManager.token else {
             errorMessage = "Please sign in to generate prompts."
             return
@@ -109,7 +111,21 @@ final class GenerateViewModel {
                 systemPrompt: systemPrompt
             )
 
-            let response = try await apiClient.generate(request, token: token)
+            let response: GenerateResponse
+            do {
+                response = try await apiClient.generate(request, token: token)
+            } catch {
+                if let network = error as? NetworkError, network.isSessionExpired {
+                    await authManager.refreshMe()
+                    guard let refreshedToken = authManager.token else {
+                        errorMessage = "Please sign in to generate prompts."
+                        return
+                    }
+                    response = try await apiClient.generate(request, token: refreshedToken)
+                } else {
+                    throw error
+                }
+            }
             let promptText = response.professional.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !promptText.isEmpty else {
                 errorMessage = "The server returned an empty result. Please try again."
@@ -166,9 +182,6 @@ final class GenerateViewModel {
         } catch {
             HapticService.notification(.error)
             if let network = error as? NetworkError {
-                if network.isSessionExpired {
-                    authManager.logout()
-                }
                 // Show paywall on rate limit
                 if case .rateLimited = network {
                     showPaywall = true

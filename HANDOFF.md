@@ -345,6 +345,9 @@ File: `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift`
   - latest process inspection showed `xcodebuild` still alive after build/package handoff with no active `xctest`/`XCTRunner` process visible, which points to hosted runner/process launch behavior rather than the test body itself
 - Physical iPhone manual validation is now the primary short-term validation path.
 - Hosted simulator validation remains useful secondary coverage, but it is no longer the main blocker for continuing Phase 2 hardening.
+- Generation remains on the legacy Railway `/api/generate` path during Phase 2.
+- StoreKit product loading failure is not the generation gate in the current app flow.
+- `GenerateViewModel` now refreshes the Supabase session token before generation and retries once on legacy 401/session-expired responses instead of immediately logging the user out.
 - **Important truth:** automated validation completion is still pending unless `xcodebuild test` returns real pass/fail results. Do not claim Phase 2 hardening is fully validated yet.
 
 ## Known Remaining Gaps
