@@ -53,6 +53,7 @@ This roadmap separates **current working reality** from **next critical steps** 
 16. ✅ Foreground lifecycle observer registration is deduped before re-registration, reducing duplicate retry observer risk in longer app sessions
 17. ✅ Ambiguous unowned local history is now cleared on signed-in reconciliation instead of being adopted for the current user, reducing legacy/wrong-user cache leakage risk
 18. ✅ All authenticated sync entrypoints now share the same owner-preparation + deferred-history-restore path before syncing
+19. ✅ Pending deletes are filtered out of deferred-history restore/persistence, preventing deleted items from resurfacing during the reconciliation window
 
 ### What's NOT Fully Validated Yet
 

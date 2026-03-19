@@ -484,8 +484,13 @@ final class HistoryStore {
     private func restoreDeferredInitialHistoryIfNeeded() {
         guard let deferredInitialItems else { return }
 
-        var merged = Dictionary(uniqueKeysWithValues: deferredInitialItems.map { ($0.id, $0) })
+        var merged = Dictionary(
+            uniqueKeysWithValues: deferredInitialItems
+                .filter { !pendingDeletedIDs.contains($0.id) }
+                .map { ($0.id, $0) }
+        )
         for item in items {
+            guard !pendingDeletedIDs.contains(item.id) else { continue }
             merged[item.id] = item
         }
 
@@ -520,8 +525,13 @@ final class HistoryStore {
     private var itemsForPersistence: [PromptHistoryItem] {
         guard let deferredInitialItems else { return items }
 
-        var merged = Dictionary(uniqueKeysWithValues: deferredInitialItems.map { ($0.id, $0) })
+        var merged = Dictionary(
+            uniqueKeysWithValues: deferredInitialItems
+                .filter { !pendingDeletedIDs.contains($0.id) }
+                .map { ($0.id, $0) }
+        )
         for item in items {
+            guard !pendingDeletedIDs.contains(item.id) else { continue }
             merged[item.id] = item
         }
 

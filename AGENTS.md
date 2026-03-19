@@ -314,6 +314,7 @@ Uses standard XCTest framework for end-to-end testing.
 - `HistoryStore` now removes existing lifecycle observer tokens before re-registering foreground observers, preventing duplicate retry observers.
 - `HistoryStore` now clears ambiguous unowned local history when a signed-in session is resolved and no trusted owner file exists, rather than adopting that cache for the current user.
 - All authenticated sync entrypoints now go through one shared preparation path so owner binding and deferred-history restore happen consistently before sync.
+- Deferred-history restore and persistence now both exclude pending-deleted IDs, preventing quick post-launch deletes from being reintroduced by hidden cache state.
 - `HistoryStore` also has an internal foreground-retry hook used only to make the foreground retry test deterministic without changing production notification behavior.
 - Storage hardening code is improved and compiles.
 - Simulator ambiguity is resolved by using only:
