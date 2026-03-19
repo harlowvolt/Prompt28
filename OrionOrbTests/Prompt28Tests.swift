@@ -1,6 +1,10 @@
 import Testing
 import Foundation
 @testable import Prompt28
+@testable import Supabase
+#if canImport(UIKit)
+import UIKit
+#endif
 
 // MARK: - UsageTracker Tests
 
@@ -226,4 +230,257 @@ struct SpeechErrorClassificationTests {
     }
 }
 
+// MARK: - HistoryStore Tests
+
+@Suite("HistoryStore")
+struct HistoryStoreTests {
+
+    @MainActor
+    private func makeSupabase() -> SupabaseClient {
+        SupabaseClient(
+            supabaseURL: URL(string: "https://example.supabase.co")!,
+            supabaseKey: "test-key"
+        )
+    }
+
+    private func makeAppDirectory() -> URL {
+        let dir = FileManager.default.temporaryDirectory
+            .appendingPathComponent("HistoryStoreTests-\(UUID().uuidString)", isDirectory: true)
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        return dir
+    }
+
+    private func waitUntil(
+        timeoutNanoseconds: UInt64 = 1_000_000_000,
+        condition: @escaping @Sendable () -> Bool
+    ) async -> Bool {
+        let deadline = DispatchTime.now().uptimeNanoseconds + timeoutNanoseconds
+        while DispatchTime.now().uptimeNanoseconds < deadline {
+            if condition() { return true }
+            await Task.yield()
+            try? await Task.sleep(nanoseconds: 10_000_000)
+        }
+        return condition()
+    }
+
+    @Test("Cold launch with existing session triggers automatic sync")
+    @MainActor
+    func coldLaunchExistingSessionTriggersSync() async {
+        let appDirectory = makeAppDirectory()
+        let userID = UUID()
+        var syncCalls: [UUID] = []
+
+        _ = HistoryStore(
+            supabase: makeSupabase(),
+            appDirectoryURL: appDirectory,
+            startAuthListener: false,
+            observeAppLifecycle: false,
+            sessionUserIDProvider: { userID },
+            syncExecutor: { id in syncCalls.append(id) }
+        )
+
+        let synced = await waitUntil { syncCalls == [userID] }
+        #expect(synced)
+    }
+
+    @Test("Add, favorite, and rename trigger best-effort sync for signed-in user")
+    @MainActor
+    func mutationsTriggerImmediateSync() async {
+        let appDirectory = makeAppDirectory()
+        let userID = UUID()
+        var syncCalls: [UUID] = []
+
+        let store = HistoryStore(
+            supabase: makeSupabase(),
+            appDirectoryURL: appDirectory,
+            startAuthListener: false,
+            observeAppLifecycle: false,
+            sessionUserIDProvider: { userID },
+            syncExecutor: { id in syncCalls.append(id) }
+        )
+
+        _ = await waitUntil { !syncCalls.isEmpty }
+        syncCalls.removeAll()
+
+        let item = PromptHistoryItem(mode: .ai, input: "Test input", professional: "Result", template: "Template")
+        store.add(item)
+        store.toggleFavorite(id: item.id)
+        store.rename(id: item.id, customName: "Renamed")
+
+        let completed = await waitUntil { syncCalls.count == 3 }
+        #expect(completed)
+        #expect(syncCalls == [userID, userID, userID])
+    }
+
+    @Test("Rapid consecutive mutations do not overlap syncs")
+    @MainActor
+    func rapidMutationsDoNotStartOverlappingSyncs() async {
+        let appDirectory = makeAppDirectory()
+        let userID = UUID()
+        let syncStarted = ManagedAtomicCounter()
+
+        let store = HistoryStore(
+            supabase: makeSupabase(),
+            appDirectoryURL: appDirectory,
+            startAuthListener: false,
+            observeAppLifecycle: false,
+            sessionUserIDProvider: { userID },
+            syncExecutor: { _ in
+                syncStarted.increment()
+                try? await Task.sleep(nanoseconds: 150_000_000)
+            }
+        )
+
+        _ = await waitUntil { syncStarted.value > 0 }
+        syncStarted.reset()
+
+        let item = PromptHistoryItem(mode: .ai, input: "Rapid", professional: "Result", template: "Template")
+        store.add(item)
+        store.toggleFavorite(id: item.id)
+        store.rename(id: item.id, customName: "New Name")
+
+        let settled = await waitUntil(timeoutNanoseconds: 500_000_000) { syncStarted.value == 1 }
+        #expect(settled)
+        try? await Task.sleep(nanoseconds: 200_000_000)
+        #expect(syncStarted.value == 1)
+    }
+
+    @Test("Pending deletes persist across app relaunch")
+    @MainActor
+    func pendingDeletesPersistAcrossRelaunch() async throws {
+        let appDirectory = makeAppDirectory()
+        let itemID = UUID()
+
+        do {
+            let store = HistoryStore(
+                supabase: makeSupabase(),
+                appDirectoryURL: appDirectory,
+                startAuthListener: false,
+                observeAppLifecycle: false,
+                sessionUserIDProvider: { nil },
+                syncExecutor: nil
+            )
+            store.add(PromptHistoryItem(id: itemID, mode: .ai, input: "Delete me", professional: "Result", template: "Template"))
+            store.remove(id: itemID)
+        }
+
+        let data = try Data(contentsOf: appDirectory.appendingPathComponent("history_pending_deletes.json"))
+        let pendingDeletes = try JSONDecoder().decode([UUID].self, from: data)
+        #expect(Set(pendingDeletes) == [itemID])
+    }
+
+    @Test("Foreground retry syncs pending local work after reconnect")
+    @MainActor
+    func foregroundRetrySyncsPendingWork() async {
+        #if canImport(UIKit)
+        let appDirectory = makeAppDirectory()
+        let userID = UUID()
+        var currentUserID: UUID? = nil
+        var syncCalls: [UUID] = []
+
+        let store = HistoryStore(
+            supabase: makeSupabase(),
+            appDirectoryURL: appDirectory,
+            startAuthListener: false,
+            observeAppLifecycle: true,
+            sessionUserIDProvider: { currentUserID },
+            syncExecutor: { id in syncCalls.append(id) }
+        )
+
+        _ = store
+        let item = PromptHistoryItem(mode: .ai, input: "Offline", professional: "Result", template: "Template")
+        store.add(item)
+        try? await Task.sleep(nanoseconds: 50_000_000)
+        #expect(syncCalls.isEmpty)
+
+        currentUserID = userID
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+
+        let retried = await waitUntil { syncCalls == [userID] }
+        #expect(retried)
+        #else
+        Issue.record("UIKit unavailable for foreground retry test on this platform")
+        #endif
+    }
+
+    @Test("Large history still prunes to max items")
+    @MainActor
+    func largeHistoryStillPrunes() {
+        let appDirectory = makeAppDirectory()
+        let store = HistoryStore(
+            supabase: makeSupabase(),
+            appDirectoryURL: appDirectory,
+            startAuthListener: false,
+            observeAppLifecycle: false,
+            sessionUserIDProvider: { nil },
+            syncExecutor: nil
+        )
+
+        for index in 0..<250 {
+            store.add(PromptHistoryItem(mode: .ai, input: "Input \(index)", professional: "Result \(index)", template: "Template"))
+        }
+
+        #expect(store.items.count == 200)
+    }
+
+    @Test("Signed-out launch clears local history for user isolation")
+    @MainActor
+    func signedOutLaunchClearsLocalHistory() async {
+        let appDirectory = makeAppDirectory()
+
+        do {
+            let seededStore = HistoryStore(
+                supabase: makeSupabase(),
+                appDirectoryURL: appDirectory,
+                startAuthListener: false,
+                observeAppLifecycle: false,
+                sessionUserIDProvider: { UUID() },
+                syncExecutor: { _ in }
+            )
+            let item = PromptHistoryItem(mode: .ai, input: "Seed", professional: "Result", template: "Template")
+            seededStore.add(item)
+            seededStore.remove(id: item.id)
+        }
+
+        let store = HistoryStore(
+            supabase: makeSupabase(),
+            appDirectoryURL: appDirectory,
+            startAuthListener: false,
+            observeAppLifecycle: false,
+            sessionUserIDProvider: { nil },
+            syncExecutor: nil
+        )
+
+        let cleared = await waitUntil { store.items.isEmpty }
+        #expect(cleared)
+
+        let pendingDeletesURL = appDirectory.appendingPathComponent("history_pending_deletes.json")
+        let data = try? Data(contentsOf: pendingDeletesURL)
+        let pendingDeletes = (try? JSONDecoder().decode([UUID].self, from: data ?? Data())) ?? [UUID()]
+        #expect(pendingDeletes.isEmpty)
+    }
+}
+
+private final class ManagedAtomicCounter: @unchecked Sendable {
+    private let lock = NSLock()
+    private var storage = 0
+
+    var value: Int {
+        lock.lock()
+        defer { lock.unlock() }
+        return storage
+    }
+
+    func increment() {
+        lock.lock()
+        storage += 1
+        lock.unlock()
+    }
+
+    func reset() {
+        lock.lock()
+        storage = 0
+        lock.unlock()
+    }
+}
 

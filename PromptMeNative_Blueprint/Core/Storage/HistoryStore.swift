@@ -1,5 +1,8 @@
 import Foundation
 @preconcurrency import Supabase
+#if canImport(UIKit)
+import UIKit
+#endif
 
 @MainActor
 protocol HistoryStoring: AnyObject {
@@ -110,7 +113,14 @@ final class HistoryStore {
 
     private let supabase: SupabaseClient
     private let fileURL: URL
+    private let pendingDeletesURL: URL
     private let maxItems = 200
+    private var pendingDeletedIDs: Set<UUID> = []
+    private let sessionUserIDProvider: (() async -> UUID?)?
+    private let syncExecutor: ((UUID) async -> Void)?
+    #if canImport(UIKit)
+    private var lifecycleObserverTokens: [NSObjectProtocol] = []
+    #endif
 
     /// Background task that listens to `supabase.auth.authStateChanges`.
     private var authListenerTask: Task<Void, Never>?
@@ -119,6 +129,8 @@ final class HistoryStore {
 
     init(supabase: SupabaseClient) {
         self.supabase = supabase
+        self.sessionUserIDProvider = nil
+        self.syncExecutor = nil
 
         let base = FileManager.default.urls(
             for: .applicationSupportDirectory, in: .userDomainMask
@@ -128,10 +140,48 @@ final class HistoryStore {
             at: appDir, withIntermediateDirectories: true
         )
         self.fileURL = appDir.appendingPathComponent("history.json")
+        self.pendingDeletesURL = appDir.appendingPathComponent("history_pending_deletes.json")
 
         loadFromDisk()
+        loadPendingDeletes()
         migrateLegacyJSONIfNeeded()
         startAuthListener()
+        startLifecycleObservers()
+        Task { [weak self] in
+            await self?.reconcileInitialSessionState()
+        }
+    }
+
+    init(
+        supabase: SupabaseClient,
+        appDirectoryURL: URL,
+        startAuthListener: Bool,
+        observeAppLifecycle: Bool = true,
+        sessionUserIDProvider: (() async -> UUID?)? = nil,
+        syncExecutor: ((UUID) async -> Void)? = nil
+    ) {
+        self.supabase = supabase
+        self.sessionUserIDProvider = sessionUserIDProvider
+        self.syncExecutor = syncExecutor
+
+        try? FileManager.default.createDirectory(
+            at: appDirectoryURL, withIntermediateDirectories: true
+        )
+        self.fileURL = appDirectoryURL.appendingPathComponent("history.json")
+        self.pendingDeletesURL = appDirectoryURL.appendingPathComponent("history_pending_deletes.json")
+
+        loadFromDisk()
+        loadPendingDeletes()
+        migrateLegacyJSONIfNeeded()
+        if startAuthListener {
+            startAuthListener()
+        }
+        if observeAppLifecycle {
+            startLifecycleObservers()
+        }
+        Task { [weak self] in
+            await self?.reconcileInitialSessionState()
+        }
     }
 
     // MARK: - Public API
@@ -154,13 +204,20 @@ final class HistoryStore {
     }
 
     func remove(id: UUID) {
+        guard fetchByID(id) != nil else { return }
+        pendingDeletedIDs.insert(id)
         items.removeAll { $0.id == id }
+        savePendingDeletes()
         saveToDisk()
+        triggerBestEffortSyncIfAuthenticated()
     }
 
     func clearAll() {
+        items.forEach { pendingDeletedIDs.insert($0.id) }
         items = []
+        savePendingDeletes()
         saveToDisk()
+        triggerBestEffortSyncIfAuthenticated()
     }
 
     func toggleFavorite(id: UUID) {
@@ -188,6 +245,15 @@ final class HistoryStore {
     /// 3. Merges by `lastModified` — remote wins when it is newer.
     /// 4. Marks successfully uploaded records as `isSynced = true`.
     func syncWithSupabase(userId: UUID) async {
+        if let syncExecutor {
+            guard !isSyncing else { return }
+            isSyncing = true
+            defer { isSyncing = false }
+            await syncExecutor(userId)
+            return
+        }
+
+        guard !isSyncing else { return }
         isSyncing = true
         defer { isSyncing = false }
 
@@ -209,6 +275,26 @@ final class HistoryStore {
                 #endif
             }
 
+            // ── Step 1.5: propagate pending deletes ───────────────────────
+            if !pendingDeletedIDs.isEmpty {
+                let deleteIDs = Array(pendingDeletedIDs)
+                for id in deleteIDs {
+                    try await supabase
+                        .from("prompts")
+                        .delete()
+                        .eq("user_id", value: userId.uuidString)
+                        .eq("id", value: id.uuidString)
+                        .execute()
+                }
+
+                pendingDeletedIDs.subtract(deleteIDs)
+                savePendingDeletes()
+
+                #if DEBUG
+                print("☁️ [HistoryStore] Deleted \(deleteIDs.count) record(s) from Supabase")
+                #endif
+            }
+
             // ── Step 2: fetch all remote records for this user ─────────────
             let remote: [PromptRecord] = try await supabase
                 .from("prompts")
@@ -220,6 +306,9 @@ final class HistoryStore {
             // ── Step 3: last-write-wins merge ──────────────────────────────
             var merged = Dictionary(uniqueKeysWithValues: items.map { ($0.id, $0) })
             for record in remote {
+                if pendingDeletedIDs.contains(record.id) {
+                    continue
+                }
                 if let local = merged[record.id] {
                     if record.lastModified > local.lastModified {
                         // Remote wins — overwrite the local item in place.
@@ -270,8 +359,15 @@ final class HistoryStore {
             guard let self else { return }
             for await (event, session) in supabase.auth.authStateChanges {
                 guard !Task.isCancelled else { break }
-                if event == .signedIn, let userId = session?.user.id {
-                    await self.syncWithSupabase(userId: userId)
+                switch event {
+                case .signedIn, .tokenRefreshed, .userUpdated:
+                    if let userId = session?.user.id {
+                        await self.syncWithSupabase(userId: userId)
+                    }
+                case .signedOut, .userDeleted:
+                    self.resetLocalStateForSignedOutUser()
+                default:
+                    break
                 }
             }
         }
@@ -283,15 +379,63 @@ final class HistoryStore {
         items.first { $0.id == id }
     }
 
+    private func reconcileInitialSessionState() async {
+        if let userId = await currentSessionUserID() {
+            await syncWithSupabase(userId: userId)
+        } else {
+            resetLocalStateForSignedOutUser()
+        }
+    }
+
     private func triggerBestEffortSyncIfAuthenticated() {
         guard !isSyncing else { return }
 
         Task { [weak self] in
             guard let self else { return }
             guard !self.isSyncing else { return }
-            guard let session = try? await self.supabase.auth.session else { return }
-            await self.syncWithSupabase(userId: session.user.id)
+            guard let userId = await self.currentSessionUserID() else { return }
+            await self.syncWithSupabase(userId: userId)
         }
+    }
+
+    private func hasPendingSyncWork() -> Bool {
+        items.contains(where: { !$0.isSynced }) || !pendingDeletedIDs.isEmpty
+    }
+
+    private func startLifecycleObservers() {
+        #if canImport(UIKit)
+        let notificationNames: [Notification.Name] = [
+            UIApplication.willEnterForegroundNotification,
+            UIApplication.didBecomeActiveNotification
+        ]
+
+        for name in notificationNames {
+            let token = NotificationCenter.default.addObserver(
+                forName: name,
+                object: nil,
+                queue: .main
+            ) { [weak self] _ in
+                guard let self else { return }
+                guard self.hasPendingSyncWork() else { return }
+                self.triggerBestEffortSyncIfAuthenticated()
+            }
+            lifecycleObserverTokens.append(token)
+        }
+        #endif
+    }
+
+    private func currentSessionUserID() async -> UUID? {
+        if let sessionUserIDProvider {
+            return await sessionUserIDProvider()
+        }
+        return try? await supabase.auth.session.user.id
+    }
+
+    private func resetLocalStateForSignedOutUser() {
+        items = []
+        pendingDeletedIDs = []
+        savePendingDeletes()
+        saveToDisk()
     }
 
     private func copyFields(
@@ -335,6 +479,18 @@ final class HistoryStore {
         }
     }
 
+    private func savePendingDeletes() {
+        do {
+            let data = try JSONEncoder().encode(Array(pendingDeletedIDs))
+            try data.write(to: pendingDeletesURL, options: [.atomic])
+        } catch {
+            TelemetryService.shared.logStorageError(
+                code: "SAVE_PENDING_DELETES_FAILED",
+                message: "Failed to save pending history deletes: \(error.localizedDescription)"
+            )
+        }
+    }
+
     private func loadFromDisk() {
         guard FileManager.default.fileExists(atPath: fileURL.path) else {
             items = []
@@ -351,6 +507,25 @@ final class HistoryStore {
             TelemetryService.shared.logStorageError(
                 code: "LOAD_FAILED",
                 message: "Failed to load history: \(error.localizedDescription)"
+            )
+        }
+    }
+
+    private func loadPendingDeletes() {
+        guard FileManager.default.fileExists(atPath: pendingDeletesURL.path) else {
+            pendingDeletedIDs = []
+            return
+        }
+
+        do {
+            let data = try Data(contentsOf: pendingDeletesURL)
+            let decoded = try JSONDecoder().decode([UUID].self, from: data)
+            pendingDeletedIDs = Set(decoded)
+        } catch {
+            pendingDeletedIDs = []
+            TelemetryService.shared.logStorageError(
+                code: "LOAD_PENDING_DELETES_FAILED",
+                message: "Failed to load pending history deletes: \(error.localizedDescription)"
             )
         }
     }
