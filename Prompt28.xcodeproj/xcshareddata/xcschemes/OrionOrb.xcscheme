@@ -41,17 +41,6 @@
                ReferencedContainer = "container:Prompt28.xcodeproj">
             </BuildableReference>
          </TestableReference>
-         <TestableReference
-            skipped = "NO"
-            parallelizable = "YES">
-            <BuildableReference
-               BuildableIdentifier = "primary"
-               BlueprintIdentifier = "CCD1CE112F5C55FC00566BCF"
-               BuildableName = "Prompt28UITests.xctest"
-               BlueprintName = "Prompt28UITests"
-               ReferencedContainer = "container:Prompt28.xcodeproj">
-            </BuildableReference>
-         </TestableReference>
       </Testables>
    </TestAction>
    <LaunchAction
