@@ -46,6 +46,9 @@ struct FavoritesView: View {
                         }
                         .padding(.horizontal, 24)
                     }
+                    .refreshable {
+                        await viewModel.syncWithRemote()
+                    }
                 }
             }
             .toolbar(.hidden, for: .navigationBar)
