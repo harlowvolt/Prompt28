@@ -383,7 +383,7 @@ struct HistoryStoreTests {
             supabase: makeSupabase(),
             appDirectoryURL: appDirectory,
             startAuthListenerOnInit: false,
-            observeAppLifecycle: true,
+            observeAppLifecycle: false,
             reconcileInitialSessionOnInit: false,
             sessionUserIDProvider: { currentUserID },
             syncExecutor: { id in syncCalls.append(id) }

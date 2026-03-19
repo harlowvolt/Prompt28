@@ -316,13 +316,19 @@ Uses standard XCTest framework for end-to-end testing.
   - `Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork`
   - initial session reconciliation race already removed for that test
   - direct invocation seam added so the test no longer depends on UIKit foreground notification delivery
+  - lifecycle observation is now also disabled for that test, so it no longer depends on hosted app lifecycle behavior
   - hosted run still does not complete with a real pass/fail result
+  - latest process inspection showed only `xcodebuild` alive after build/package handoff, with no visible `xctest`/`XCTRunner` process
 - Automated validation completion is still pending unless `xcodebuild test` has completed with real pass/fail output.
 
 ## Known Remaining Gaps
 
 - Do not mark Phase 2 hardening as complete until history validation actually finishes end to end.
 - Current repo state supports more deterministic testing, but test-execution completion still needs to be proven in a clean run.
+- Latest attempted command:
+  - `xcodebuild test -project Prompt28.xcodeproj -scheme OrionOrb -destination 'id=06B488AD-877C-4EC1-A472-E2053BD31DB9' -derivedDataPath /tmp/Prompt28DerivedData -only-testing:Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork -resultBundlePath /tmp/prompt28-foregroundRetry-4.xcresult`
+- Latest result:
+  - no real XCTest result returned
 - Next recommended move is to inspect the hosted test runner/process state specifically for `foregroundRetrySyncsPendingWork` after build/package handoff, then resume one-by-one `HistoryStoreTests` validation on the same simulator/UDID.
 
 ---

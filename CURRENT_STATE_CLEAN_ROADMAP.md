@@ -57,7 +57,9 @@ This roadmap separates **current working reality** from **next critical steps** 
    - `Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork`
    - init-time session reconciliation race already removed for this test
    - test no longer depends on `UIApplication.didBecomeActiveNotification`; it calls the foreground retry path directly
+   - lifecycle observation is now also disabled for this test so it is fully isolated from hosted app lifecycle behavior
    - hosted run still does not return a real pass/fail result yet
+   - latest process inspection showed only `xcodebuild` alive after build/package handoff, not an active `xctest`/`XCTRunner` process
 4. ⏳ Remaining `HistoryStoreTests` should continue one-by-one only after the foreground retry blocker is understood
 
 ### Build Info
@@ -83,6 +85,10 @@ This roadmap separates **current working reality** from **next critical steps** 
    - `/tmp/Prompt28DerivedData`
 3. Resolve the remaining first blocker:
    - `Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork`
+   - latest attempted command:
+     - `xcodebuild test -project Prompt28.xcodeproj -scheme OrionOrb -destination 'id=06B488AD-877C-4EC1-A472-E2053BD31DB9' -derivedDataPath /tmp/Prompt28DerivedData -only-testing:Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork -resultBundlePath /tmp/prompt28-foregroundRetry-4.xcresult`
+   - latest result:
+     - no real XCTest pass/fail result returned
 4. After that blocker is resolved, run remaining `HistoryStoreTests` one-by-one, not as a full suite first
 5. Do not mark Phase 2 hardening complete until `xcodebuild test` returns real pass/fail results for the history validation cases
 

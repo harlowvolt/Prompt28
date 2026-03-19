@@ -330,7 +330,9 @@ File: `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift`
   - `Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork`
   - initial session reconciliation race was removed for this test
   - UIKit notification dependency was removed for this test by calling the foreground retry path directly
+  - lifecycle observation was also disabled for this test so it is fully isolated from hosted app lifecycle behavior
   - despite that, the hosted run still does not return a real XCTest pass/fail result yet
+  - latest process inspection showed `xcodebuild` still alive after build/package handoff with no active `xctest`/`XCTRunner` process visible, which points to hosted runner/process launch behavior rather than the test body itself
 - **Important truth:** automated validation completion is still pending unless `xcodebuild test` returns real pass/fail results. Do not claim Phase 2 hardening is fully validated yet.
 
 ## Known Remaining Gaps
@@ -338,9 +340,14 @@ File: `PromptMeNative_Blueprint/Core/Storage/HistoryStore.swift`
 - End-to-end automated validation is not yet fully complete.
 - The storage hardening implementation is in place, but `xcodebuild test` completion still needs to be proven with real pass/fail output.
 - The first remaining validation blocker is still `Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork`.
+- Latest test command run:
+  - `xcodebuild test -project Prompt28.xcodeproj -scheme OrionOrb -destination 'id=06B488AD-877C-4EC1-A472-E2053BD31DB9' -derivedDataPath /tmp/Prompt28DerivedData -only-testing:Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork -resultBundlePath /tmp/prompt28-foregroundRetry-4.xcresult`
+- Latest result:
+  - no real XCTest pass/fail result returned
+  - run stopped after repeated quiet periods post-build/package handoff
 - Phase 2 hardening should not be marked complete until the history validation suite actually finishes successfully.
 - Recommended next step:
-  - inspect the hosted test runner state for `foregroundRetrySyncsPendingWork` after build/package handoff
+  - inspect why hosted test launch is not producing an `xctest`/`XCTRunner` process for `foregroundRetrySyncsPendingWork` after build/package handoff
   - determine whether the remaining stall is XCTest-host/process startup, not test-body logic
   - only after that continue the rest of `HistoryStoreTests` one-by-one on the same simulator/UDID
 
