@@ -250,9 +250,10 @@ struct HistoryStoreTests {
         return dir
     }
 
+    @MainActor
     private func waitUntil(
         timeoutNanoseconds: UInt64 = 1_000_000_000,
-        condition: @escaping @Sendable () -> Bool
+        condition: @escaping () -> Bool
     ) async -> Bool {
         let deadline = DispatchTime.now().uptimeNanoseconds + timeoutNanoseconds
         while DispatchTime.now().uptimeNanoseconds < deadline {
@@ -273,7 +274,7 @@ struct HistoryStoreTests {
         _ = HistoryStore(
             supabase: makeSupabase(),
             appDirectoryURL: appDirectory,
-            startAuthListener: false,
+            startAuthListenerOnInit: false,
             observeAppLifecycle: false,
             sessionUserIDProvider: { userID },
             syncExecutor: { id in syncCalls.append(id) }
@@ -293,7 +294,7 @@ struct HistoryStoreTests {
         let store = HistoryStore(
             supabase: makeSupabase(),
             appDirectoryURL: appDirectory,
-            startAuthListener: false,
+            startAuthListenerOnInit: false,
             observeAppLifecycle: false,
             sessionUserIDProvider: { userID },
             syncExecutor: { id in syncCalls.append(id) }
@@ -322,7 +323,7 @@ struct HistoryStoreTests {
         let store = HistoryStore(
             supabase: makeSupabase(),
             appDirectoryURL: appDirectory,
-            startAuthListener: false,
+            startAuthListenerOnInit: false,
             observeAppLifecycle: false,
             sessionUserIDProvider: { userID },
             syncExecutor: { _ in
@@ -355,7 +356,7 @@ struct HistoryStoreTests {
             let store = HistoryStore(
                 supabase: makeSupabase(),
                 appDirectoryURL: appDirectory,
-                startAuthListener: false,
+                startAuthListenerOnInit: false,
                 observeAppLifecycle: false,
                 sessionUserIDProvider: { nil },
                 syncExecutor: nil
@@ -381,7 +382,7 @@ struct HistoryStoreTests {
         let store = HistoryStore(
             supabase: makeSupabase(),
             appDirectoryURL: appDirectory,
-            startAuthListener: false,
+            startAuthListenerOnInit: false,
             observeAppLifecycle: true,
             sessionUserIDProvider: { currentUserID },
             syncExecutor: { id in syncCalls.append(id) }
@@ -410,7 +411,7 @@ struct HistoryStoreTests {
         let store = HistoryStore(
             supabase: makeSupabase(),
             appDirectoryURL: appDirectory,
-            startAuthListener: false,
+            startAuthListenerOnInit: false,
             observeAppLifecycle: false,
             sessionUserIDProvider: { nil },
             syncExecutor: nil
@@ -432,7 +433,7 @@ struct HistoryStoreTests {
             let seededStore = HistoryStore(
                 supabase: makeSupabase(),
                 appDirectoryURL: appDirectory,
-                startAuthListener: false,
+                startAuthListenerOnInit: false,
                 observeAppLifecycle: false,
                 sessionUserIDProvider: { UUID() },
                 syncExecutor: { _ in }
@@ -445,7 +446,7 @@ struct HistoryStoreTests {
         let store = HistoryStore(
             supabase: makeSupabase(),
             appDirectoryURL: appDirectory,
-            startAuthListener: false,
+            startAuthListenerOnInit: false,
             observeAppLifecycle: false,
             sessionUserIDProvider: { nil },
             syncExecutor: nil
@@ -483,4 +484,3 @@ private final class ManagedAtomicCounter: @unchecked Sendable {
         lock.unlock()
     }
 }
-

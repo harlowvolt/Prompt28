@@ -171,7 +171,7 @@
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		CCD1CE0B2F5C55FC00566BCF /* Prompt28Tests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = Prompt28Tests;
+			path = OrionOrbTests;
 			sourceTree = "<group>";
 		};
 		CCD1CE152F5C55FC00566BCF /* Prompt28UITests */ = {

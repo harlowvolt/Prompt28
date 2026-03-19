@@ -155,7 +155,7 @@ final class HistoryStore {
     init(
         supabase: SupabaseClient,
         appDirectoryURL: URL,
-        startAuthListener: Bool,
+        startAuthListenerOnInit: Bool,
         observeAppLifecycle: Bool = true,
         sessionUserIDProvider: (() async -> UUID?)? = nil,
         syncExecutor: ((UUID) async -> Void)? = nil
@@ -173,7 +173,7 @@ final class HistoryStore {
         loadFromDisk()
         loadPendingDeletes()
         migrateLegacyJSONIfNeeded()
-        if startAuthListener {
+        if startAuthListenerOnInit {
             startAuthListener()
         }
         if observeAppLifecycle {
@@ -415,9 +415,11 @@ final class HistoryStore {
                 object: nil,
                 queue: .main
             ) { [weak self] _ in
-                guard let self else { return }
-                guard self.hasPendingSyncWork() else { return }
-                self.triggerBestEffortSyncIfAuthenticated()
+                Task { @MainActor [weak self] in
+                    guard let self else { return }
+                    guard self.hasPendingSyncWork() else { return }
+                    self.triggerBestEffortSyncIfAuthenticated()
+                }
             }
             lifecycleObserverTokens.append(token)
         }
