@@ -169,8 +169,11 @@ final class StoreManager {
                         _ = self.purchasedProductIDs.insert(transaction.productID)
                     }
                     await transaction.finish()
-                    // Sync server plan tier for background transaction updates
-                    // (renewals, cross-device restores, family sharing, etc.).
+                    // Sync plan to Supabase user_metadata for renewals, restores,
+                    // family sharing, and any background transaction updates.
+                    if let planTier = await self.planType(for: transaction.productID) {
+                        await self.syncPlanToSupabase(planTier)
+                    }
                     await self.authManager.refreshMe()
                 } catch {}
             }
