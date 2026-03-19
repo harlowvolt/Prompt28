@@ -5,6 +5,10 @@
 //   ANTHROPIC_API_KEY   — preferred (get from console.anthropic.com)
 //   OPENAI_API_KEY      — fallback  (get from platform.openai.com)
 //
+// Built-in Supabase secrets (auto-available in Edge Functions):
+//   SUPABASE_URL
+//   SUPABASE_SERVICE_ROLE_KEY
+//
 // Set via CLI:
 //   supabase secrets set ANTHROPIC_API_KEY=sk-ant-...
 //
@@ -18,6 +22,8 @@ const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
+const FREE_MONTHLY_LIMIT = 10;
+
 interface GenerateRequest {
   input: string;
   refinement?: string | null;
@@ -28,6 +34,9 @@ interface GenerateRequest {
 interface GenerateResponse {
   professional: string;
   template: string;
+  prompts_used: number;
+  prompts_remaining: number | null;
+  plan: string;
 }
 
 const defaultSystemPrompts: Record<string, string> = {
@@ -57,19 +66,55 @@ Deno.serve(async (req: Request) => {
       return errorResponse("Input too short.", 400);
     }
 
-    // ── Auth: verify Supabase JWT ─────────────────────────────────────────────
+    // ── Auth: verify Supabase JWT & extract user ──────────────────────────────
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return errorResponse("Unauthorized.", 401);
     }
+
+    let userPlan = "starter"; // default — overridden by user_metadata if set
+    let promptsUsedBefore = 0; // pre-generation count for this billing period
+
     if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
         auth: { persistSession: false },
       });
       const token = authHeader.replace("Bearer ", "");
-      const { error: authError } = await supabase.auth.getUser(token);
-      if (authError) {
+      const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+      if (authError || !user) {
         return errorResponse("Invalid or expired session.", 401);
+      }
+
+      // Plan override: App Store Server Notifications webhook (Phase 3.5+) can write
+      // plan = "pro" or "unlimited" into user_metadata so metering is bypassed.
+      const metaPlan = user.user_metadata?.plan as string | undefined;
+      if (metaPlan === "pro" || metaPlan === "unlimited") {
+        userPlan = metaPlan;
+      }
+
+      // ── Server-side usage metering (starter plan only) ─────────────────────
+      // Count prompts this calendar month. The iOS app writes to the `prompts`
+      // table after a successful generation, so this count = pre-generation total.
+      // Gate at FREE_MONTHLY_LIMIT before calling the AI to avoid wasted credits.
+      if (userPlan === "starter") {
+        const periodStart = new Date();
+        periodStart.setUTCDate(1);
+        periodStart.setUTCHours(0, 0, 0, 0);
+
+        const { count, error: countError } = await supabase
+          .from("prompts")
+          .select("id", { count: "exact", head: true })
+          .eq("user_id", user.id)
+          .gte("created_at", periodStart.toISOString());
+
+        if (!countError && count !== null && count >= FREE_MONTHLY_LIMIT) {
+          return errorResponse(
+            "Monthly generation limit reached. Upgrade to Pro for unlimited prompts.",
+            429,
+          );
+        }
+
+        promptsUsedBefore = count ?? 0;
       }
     }
 
@@ -123,7 +168,20 @@ Deno.serve(async (req: Request) => {
       return errorResponse("AI returned an empty result. Please try again.", 502);
     }
 
-    const result: GenerateResponse = { professional, template };
+    // ── Build usage metadata for iOS UsageTracker sync ───────────────────────
+    const promptsUsed = userPlan === "starter" ? promptsUsedBefore + 1 : 0;
+    const promptsRemaining = userPlan === "starter"
+      ? Math.max(0, FREE_MONTHLY_LIMIT - promptsUsed)
+      : null;
+
+    const result: GenerateResponse = {
+      professional,
+      template,
+      prompts_used: promptsUsed,
+      prompts_remaining: promptsRemaining,
+      plan: userPlan,
+    };
+
     return new Response(JSON.stringify(result), {
       headers: { "Content-Type": "application/json", "Access-Control-Allow-Origin": "*" },
     });

@@ -241,7 +241,13 @@ final class GenerateViewModel {
                 }
             } else if let edgeMessage = edgeFunctionErrorMessage(from: error) {
                 // Edge Function returned a non-2xx response with a JSON body like
-                // { "error": "OpenAI API key is invalid…" }. Show that message directly.
+                // { "error": "Monthly generation limit reached…" }. Show that message directly.
+                // If the function returned 429, also open the paywall.
+                if edgeFunctionHTTPStatus(from: error) == 429 {
+                    showPaywall = true
+                    AnalyticsService.shared.track(.generateRateLimited)
+                    AnalyticsService.shared.track(.paywallShown)
+                }
                 errorMessage = edgeMessage
             } else {
                 errorMessage = error.localizedDescription
@@ -338,6 +344,22 @@ final class GenerateViewModel {
     }
 
     // MARK: - Edge Function error extraction
+
+    /// Extracts the HTTP status code from a Supabase `FunctionsError.httpError(code:data:)`.
+    /// Returns `nil` for any other error type.
+    private func edgeFunctionHTTPStatus(from error: Error) -> Int? {
+        let m = Mirror(reflecting: error)
+        // FunctionsError.httpError has associated values (code: Int, data: Data?)
+        // The first child is the enum case label; the value is a tuple of associated values.
+        for child in m.children {
+            let inner = Mirror(reflecting: child.value)
+            for innerChild in inner.children {
+                if let code = innerChild.value as? Int { return code }
+            }
+            if let code = child.value as? Int { return code }
+        }
+        return nil
+    }
 
     /// Extracts a human-readable error message from a Supabase `FunctionsError`.
     ///
