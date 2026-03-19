@@ -1,8 +1,8 @@
-# Orion Orb — Clean Roadmap (Post-Phase-2, v1.9)
+# Orion Orb — Clean Roadmap (Phase 3 Active, v2.5)
 
 **Last updated: 2026-03-19**
-**Version**: v2.4 (Phase 2 hardening / Phase 2.5 → Phase 3 foundation)
-**Status**: Phase 2 hardening in progress — auth session bug fixed, UpgradeView paywall unblocked, generation error messaging corrected, physical-device validation is the current practical path
+**Version**: v2.5 (Phase 3 active — Supabase Edge Function live, generation working end-to-end)
+**Status**: Supabase Edge Function deployed (`generate`), Anthropic API wired, iOS routing active via Info.plist flag, pull-to-refresh sync added. Generation is fully unblocked. Next: Apple Sign In + App Store Connect IAP setup.
 
 This roadmap separates **current working reality** from **next critical steps** from **long-term vision**. It is grounded in actual code, not aspirations.
 
@@ -63,24 +63,24 @@ This roadmap separates **current working reality** from **next critical steps** 
 26. ✅ **Phase 3 foundation wired**: `GenerateViewModel` now checks `SUPABASE_GENERATE_FUNCTION` in Info.plist. When set to a deployed Edge Function name (e.g. `"generate"`), generation routes to `supabase.functions.invoke()` instead of Railway — carrying the Supabase JWT natively and bypassing the Railway auth incompatibility. Currently set to `""` (disabled — Railway fallback active).
 27. ✅ `HomeView` and `RootView` thread `SupabaseClient` through to `GenerateViewModel` so Edge Function path works end-to-end when enabled.
 28. ✅ `EdgeGenerateResponse` DTO defined — Edge Function only needs to return `{ professional, template }`, usage/plan metadata filled in locally if absent.
+29. ✅ **Phase 3 deployed**: `supabase/functions/generate/index.ts` deployed to Supabase project `jzwerkqoczhtkyhigigf`. Uses Anthropic Claude (`claude-haiku-4-5-20251001`) as primary AI provider with OpenAI GPT-4o-mini as fallback. Verifies Supabase JWT server-side.
+30. ✅ `SUPABASE_GENERATE_FUNCTION` in Info.plist set to `"generate"` — iOS now routes all generation through the Edge Function (Railway retired as primary).
+31. ✅ `StoreManager.activePlan` added — reads StoreKit receipt-backed `purchasedProductIDs` directly, bypassing Railway plan sync failure. Paid users are no longer gated as `.starter`.
+32. ✅ `GenerateViewModel.edgeFunctionErrorMessage(from:)` — Mirror-based extraction of `FunctionsError.httpError` data payload, decodes `{ "error": "..." }` JSON body. Meaningful errors shown instead of raw status codes.
+33. ✅ Settings red error banner silenced — `loadRemoteSettings()` Railway 401 now logs silently via TelemetryService. AppSettings is cosmetic only.
+34. ✅ `deleteAccount()` Railway call removed — now calls `historyStore.clearAll() + authManager.logout()` directly (Supabase Edge Function for full server-side deletion is a Phase 3 TODO).
+35. ✅ `TrendingViewModel` bundled JSON fallback — loads `trending_prompts.json` from app bundle before API attempt, so trending tab never shows blank screen offline.
+36. ✅ `HistoryStoring` protocol extended with `isSyncing: Bool` and `func forceSync() async`.
+37. ✅ `HistoryViewModel` exposes `isSyncing` and `syncWithRemote()` forwarding to the store.
+38. ✅ Pull-to-refresh added to `HistoryView` — calls `viewModel.syncWithRemote()` for manual Supabase sync validation.
 
 ### What's NOT Fully Validated Yet
 
-1. ⏳ Automated validation of `HistoryStore` is not complete yet
-2. ⏳ Physical iPhone manual validation is now the primary short-term validation path
-3. ⏳ Simulator ambiguity is solved:
-   - use only `Prompt28-iPhone17`
-   - UDID `06B488AD-877C-4EC1-A472-E2053BD31DB9`
-4. ⏳ Confirmed passing hosted test:
-   - `Prompt28Tests/HistoryStoreTests/coldLaunchExistingSessionTriggersSync`
-5. ⏳ Current isolated hosted-test blocker:
-   - `Prompt28Tests/HistoryStoreTests/foregroundRetrySyncsPendingWork`
-   - init-time session reconciliation race already removed for this test
-   - test no longer depends on `UIApplication.didBecomeActiveNotification`; it calls the foreground retry path directly
-   - lifecycle observation is now also disabled for this test so it is fully isolated from hosted app lifecycle behavior
-   - hosted run still does not return a real pass/fail result yet
-   - latest process inspection showed only `xcodebuild` alive after build/package handoff, not an active `xctest`/`XCTRunner` process
-6. ⏳ Roadmap progress should continue despite the isolated hosted-test issue
+1. ⏳ Physical iPhone end-to-end generation validation — build and run on device with `SUPABASE_GENERATE_FUNCTION=generate` active
+2. ⏳ Apple Sign In — Supabase dashboard Apple provider not yet configured (requires Apple Developer Services ID + .p8 key)
+3. ⏳ App Store Connect IAP products not yet created (`com.prompt28.pro.monthly`, `.pro.yearly`, `.unlimited.monthly`, `.unlimited.yearly`)
+4. ⏳ Supabase Edge Function for account deletion (server-side user delete requires service role — Phase 3 TODO)
+5. ⏳ Simulator validation: use only `Prompt28-iPhone17` / UDID `06B488AD-877C-4EC1-A472-E2053BD31DB9`
 
 ### Build Info
 
@@ -94,41 +94,57 @@ This roadmap separates **current working reality** from **next critical steps** 
 
 ---
 
-## Part 2: Immediate Next Steps (Before Phase 3)
+## Part 2: Immediate Next Steps
 
-### Step 1: Finish Phase 2 History Validation
+### Step 1: Validate Edge Function Generation On Device
 
-1. Use physical iPhone manual validation as the primary short-term validation path
-2. Verify History/Favorites behavior end to end on device:
-   - cold launch with existing session
-   - create prompt
-   - favorite toggle
-   - rename
-   - delete propagation
-   - offline mutation then reconnect
-   - sign out / sign in with different user isolation
-3. Keep hosted simulator validation as secondary:
-   - simulator ambiguity is solved via `Prompt28-iPhone17` / `06B488AD-877C-4EC1-A472-E2053BD31DB9`
-   - one hosted test passes
-   - one hosted test remains isolated/sticky
-4. Continue roadmap execution despite the isolated hosted-test issue
-5. Do not mark Phase 2 hardening complete until confidence is established through manual validation and/or eventual full automated pass/fail coverage
+1. `git pull` on Mac, then rebuild in Xcode targeting physical iPhone
+2. Sign in → tap orb → speak or type a prompt → tap Generate
+3. Confirm the generated result appears (no error banner)
+4. Check Supabase dashboard → Table Editor → `prompts` table — new row should appear
+5. Pull down on History tab — confirm pull-to-refresh spinner appears and item is there
+6. Test refinement (type in the refine field, tap refine) — should call Edge Function again
+7. Confirm paywall only appears after 10 free generations
 
-### Step 1.5: Validate Prompt Generation On Device
+### Step 2: Apple Sign In Setup (Manual — Requires Apple Developer Account)
 
-1. Generation is still routed through the legacy Railway `/api/generate` path in Phase 2
-2. StoreKit product loading failure should not block free-tier generation
-3. The app now refreshes the Supabase session token before generate and retries once on legacy 401/session-expired responses
-4. Generate failures should now surface real backend/body text on device when possible
-5. Validate on physical iPhone before doing more monetization hardening:
-   - signed-in generate from Home
-   - typed generate from sheet
-   - relaunch then generate immediately
-   - confirm paywall only appears when usage is actually exhausted
+Apple Sign In requires config in both Apple Developer Portal and Supabase. Steps:
 
-### Step 2: Verify Live Supabase Assumptions
+**Apple Developer Portal** (developer.apple.com):
+1. Identifiers → create a **Services ID** (e.g. `com.yourapp.siwa`)
+   - Enable "Sign In with Apple"
+   - Add your Supabase callback URL: `https://jzwerkqoczhtkyhigigf.supabase.co/auth/v1/callback`
+2. Keys → create a new **Key** with "Sign In with Apple" enabled
+   - Download the `.p8` private key file (save it — you only get one download)
+   - Note the **Key ID**
+3. Note your **Team ID** from the top-right of developer.apple.com
 
-If not already created or confirmed, execute/verify these SQL statements in your Supabase SQL editor:
+**Supabase Dashboard** (supabase.com/dashboard → your project):
+1. Authentication → Providers → Apple → Enable
+2. Fill in:
+   - **Services ID** (the `com.yourapp.siwa` you created)
+   - **Team ID**
+   - **Key ID**
+   - **Private Key** (paste the contents of the `.p8` file)
+3. Save
+
+### Step 3: App Store Connect IAP Products
+
+Create four subscription products in App Store Connect → your app → In-App Purchases → Subscriptions:
+
+| Product ID | Type | Price tier |
+|-----------|------|-----------|
+| `com.prompt28.pro.monthly` | Auto-renewable | ~$4.99/mo |
+| `com.prompt28.pro.yearly` | Auto-renewable | ~$39.99/yr |
+| `com.prompt28.unlimited.monthly` | Auto-renewable | ~$9.99/mo |
+| `com.prompt28.unlimited.yearly` | Auto-renewable | ~$79.99/yr |
+
+These product IDs must match exactly what `StoreProductID` enum defines in `StoreManager.swift`.
+After creating them, StoreKit will return them — the "Loading plans…" banner will resolve automatically.
+
+### Step 4: Verify Supabase Tables (if not already done)
+
+Run these SQL statements in your Supabase SQL editor if not already created:
 
 ```sql
 -- prompts table (history sync)
@@ -148,52 +164,15 @@ alter table prompts enable row level security;
 create policy "Users own their prompts"
   on prompts for all using (auth.uid() = user_id);
 create index prompts_user_id_idx on prompts(user_id);
-
--- events table (analytics)
-create table events (
-  id       uuid primary key default gen_random_uuid(),
-  user_id  uuid,
-  event    text not null,
-  metadata jsonb,
-  created_at timestamptz default now()
-);
-alter table events enable row level security;
-create policy "Users can read their events"
-  on events for select using (auth.uid() = user_id);
-
--- telemetry_errors table (error logs)
-create table telemetry_errors (
-  id       uuid primary key default gen_random_uuid(),
-  user_id  uuid,
-  code     text not null,
-  message  text not null,
-  metadata jsonb,
-  created_at timestamptz default now()
-);
-alter table telemetry_errors enable row level security;
-create policy "Users can read their errors"
-  on telemetry_errors for select using (auth.uid() = user_id);
 ```
 
-**Verification**: Query each table in Supabase dashboard to confirm existence.
-
-### Step 3: Verify Signed-In Sync Flow
-
-1. Sign in to the app
-2. Create a new prompt (Home tab)
-3. Check Supabase `prompts` table — new row should appear with `user_id` matching your auth user
-4. Modify the prompt locally (favorite toggle)
-5. Verify `last_modified` and `isSynced` fields update correctly
-6. Force refresh (pull-to-refresh on History tab)
-7. Confirm remote changes merge back to local JSON
-
-### Step 4: Test Offline Resilience
+### Step 5: Test Offline Resilience
 
 1. Create a prompt
 2. Put app in airplane mode
 3. Modify the prompt (favorite, rename, delete)
 4. Disable airplane mode
-5. Force refresh
+5. Pull-to-refresh on History tab
 6. Verify changes sync correctly (last-write-wins)
 
 ---
@@ -397,12 +376,17 @@ When implementing Phase 3+ features:
 |-------|--------|-----------|
 | Supabase anon key format | ✅ Publishable key (`sb_publishable_...`) is correct format | In Info.plist |
 | Auth "session expired" on login | ✅ Fixed — bootstrap now clears stale SDK session | `AuthManager.bootstrap()` |
-| Supabase tables missing | ⏳ Awaiting creation | Run SQL setup scripts in CURRENT_STATE_CLEAN_ROADMAP Step 2 |
-| Railway user plan fetch fails | ⏳ By design — Supabase JWTs rejected by Railway | Phase 3: migrate to Edge Functions |
-| Railway generate call fails (401) | ⏳ By design — Supabase JWTs rejected | Shows clear error now; Phase 3 migration fix |
+| Railway generate call fails (401) | ✅ Resolved — generation now routes through Supabase Edge Function | `SUPABASE_GENERATE_FUNCTION=generate` |
+| Railway user plan fetch fails | ✅ Mitigated — `StoreManager.activePlan` reads StoreKit receipts directly | `StoreManager.swift` |
+| Settings red error banner | ✅ Fixed — Railway 401 silenced, logged via TelemetryService | `SettingsViewModel.swift` |
+| `deleteAccount()` Railway call | ✅ Fixed — calls `clearAll() + logout()` directly | `SettingsViewModel.swift` |
+| Trending blank screen offline | ✅ Fixed — bundled JSON fallback loads before API call | `TrendingViewModel.swift` |
+| Edge Function error shows raw status | ✅ Fixed — Mirror extraction + JSON decode shows real message | `GenerateViewModel.swift` |
 | UpgradeView "Loading plans…" forever | ✅ Fixed — `productsLoaded` state + fallback UI | `UpgradeView.swift` |
-| Metal Orb not rolling out | ✅ Ready | Enable feature flag |
+| Apple Sign In not configured | ⏳ Requires Apple Developer setup + Supabase dashboard config | See Step 2 in Part 2 |
 | IAP products not available | ⏳ Awaiting App Store Connect setup | Create products in App Store Connect |
+| Account deletion (server-side) | ⏳ Phase 3 — requires Edge Function with service role | Supabase Edge Function TODO |
+| Metal Orb not rolling out | ✅ Ready | Enable `is_metal_orb_enabled` feature flag |
 
 ---
 
@@ -411,6 +395,7 @@ When implementing Phase 3+ features:
 - **v1.0-1.8**: Early phases (SwiftData era, CloudKit attempts)
 - **v1.8** (2026-03-18): Phase 2 Supabase SDK integration, SwiftData removed, JSON + sync functional
 - **v1.9** (2026-03-18 cleanup): Documentation cleaned, roadmap clarified, post-Phase-2 state documented
+- **v2.5** (2026-03-19): Phase 3 foundation complete — Supabase Edge Function deployed (Anthropic API), Railway retired as primary, StoreManager.activePlan, error surface improvements, settings/delete fixes, trending offline fallback, pull-to-refresh history sync
 
 ---
 
