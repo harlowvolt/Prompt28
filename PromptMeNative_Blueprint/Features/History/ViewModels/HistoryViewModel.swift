@@ -52,4 +52,13 @@ final class HistoryViewModel {
 	func clearAll() {
 		historyStore?.clearAll()
 	}
+
+	/// `true` while a Supabase sync is in flight — forwarded from the store so
+	/// the pull-to-refresh indicator stays visible for the full sync duration.
+	var isSyncing: Bool { historyStore?.isSyncing ?? false }
+
+	/// Triggers a forced two-way Supabase sync (called from pull-to-refresh).
+	func syncWithRemote() async {
+		await historyStore?.forceSync()
+	}
 }

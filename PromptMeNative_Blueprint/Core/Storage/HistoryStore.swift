@@ -7,11 +7,14 @@ import UIKit
 @MainActor
 protocol HistoryStoring: AnyObject {
     var items: [PromptHistoryItem] { get }
+    var isSyncing: Bool { get }
     func add(_ item: PromptHistoryItem)
     func remove(id: UUID)
     func clearAll()
     func toggleFavorite(id: UUID)
     func rename(id: UUID, customName: String?)
+    /// Force a two-way Supabase sync right now (e.g. pull-to-refresh).
+    func forceSync() async
 }
 
 // MARK: - Supabase DTO
