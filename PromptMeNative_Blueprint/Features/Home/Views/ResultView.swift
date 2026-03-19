@@ -152,6 +152,7 @@ struct ResultView: View {
                     copiedPrompt = true
                     HapticService.impact(.light)
                     viewModel.triggerCopiedToast()
+                    viewModel.trackCopy()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { copiedPrompt = false }
                 }
                 .buttonStyle(.borderedProminent)
@@ -170,6 +171,7 @@ struct ResultView: View {
                     }
                     .buttonStyle(.bordered)
                     .tint(PromptTheme.softLilac.opacity(0.86))
+                    .simultaneousGesture(TapGesture().onEnded { viewModel.trackShare() })
                 } else {
                     Label("Preparing...", systemImage: "hourglass")
                         .font(PromptTheme.Typography.rounded(15, .semibold))

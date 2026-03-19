@@ -74,6 +74,7 @@ final class GenerateViewModel {
     }
 
     func generate() async {
+        AnalyticsService.shared.track(.generateTapped(mode: selectedMode.rawValue))
         await runGenerate(input: inputText, refinement: nil)
     }
 
@@ -247,6 +248,14 @@ final class GenerateViewModel {
             }
             AnalyticsService.shared.track(.generateError(message: error.localizedDescription))
         }
+    }
+
+    func trackCopy() {
+        AnalyticsService.shared.track(.copyPrompt)
+    }
+
+    func trackShare() {
+        AnalyticsService.shared.track(.sharePrompt)
     }
 
     func triggerCopiedToast() {
