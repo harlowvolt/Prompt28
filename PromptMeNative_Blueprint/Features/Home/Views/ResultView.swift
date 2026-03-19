@@ -192,14 +192,44 @@ struct ResultView: View {
                 .tint(viewModel.isLatestFavorite ? PromptTheme.softLilac : PromptTheme.softLilac.opacity(0.86))
             }
 
-            // Refine
-            TextField("Refine request", text: $viewModel.refinementText)
-                .textFieldStyle(.roundedBorder)
+            // Refine row — styled to match the glass design system
+            HStack(spacing: 10) {
+                TextField("Refine this prompt…", text: $viewModel.refinementText)
+                    .font(PromptTheme.Typography.rounded(15, .regular))
+                    .foregroundStyle(PromptTheme.paleLilacWhite)
+                    .padding(.horizontal, 14)
+                    .frame(height: 46)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(PromptTheme.glassFill)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
+                            )
+                    )
 
-            Button("Refine") {
-                Task { await viewModel.refine() }
+                Button {
+                    Task { await viewModel.refine() }
+                } label: {
+                    if viewModel.isGenerating {
+                        ProgressView()
+                            .tint(PromptTheme.softLilac)
+                            .frame(width: 58, height: 46)
+                    } else {
+                        Text("Refine")
+                            .font(PromptTheme.Typography.rounded(15, .semibold))
+                            .foregroundStyle(PromptTheme.paleLilacWhite)
+                            .frame(width: 58, height: 46)
+                    }
+                }
+                .background(
+                    Capsule()
+                        .fill(PromptTheme.mutedViolet.opacity(0.55))
+                        .overlay(Capsule().stroke(PromptTheme.softLilac.opacity(0.28), lineWidth: 0.5))
+                )
+                .buttonStyle(.plain)
+                .disabled(viewModel.isGenerating || viewModel.refinementText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
-            .buttonStyle(.bordered)
         }
         .frame(maxWidth: .infinity)
         .padding(PromptTheme.Spacing.s)
