@@ -439,7 +439,7 @@ When you pick up this project:
 1. **Read this file first** — It's the ground truth for current state
 2. **Check HANDOFF.md** — Deep technical reference (much longer), always kept in sync
 3. **Check AGENTS.md** — Agent-focused rules and patterns
-4. **Verify Supabase config** — Is the anon key correct? Have the two new migrations been run?
+4. **Verify Supabase config** — Is the anon key correct? Have all three migrations been run? (`20240101000000_core_tables.sql`, `20240601000000_prompt_feedback.sql`, `20240602000000_trending_prompts.sql`)
 5. **Redeploy the Edge Function** — `supabase functions deploy generate --no-verify-jwt` picks up Phase 5 intent + context changes
 6. **Phase 3 + 4 are DONE** — Do not re-implement them. Read v3.0 status above.
 7. **Phase 5 code done** — web-context enrichment (Brave Search, not MCP) is written. Needs Edge Function redeploy + BRAVE_API_KEY secret to go live. IAP products, Apple Sign In, and TestFlight submission are still manual.

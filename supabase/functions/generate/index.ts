@@ -13,7 +13,7 @@
 //   ANTHROPIC_API_KEY   — preferred (get from console.anthropic.com)
 //   OPENAI_API_KEY      — fallback  (get from platform.openai.com)
 //
-// Optional Supabase secret (enables MCP web-context):
+// Optional Supabase secret (enables web-context enrichment via Brave Search):
 //   BRAVE_API_KEY       — get from api.search.brave.com (free tier: 2 000 req/mo)
 //
 // Built-in Supabase secrets (auto-available in Edge Functions):
@@ -212,7 +212,8 @@ function buildTemporalContext(): string {
   return `[Context: Today is ${dayName}, ${dayNum} ${month} ${year} (week ${weekNum}). Season: ${season} (Northern Hemisphere).]`;
 }
 
-// ── MCP web-context (Phase 5) ─────────────────────────────────────────────────
+// ── Web-context enrichment (Phase 5) ──────────────────────────────────────────
+// Brave Search API — lightweight grounding, not MCP.
 
 /**
  * Intents that benefit from live web context.
@@ -380,10 +381,9 @@ Deno.serve(async (req: Request) => {
       }
     }
 
-    // ── Phase 5: MCP web-context (optional, parallel-safe) ────────────────
-    // Fire the Brave Search fetch concurrently with the auth check above.
-    // Only runs when BRAVE_API_KEY is set and the query looks like it needs live data.
-    // Fails silently — never blocks generation if the fetch errors or times out.
+    // ── Phase 5: web-context enrichment via Brave Search (optional, parallel-safe) ──
+    // Fired concurrently with auth. Only when BRAVE_API_KEY is set and query needs
+    // live grounding. Fails silently — never blocks generation.
     const webContextPromise = needsWebContext(input, intentCategory)
       ? fetchWebContext(input)
       : Promise.resolve(null);
