@@ -67,12 +67,6 @@ final class APIClient {
                         endpoint: request.url?.path
                     )
                 }
-                if endpoint.path == "/api/generate" {
-                    let message = responseSnippet.map {
-                        "Generation failed: server returned an unexpected response. \($0)"
-                    } ?? "Generation failed: server returned an unexpected response."
-                    throw NetworkError.server(message: message)
-                }
                 throw NetworkError.decoding
             }
         }

@@ -60,8 +60,7 @@ final class SettingsViewModel {
 			appSettings = try await apiClient.settings()
 		} catch {
 			// AppSettings is purely cosmetic (greeting text, nav labels).
-			// The app works correctly with .default values, so we silently swallow
-			// the Railway 401 that occurs during the Supabase JWT migration period
+			// The app works fine with .default values; swallow the error silently
 			// rather than showing a confusing red error box in Settings.
 			TelemetryService.shared.logStorageError(
 				code: "SETTINGS_FETCH_FAILED",
@@ -121,9 +120,9 @@ final class SettingsViewModel {
 		errorMessage = nil
 		defer { isSaving = false }
 
-		// Phase 3: call the `delete-account` Edge Function which deletes the
-		// auth.users row (requires service role) and all associated prompts.
-		// Falls back to local-only clear + logout if the function is unavailable.
+		// Call the `delete-account` Edge Function which deletes the auth.users row
+		// (requires service role) and all associated prompts.
+		// Falls back to local-only clear + logout if the function is unreachable.
 		if let sb = supabase {
 			do {
 				struct DeleteResponse: Decodable { let success: Bool? }

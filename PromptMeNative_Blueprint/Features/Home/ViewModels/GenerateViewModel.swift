@@ -22,15 +22,15 @@ final class GenerateViewModel {
     private let preferencesStore: any PreferenceStoring
     private let usageTracker: UsageTracker
 
-    // Phase 3: StoreKit plan gate — reads verified receipts to determine real plan tier.
+    // StoreKit plan gate — reads verified receipts to determine real plan tier.
     // Nil during testing / when storeManager isn't available; falls back to auth plan.
     private let storeManager: StoreManager?
 
-    // Phase 3: Supabase Edge Function generation path.
-    // Nil when the feature flag is not set (default — falls back to Railway).
+    // Supabase client for Edge Function invocation.
+    // Nil when not injected (should not happen in production since HomeView always injects it).
     private let supabase: SupabaseClient?
-    // Name of the deployed Edge Function, read from Info.plist key
-    // SUPABASE_GENERATE_FUNCTION. Empty string or missing key → Railway fallback.
+    // Name of the deployed Edge Function, read from Info.plist key SUPABASE_GENERATE_FUNCTION.
+    // Empty string or missing key → "Generation service not configured" error at generate time.
     private let edgeFunctionName: String?
 
     init(
@@ -48,8 +48,7 @@ final class GenerateViewModel {
         self.storeManager = storeManager
         self.supabase = supabase
         // Read the Edge Function name from Info.plist at init time.
-        // Set SUPABASE_GENERATE_FUNCTION = "" in Info.plist to disable (default).
-        // Set it to the deployed function name (e.g. "generate") to enable Phase 3 path.
+        // Must be set to the deployed function name (e.g. "generate") — empty/missing shows a config error.
         let raw = Bundle.main.object(forInfoDictionaryKey: "SUPABASE_GENERATE_FUNCTION") as? String
         self.edgeFunctionName = (raw?.isEmpty == false) ? raw : nil
         self.selectedMode = preferencesStore.preferences.selectedMode
@@ -224,9 +223,8 @@ final class GenerateViewModel {
                     AnalyticsService.shared.track(.generateRateLimited)
                     AnalyticsService.shared.track(.paywallShown)
                 }
-                // Railway rejects Supabase JWTs with 401, which maps to .unauthorized.
-                // Showing "Session expired" is misleading — the user IS signed in.
-                // Show a service-level message instead until Phase 3 migrates to Edge Functions.
+                // .unauthorized on the Edge Function is unexpected (JWT is always forwarded).
+                // Show a generic service message rather than a misleading "session expired."
                 if case .unauthorized = network {
                     errorMessage = "Prompt generation is temporarily unavailable. Please try again."
                 } else {
@@ -258,7 +256,7 @@ final class GenerateViewModel {
     }
 
     /// Records thumbs up/down feedback for the most recently generated prompt.
-    /// Writes to the Supabase `prompt_feedback` table (Phase 4 RLHF data flywheel)
+    /// Writes to the Supabase `prompt_feedback` table (RLHF data flywheel)
     /// and fires the `prompt_feedback` analytics event.
     ///
     /// Table schema (run once in Supabase SQL editor):
@@ -333,7 +331,7 @@ final class GenerateViewModel {
         errorMessage = nil
     }
 
-    // MARK: - Phase 3: Edge Function invocation
+    // MARK: - Edge Function invocation
 
     /// Calls the Supabase Edge Function at `functionName` and maps the response
     /// to the app's `GenerateResponse`. The Edge Function only needs to return
@@ -450,7 +448,7 @@ final class GenerateViewModel {
 /// The Edge Function MUST return at minimum `{ professional, template }`.
 /// All other fields are optional and filled in locally when absent.
 ///
-/// Full Edge Function response shape (Phase 5):
+/// Full Edge Function response shape:
 /// ```json
 /// {
 ///   "professional": "Refined prompt text…",
@@ -458,8 +456,8 @@ final class GenerateViewModel {
 ///   "prompts_used": 1,               // optional
 ///   "prompts_remaining": 9,          // optional (starter plan)
 ///   "plan": "starter",               // optional
-///   "intent_category": "work",       // Phase 5: classifier output
-///   "latency_ms": 843                // Phase 5: total server-side latency
+///   "intent_category": "work",       // optional — intent classifier output
+///   "latency_ms": 843                // optional — total server-side latency
 /// }
 /// ```
 private struct EdgeGenerateResponse: Decodable, Sendable {
@@ -468,7 +466,6 @@ private struct EdgeGenerateResponse: Decodable, Sendable {
     let prompts_used: Int?
     let prompts_remaining: Int?
     let plan: PlanType?
-    // Phase 5 fields — both optional so older Edge Function versions still decode correctly
     let intent_category: String?
     let latency_ms: Int?
 }

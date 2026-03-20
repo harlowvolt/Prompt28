@@ -187,7 +187,7 @@ struct UpgradeView: View {
                 .overlay(PromptTheme.softLilac.opacity(0.12))
                 .padding(.vertical, 2)
 
-            // ── Dev plan activation (requires Railway admin key) ─────────────
+            // ── Dev plan activation (writes plan to Supabase user_metadata) ───
 
             Text("Dev Plan (requires admin key)")
                 .font(.system(size: 12, weight: .semibold, design: .rounded))

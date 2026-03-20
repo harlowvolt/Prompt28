@@ -69,8 +69,7 @@ final class StoreManager {
                 if let planTier = planType(for: transaction.productID) {
                     await syncPlanToSupabase(planTier)
                 }
-                // Best-effort Railway plan sync (silently fails — plan is read
-                // from StoreKit receipts via activePlan in all user-facing gates).
+                // Refresh in-memory user so the UI picks up the new plan immediately.
                 await authManager.refreshMe()
                 AnalyticsService.shared.track(.planUpgradeSuccess(plan: product.id))
                 return true

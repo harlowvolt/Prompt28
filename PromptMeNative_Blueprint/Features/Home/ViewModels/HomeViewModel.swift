@@ -31,8 +31,7 @@ final class HomeViewModel {
         do {
             settings = try await apiClient.settings()
         } catch {
-            // Railway /api/settings rejects Supabase JWTs with 401.
-            // AppSettings is purely cosmetic (feature flags), so falling back to
+            // AppSettings is purely cosmetic (feature flags); falling back to
             // .default is safe. Log silently rather than showing a red banner.
             TelemetryService.shared.logStorageError(
                 code: "SETTINGS_LOAD_FAILED",

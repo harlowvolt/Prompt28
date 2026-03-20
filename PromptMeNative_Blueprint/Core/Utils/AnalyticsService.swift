@@ -97,7 +97,7 @@ struct CachedAnalyticsEvent: Codable, Identifiable {
 
 // MARK: - Service
 
-/// Phase 2 analytics service.
+/// Analytics service.
 ///
 /// Events are fired into a local UserDefaults cache (max 100, FIFO) and
 /// batch-uploaded to the Supabase `events` table via `uploadToSupabase()`.

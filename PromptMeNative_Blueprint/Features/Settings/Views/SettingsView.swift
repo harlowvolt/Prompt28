@@ -23,7 +23,7 @@ struct SettingsView: View {
     private var storeManager: StoreManager? { scopedStoreManager }
 
     /// The real plan tier — prefers StoreKit receipt-backed plan so paid users
-    /// aren't shown "Starter" when Railway plan sync has failed.
+    /// are not blocked by any plan-sync lag between purchases and auth refresh.
     private var effectivePlan: PlanType {
         storeManager?.activePlan ?? authManager?.currentUser?.plan ?? .starter
     }

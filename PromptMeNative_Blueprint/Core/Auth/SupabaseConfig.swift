@@ -25,7 +25,7 @@ struct SupabaseConfig: Equatable {
     }
 
     /// Non-fatal variant. Returns `nil` when either key is absent or malformed.
-    /// Use during Phase 2 bootstrapping before Info.plist keys are populated.
+    /// Useful in test environments where Info.plist keys may not be populated.
     static func tryLoad(from bundle: Bundle = .main) -> SupabaseConfig? {
         guard let rawURL = bundle.object(forInfoDictionaryKey: infoPlistURLKey) as? String,
               !rawURL.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,

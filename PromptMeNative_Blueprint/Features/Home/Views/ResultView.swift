@@ -117,7 +117,7 @@ struct ResultView: View {
                     .font(PromptTheme.Typography.rounded(18, .semibold))
                     .foregroundStyle(PromptTheme.paleLilacWhite)
                 Spacer()
-                // Phase 5: intent category badge — shown when classifier returns a non-general result
+                // Intent category badge — shown when the Edge Function classifier returns a non-general result
                 if let intent = result.intent_category, intent != "general" {
                     Text(intent.capitalized)
                         .font(PromptTheme.Typography.rounded(11, .semibold))
@@ -292,7 +292,7 @@ struct ResultView: View {
 
     // MARK: - Intent Badge Color
 
-    /// Returns a distinct accent color per intent category for the Phase 5 badge.
+    /// Returns a distinct accent color per intent category for the intent badge.
     private func intentBadgeColor(for intent: String) -> Color {
         switch intent {
         case "work":       return Color(hex: "#7EB8F7")   // soft blue
