@@ -24,6 +24,7 @@
 		CCAB0BB62F5D780200C29A7E /* TrendingViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B8F2F5D780200C29A7E /* TrendingViewModel.swift */; };
 		CCAB0BB72F5D780200C29A7E /* OrbEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B562F5D780200C29A7E /* OrbEngine.swift */; };
 		CCAB0BB82F5D780200C29A7E /* OrbView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B842F5D780200C29A7E /* OrbView.swift */; };
+		CCAB0C012F5D780200C29A7E /* MetalOrbView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0C002F5D780200C29A7E /* MetalOrbView.swift */; };
 		CCAB0BB92F5D780200C29A7E /* AdminCategoriesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B6C2F5D780200C29A7E /* AdminCategoriesView.swift */; };
 		CCAB0BBA2F5D780200C29A7E /* KeychainService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B5A2F5D780200C29A7E /* KeychainService.swift */; };
 		CCAB0BBB2F5D780200C29A7E /* PromptHistoryItem.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B9D2F5D780200C29A7E /* PromptHistoryItem.swift */; };
@@ -136,6 +137,7 @@
 		CCAB0B812F5D780200C29A7E /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		CCAB0B832F5D780200C29A7E /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
 		CCAB0B842F5D780200C29A7E /* OrbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrbView.swift; sourceTree = "<group>"; };
+		CCAB0C002F5D780200C29A7E /* MetalOrbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalOrbView.swift; sourceTree = "<group>"; };
 		CCAB0B852F5D780200C29A7E /* ResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultView.swift; sourceTree = "<group>"; };
 		CCAB0B862F5D780200C29A7E /* TypePromptView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TypePromptView.swift; sourceTree = "<group>"; };
 		CCAB0B892F5D780200C29A7E /* SettingsViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsViewModel.swift; sourceTree = "<group>"; };
@@ -407,6 +409,7 @@
 			children = (
 				CCAB0B832F5D780200C29A7E /* HomeView.swift */,
 				CCAB0B842F5D780200C29A7E /* OrbView.swift */,
+				CCAB0C002F5D780200C29A7E /* MetalOrbView.swift */,
 				CCAB0B852F5D780200C29A7E /* ResultView.swift */,
 				CCAB0B862F5D780200C29A7E /* TypePromptView.swift */,
 				CCA100001122334455667701 /* ShareCardView.swift */,
@@ -793,6 +796,7 @@
 				CCAB0BB62F5D780200C29A7E /* TrendingViewModel.swift in Sources */,
 				CCAB0BB72F5D780200C29A7E /* OrbEngine.swift in Sources */,
 				CCAB0BB82F5D780200C29A7E /* OrbView.swift in Sources */,
+				CCAB0C012F5D780200C29A7E /* MetalOrbView.swift in Sources */,
 				CCAB0BB92F5D780200C29A7E /* AdminCategoriesView.swift in Sources */,
 				CCAB0BBA2F5D780200C29A7E /* KeychainService.swift in Sources */,
 				CCAB0BBB2F5D780200C29A7E /* PromptHistoryItem.swift in Sources */,
