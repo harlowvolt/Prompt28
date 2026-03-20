@@ -32,6 +32,9 @@ This roadmap separates **current working reality** from **next critical steps** 
 2. **CloudKit removed**: No `CKRecord`, no `NSUbiquitousKeyValueStore` — Supabase is the cloud store
 3. **Railway JWT wrapper removed**: `SupabaseClient.swift` wrapper deleted — use native `supabase-swift` SDK
 4. **CloudKitService removed**: Entire service deleted — Supabase is the sync engine
+5. **Railway user/generate/auth methods removed**: `APIClient` stripped to admin+config only. Removed: `register`, `login`, `googleAuth`, `appleAuth`, `me`, `updatePlan`, `deleteUser`, `resetUsage`, `generate`, `config` methods + matching `APIEndpoint` cases + Railway-only DTOs (`AuthResponse`, `RegisterRequest`, etc.)
+6. **`AuthManager.apiClient` removed**: `AuthManager` is Supabase-only; plan is read from `user_metadata.plan`; `syncUserWithServer()` deleted
+7. **`GenerateViewModel.apiClient` removed**: Railway fallback branch deleted; missing Edge Function config now gives a clear error
 
 ### What's Working
 

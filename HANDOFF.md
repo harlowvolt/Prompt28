@@ -104,17 +104,17 @@ Prompt28 (marketed as **Orion Orb**) is a SwiftUI iOS app (Swift 5.9+, **iOS 17+
 
 It uses a single shared `AppEnvironment` injected via `.environment()` at the root.
 
-> **Architecture note (v2.5):** Auth and history persistence run through Supabase. Generation runs through a Supabase Edge Function (Anthropic API). The `APIClient` pointing at Railway is still present but all user-facing calls have been removed or silenced — only dev-admin endpoints remain. `APIClient` can be removed entirely in a future cleanup pass.
+> **Architecture note (v3.2):** Auth and history persistence run through Supabase. Generation runs through a Supabase Edge Function. The `APIClient` pointing at Railway is retained for the admin panel and cosmetic `AppSettings` only — all user-facing Railway calls have been removed.
 
 ## Current State
 
-- **Current phase:** Phase 5 active (Phases 3 + 4 complete)
-- **Platform direction:** native iOS 17+ SwiftUI app
-- **Persistence direction:** no SwiftData, no CloudKit — Codable JSON + Supabase only
-- **Auth direction:** Supabase Auth is live; Apple Sign In code exists but not yet configured in dashboard
-- **OAuth status:** Google sign-in working; Apple sign-in needs Apple Developer + Supabase config
-- **Generation backend:** Supabase Edge Function (`generate`) — Anthropic API primary, OpenAI fallback; Phase 5 intent classifier + temporal context active
-- **Railway status:** fully retired — `APIClient` stripped to admin+config only; all dead auth/generate/user methods removed
+- **Version:** v3.2 — Railway fully retired, all dead code removed
+- **Platform:** native iOS 17+ SwiftUI app
+- **Persistence:** Codable JSON + Supabase two-way sync (no SwiftData, no CloudKit)
+- **Auth:** Supabase Auth live; Apple Sign In code exists but needs Apple Developer + Supabase dashboard config
+- **OAuth:** Google sign-in working; Apple sign-in needs Apple Developer Services ID + .p8 key
+- **Generation:** Supabase Edge Function (`generate`) — Anthropic Claude primary, OpenAI fallback; intent classifier + temporal context active
+- **Railway:** fully retired — `APIClient` kept only for admin panel and cosmetic `AppSettings` fetch
 - **Metering:** server-side (Edge Function counts `prompts` table rows) + client-side (`UsageTracker` Keychain, synced after each generation)
 - **History direction:** local-first JSON + Supabase two-way sync (last-write-wins); pull-to-refresh available
 - **Feedback direction:** RLHF thumbs up/down → Supabase `prompt_feedback` table; `intent_category` + `latency_ms` logged per generation
