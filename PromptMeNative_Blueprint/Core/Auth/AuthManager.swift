@@ -79,7 +79,7 @@ final class AuthManager {
     
     private func handleAuthStateChange(event: AuthChangeEvent, session: Session?) async {
         switch event {
-        case .signedIn:
+        case .initialSession, .signedIn:
             if let session = session {
                 await handleSuccessfulAuth(session: session)
             }
@@ -96,7 +96,6 @@ final class AuthManager {
         case .userDeleted:
             clearSession()
         case .passwordRecovery:
-            // Handle password recovery if needed
             break
         @unknown default:
             break
@@ -303,9 +302,9 @@ final class AuthManager {
     private func handleAuthFailure(_ error: Error) {
         if let authError = error as? AuthError {
             switch authError {
-            case .api(let apiError):
-                lastError = apiError.message
-            case .sessionNotFound:
+            case .api:
+                lastError = error.localizedDescription
+            case .sessionMissing:
                 lastError = "Session expired. Please sign in again."
             default:
                 lastError = error.localizedDescription

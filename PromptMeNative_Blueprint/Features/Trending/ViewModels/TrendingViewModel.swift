@@ -195,7 +195,7 @@ final class TrendingViewModel {
                 table:  "trending_prompts"
             )
 
-            await channel.subscribe()
+            try? await channel.subscribeWithError()
 
             await MainActor.run { self.isRealtimeConnected = true }
 
@@ -208,7 +208,7 @@ final class TrendingViewModel {
                 group.addTask {
                     for await _ in insertions {
                         await MainActor.run {
-                            Task { await self.refresh(apiClient: apiClient, supabase: supabase) }
+                            _ = Task { await self.refresh(apiClient: apiClient, supabase: supabase) }
                         }
                         #if DEBUG
                         print("📡 [Trending] Realtime INSERT — refreshing from Supabase")
@@ -219,7 +219,7 @@ final class TrendingViewModel {
                 group.addTask {
                     for await _ in updates {
                         await MainActor.run {
-                            Task { await self.refresh(apiClient: apiClient, supabase: supabase) }
+                            _ = Task { await self.refresh(apiClient: apiClient, supabase: supabase) }
                         }
                         #if DEBUG
                         print("📡 [Trending] Realtime UPDATE — refreshing from Supabase")

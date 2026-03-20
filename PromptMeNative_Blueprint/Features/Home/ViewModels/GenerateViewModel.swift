@@ -54,6 +54,11 @@ final class GenerateViewModel {
         self.selectedMode = preferencesStore.preferences.selectedMode
     }
 
+    /// Resolved plan tier — prefers StoreKit receipt truth, falls back to Supabase user_metadata, then starter.
+    var activePlan: PlanType {
+        storeManager?.activePlan ?? authManager.currentUser?.plan ?? .starter
+    }
+
     var canGenerate: Bool {
         inputText.trimmingCharacters(in: .whitespacesAndNewlines).count >= 3 && !isGenerating
     }
