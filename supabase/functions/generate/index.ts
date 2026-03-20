@@ -498,7 +498,16 @@ async function callAnthropic(system: string, userMsg: string): Promise<string> {
     console.error("Anthropic error:", res.status, text);
     if (res.status === 401) throw new APIError("Anthropic API key is invalid. Please contact support.", 500);
     if (res.status === 429) throw new APIError("Generation quota reached. Please try again in a moment.", 429);
-    throw new APIError(`Anthropic error ${res.status}`, 502);
+    // Extract the actual Anthropic error message so iOS can display it
+    // and so it appears clearly in Supabase Function logs.
+    let detail = `Anthropic error ${res.status}`;
+    try {
+      const errBody = JSON.parse(text);
+      if (errBody?.error?.message) detail = `Anthropic: ${errBody.error.message}`;
+    } catch { /* non-JSON body — use raw text if short */
+      if (text && text.length < 300) detail = `Anthropic ${res.status}: ${text}`;
+    }
+    throw new APIError(detail, 502);
   }
 
   const data = await res.json();
