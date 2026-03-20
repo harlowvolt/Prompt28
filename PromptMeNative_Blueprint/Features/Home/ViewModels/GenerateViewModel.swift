@@ -174,7 +174,8 @@ final class GenerateViewModel {
                 mode: selectedMode.rawValue,
                 wordCount: wordCount,
                 intentCategory: response.intent_category,
-                latencyMs: response.latency_ms
+                latencyMs: response.latency_ms,
+                webContextUsed: response.web_context_used
             ))
 
             // Haptics: success pulse
@@ -326,7 +327,8 @@ final class GenerateViewModel {
             prompts_remaining: nil,
             plan: .starter,
             intent_category: nil,
-            latency_ms: nil
+            latency_ms: nil,
+            web_context_used: nil
         )
         errorMessage = nil
     }
@@ -364,7 +366,8 @@ final class GenerateViewModel {
             prompts_remaining: remaining,
             plan: raw.plan ?? plan,
             intent_category: raw.intent_category,
-            latency_ms: raw.latency_ms
+            latency_ms: raw.latency_ms,
+            web_context_used: raw.web_context_used
         )
     }
 
@@ -457,7 +460,8 @@ final class GenerateViewModel {
 ///   "prompts_remaining": 9,          // optional (starter plan)
 ///   "plan": "starter",               // optional
 ///   "intent_category": "work",       // optional — intent classifier output
-///   "latency_ms": 843                // optional — total server-side latency
+///   "latency_ms": 843,               // optional — total server-side latency
+///   "web_context_used": true         // optional — true when Brave Search snippet was injected
 /// }
 /// ```
 private struct EdgeGenerateResponse: Decodable, Sendable {
@@ -468,4 +472,5 @@ private struct EdgeGenerateResponse: Decodable, Sendable {
     let plan: PlanType?
     let intent_category: String?
     let latency_ms: Int?
+    let web_context_used: Bool?
 }

@@ -22,4 +22,6 @@ struct GenerateResponse: Codable, Equatable {
     let intent_category: String?
     // Total server-side generation latency — nil when running against an older deployed Edge Function
     let latency_ms: Int?
+    // Phase 5 MCP: true when a Brave Search web snippet was injected as grounding context
+    let web_context_used: Bool?
 }

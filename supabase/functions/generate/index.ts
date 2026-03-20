@@ -4,10 +4,17 @@
 // Phase 5 additions:
 //   • Intent classifier — keyword-based, zero-latency, routes to specialized system prompts
 //   • Returns intent_category + latency_ms in every response for analytics + iOS display
+//   • MCP web-context — for intents that benefit from live data (business, technical, general
+//     queries phrased as questions), fetches a brief web snippet via Brave Search API and
+//     injects it as grounding context before generation. iOS stays a thin client — no changes
+//     needed on the iOS side. Opt-in: only fires when BRAVE_API_KEY secret is set.
 //
 // Required Supabase secret — set ONE of these:
 //   ANTHROPIC_API_KEY   — preferred (get from console.anthropic.com)
 //   OPENAI_API_KEY      — fallback  (get from platform.openai.com)
+//
+// Optional Supabase secret (enables MCP web-context):
+//   BRAVE_API_KEY       — get from api.search.brave.com (free tier: 2 000 req/mo)
 //
 // Built-in Supabase secrets (auto-available in Edge Functions):
 //   SUPABASE_URL
@@ -22,6 +29,7 @@ const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
+const BRAVE_API_KEY = Deno.env.get("BRAVE_API_KEY");
 
 const FREE_MONTHLY_LIMIT = 10;
 
@@ -204,6 +212,78 @@ function buildTemporalContext(): string {
   return `[Context: Today is ${dayName}, ${dayNum} ${month} ${year} (week ${weekNum}). Season: ${season} (Northern Hemisphere).]`;
 }
 
+// ── MCP web-context (Phase 5) ─────────────────────────────────────────────────
+
+/**
+ * Intents that benefit from live web context.
+ * "work", "school", "fitness", "creative" are self-contained — no web fetch needed.
+ * "business", "technical", "general" often involve current events, pricing, docs, or news.
+ */
+const WEB_CONTEXT_INTENTS = new Set<IntentCategory>(["business", "technical", "general"]);
+
+/**
+ * Returns true when the query looks like a question or references recency.
+ * Avoids burning the Brave quota on obviously self-contained prompts.
+ */
+function needsWebContext(input: string, intent: IntentCategory): boolean {
+  if (!BRAVE_API_KEY) return false;
+  if (!WEB_CONTEXT_INTENTS.has(intent)) return false;
+
+  const t = input.toLowerCase();
+  const questionWords = ["what", "how", "why", "when", "where", "who", "which", "is there", "can i", "should i"];
+  const recencyWords = ["latest", "current", "today", "now", "recent", "2024", "2025", "2026", "news", "update", "release"];
+
+  return questionWords.some(w => t.includes(w)) || recencyWords.some(w => t.includes(w));
+}
+
+/**
+ * Fetches the top Brave Search web snippet for the given query.
+ * Returns a brief grounding string or null on any error (fails silently — never blocks generation).
+ * Max timeout: 2 seconds. Extracts up to 3 description snippets (~400 chars total).
+ */
+async function fetchWebContext(query: string): Promise<string | null> {
+  if (!BRAVE_API_KEY) return null;
+  try {
+    const url = new URL("https://api.search.brave.com/res/v1/web/search");
+    url.searchParams.set("q", query.slice(0, 200));
+    url.searchParams.set("count", "3");
+    url.searchParams.set("text_decorations", "false");
+    url.searchParams.set("safesearch", "moderate");
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2000);
+
+    const res = await fetch(url.toString(), {
+      headers: {
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip",
+        "X-Subscription-Token": BRAVE_API_KEY,
+      },
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeout);
+
+    if (!res.ok) return null;
+
+    const data = await res.json();
+    const results: Array<{ title?: string; description?: string }> = data?.web?.results ?? [];
+
+    const snippets = results
+      .slice(0, 3)
+      .map(r => r.description?.trim())
+      .filter((d): d is string => !!d && d.length > 20);
+
+    if (snippets.length === 0) return null;
+
+    const combined = snippets.join(" | ").slice(0, 500);
+    return `[Web context: ${combined}]`;
+  } catch {
+    // Network error, timeout, parse error — silently ignore, never block generation.
+    return null;
+  }
+}
+
 // ── Request / Response interfaces ─────────────────────────────────────────────
 
 interface GenerateRequest {
@@ -221,6 +301,7 @@ interface GenerateResponse {
   plan: string;
   intent_category: IntentCategory;  // Phase 5: returned to iOS for display + analytics
   latency_ms: number;               // Phase 5: total generation latency in ms
+  web_context_used: boolean;        // Phase 5 MCP: true when a web snippet was injected
 }
 
 // ── Main handler ──────────────────────────────────────────────────────────────
@@ -299,20 +380,31 @@ Deno.serve(async (req: Request) => {
       }
     }
 
+    // ── Phase 5: MCP web-context (optional, parallel-safe) ────────────────
+    // Fire the Brave Search fetch concurrently with the auth check above.
+    // Only runs when BRAVE_API_KEY is set and the query looks like it needs live data.
+    // Fails silently — never blocks generation if the fetch errors or times out.
+    const webContextPromise = needsWebContext(input, intentCategory)
+      ? fetchWebContext(input)
+      : Promise.resolve(null);
+
     // ── Resolve system prompt (intent-specialized) ─────────────────────────
     const resolvedSystem = resolveSystemPrompt(intentCategory, mode, systemPrompt);
 
     // ── Build user message ─────────────────────────────────────────────────
-    // Phase 5: prepend temporal context so the model knows "now" without the
-    // user having to state the date — useful for weekly plans, seasonal queries, etc.
+    // Phase 5: prepend temporal context + optional web-context snippet so the
+    // model knows "now" and has live grounding without MCP round-trips on the iOS side.
     const temporalContext = buildTemporalContext();
+    const webContext = await webContextPromise;
 
     let userMessage = input.trim();
     if (refinement?.trim()) {
+      const contextHeader = [temporalContext, webContext].filter(Boolean).join("\n");
       userMessage =
-        `${temporalContext}\n\nOriginal prompt:\n${input.trim()}\n\nRefinement request:\n${refinement.trim()}\n\nRefine the original prompt based on the refinement request.`;
+        `${contextHeader}\n\nOriginal prompt:\n${input.trim()}\n\nRefinement request:\n${refinement.trim()}\n\nRefine the original prompt based on the refinement request.`;
     } else {
-      userMessage = `${temporalContext}\n\n${input.trim()}`;
+      const contextHeader = [temporalContext, webContext].filter(Boolean).join("\n");
+      userMessage = `${contextHeader}\n\n${input.trim()}`;
     }
 
     const taskInstruction =
@@ -369,6 +461,7 @@ Deno.serve(async (req: Request) => {
       plan: userPlan,
       intent_category: intentCategory,
       latency_ms: latencyMs,
+      web_context_used: webContext !== null,
     };
 
     return new Response(JSON.stringify(result), {

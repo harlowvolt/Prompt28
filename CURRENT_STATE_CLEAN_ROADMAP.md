@@ -1,8 +1,8 @@
 # Orion Orb — Clean Roadmap (Railway Fully Retired, v3.2)
 
 **Last updated: 2026-03-19**
-**Version**: v3.2 (Railway fully retired — all dead code removed, APIClient stripped to admin-only, AuthManager independent of Railway, plan read from Supabase user_metadata)
-**Status**: All Phase 3 + Phase 4 features implemented. Phase 5 (MCP intent routing) is the next horizon. Device validation and App Store Connect IAP setup are the remaining blockers before TestFlight.
+**Version**: v3.3 (Phase 5 MCP web-context complete — Brave Search grounding injected for business/technical/general intents when BRAVE_API_KEY is set; MetalOrbView added to Xcode target; core Supabase table migrations added)
+**Status**: All Phase 3–5 features implemented in code. Device validation and App Store Connect IAP setup are the remaining blockers before TestFlight.
 
 This roadmap separates **current working reality** from **next critical steps** from **long-term vision**. It is grounded in actual code, not aspirations.
 
@@ -427,6 +427,8 @@ When implementing Phase 3+ features:
 - **v1.9** (2026-03-18 cleanup): Documentation cleaned, roadmap clarified, post-Phase-2 state documented
 - **v2.5** (2026-03-19): Phase 3 foundation complete — Supabase Edge Function deployed (Anthropic API), Railway retired as primary, StoreManager.activePlan, error surface improvements, settings/delete fixes, trending offline fallback, pull-to-refresh history sync
 - **v3.0** (2026-03-19): Phase 4 complete — thumbs up/down RLHF feedback (ResultView + Supabase insert), Metal Orb GPU renderer (MetalOrbView + Orb.metal + feature flag), Supabase Realtime Trending (INSERT/UPDATE channel subscription), shareable card UI polished, TypePromptView glass rewrite, analytics gaps closed
+- **v3.2** (2026-03-19): Railway fully retired — dead code removed, APIClient stripped to admin-only, AuthManager Supabase-only, plan from user_metadata, AGENTS.md + HANDOFF.md synced
+- **v3.3** (2026-03-19): Phase 5 complete — MCP web-context (Brave Search grounding in Edge Function, opt-in via BRAVE_API_KEY secret), `web_context_used` surfaced in GenerateResponse + analytics; MetalOrbView.swift added to Xcode target; core table migrations created (`20240101000000_core_tables.sql`); CODEX_HANDOFF_v3_2.md created
 
 ---
 
