@@ -428,7 +428,7 @@ When implementing Phase 3+ features:
 - **v2.5** (2026-03-19): Phase 3 foundation complete — Supabase Edge Function deployed (Anthropic API), Railway retired as primary, StoreManager.activePlan, error surface improvements, settings/delete fixes, trending offline fallback, pull-to-refresh history sync
 - **v3.0** (2026-03-19): Phase 4 complete — thumbs up/down RLHF feedback (ResultView + Supabase insert), Metal Orb GPU renderer (MetalOrbView + Orb.metal + feature flag), Supabase Realtime Trending (INSERT/UPDATE channel subscription), shareable card UI polished, TypePromptView glass rewrite, analytics gaps closed
 - **v3.2** (2026-03-19): Railway fully retired — dead code removed, APIClient stripped to admin-only, AuthManager Supabase-only, plan from user_metadata, AGENTS.md + HANDOFF.md synced
-- **v3.3** (2026-03-19): Phase 5 complete — MCP web-context (Brave Search grounding in Edge Function, opt-in via BRAVE_API_KEY secret), `web_context_used` surfaced in GenerateResponse + analytics; MetalOrbView.swift added to Xcode target; core table migrations created (`20240101000000_core_tables.sql`); CODEX_HANDOFF_v3_2.md created
+- **v3.3** (2026-03-19): Phase 5 code complete — web-context enrichment via Brave Search API (not MCP) in Edge Function, opt-in via BRAVE_API_KEY secret; `web_context_used` surfaced in GenerateResponse + analytics; MetalOrbView.swift added to Xcode target; core table migrations created (`20240101000000_core_tables.sql`); CODEX_HANDOFF_v3_2.md created. **Feature not yet live — requires Edge Function redeploy + BRAVE_API_KEY secret.**
 
 ---
 
@@ -442,7 +442,7 @@ When you pick up this project:
 4. **Verify Supabase config** — Is the anon key correct? Have the two new migrations been run?
 5. **Redeploy the Edge Function** — `supabase functions deploy generate --no-verify-jwt` picks up Phase 5 intent + context changes
 6. **Phase 3 + 4 are DONE** — Do not re-implement them. Read v3.0 status above.
-7. **Phase 5 remaining** — MCP web-context integration, App Store Connect IAP products, Apple Sign In, TestFlight submission
+7. **Phase 5 code done** — web-context enrichment (Brave Search, not MCP) is written. Needs Edge Function redeploy + BRAVE_API_KEY secret to go live. IAP products, Apple Sign In, and TestFlight submission are still manual.
 8. **Device testing** — Build on physical iPhone, validate generation → metering → paywall → upgrade → deletion end-to-end
 
 Good luck building Orion Orb! 🌌

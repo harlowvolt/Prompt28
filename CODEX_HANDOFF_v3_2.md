@@ -88,16 +88,23 @@ All user-facing Railway methods (`register`, `login`, `me`, `generate`, `updateP
 
 ---
 
-## Phase 5 — Current State (Complete)
+## Phase 5 — Code Complete, Not Yet Live
 
-**iOS:** `EdgeGenerateResponse` decodes `intent_category`, `latency_ms`, and `web_context_used`. `ResultView` shows intent badge. `AnalyticsService.generateSuccess` logs all three fields.
+**What "Phase 5" actually means here:** Keyword-based intent classification + temporal context + optional web-context enrichment via Brave Search API. This is NOT true MCP (Model Context Protocol). It is a lightweight server-side enrichment step where the Edge Function fetches top search snippets and injects them as grounding text before generation.
 
-**Edge Function:** Intent classifier (keyword-based, zero-latency), temporal context injection, intent-specialized system prompts, **MCP web-context** (Brave Search snippet injected for `business`/`technical`/`general` intents when query looks like a question or references recency). Response includes `intent_category`, `latency_ms`, `web_context_used`. Web fetch is fully opt-in — set `BRAVE_API_KEY` Supabase secret to enable; fails silently if absent or on timeout.
+**iOS (code complete ✅):** `EdgeGenerateResponse` decodes `intent_category`, `latency_ms`, `web_context_used`. `ResultView` shows intent badge. `AnalyticsService.generateSuccess` logs all three fields.
 
-**Remaining Phase 5 extensions (optional):**
-- Broader web-context intents (currently business/technical/general only)
+**Edge Function (code complete ✅, not yet live ⏳):** Intent classifier, temporal context, intent-specialized system prompts, Brave Search enrichment for `business`/`technical`/`general` intents on question/recency queries. `web_context_used` in response. **Requires redeploy + `BRAVE_API_KEY` secret to activate web enrichment.**
+
+**To go live:**
+1. `supabase functions deploy generate --no-verify-jwt`
+2. Set `BRAVE_API_KEY` in Supabase Dashboard → Settings → Edge Functions → Secrets (free tier: 2 000 req/mo at api.search.brave.com)
+3. Web enrichment is opt-in — if secret is absent, generation works normally without it
+
+**Optional future extensions:**
+- iOS `web_context_used` badge in `ResultView`
+- Broader enrichment intents (work, school)
 - Confidence score from intent classifier
-- iOS display of `web_context_used` badge in `ResultView`
 
 ---
 
