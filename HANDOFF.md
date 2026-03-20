@@ -1,3 +1,11 @@
+# DEPRECATED — DO NOT USE
+
+> **This document is deprecated as of v3.3 (2026-03-19).**
+> It contains stale terminology ("MCP", "Phase 5 Active") and is superseded.
+> **Use `AGENTS.md` as the single source of truth.**
+
+---
+
 # Prompt28 (Orion Orb) — AI Handoff Document (v3.2, Phase 5 Active)
 
 **Last updated: 2026-03-19. Version v3.2 (Railway fully retired — all dead code removed; Trending Supabase-direct; Phase 5 foundations active). Safe for Codex, Gemini, ChatGPT, and future Claude sessions.**

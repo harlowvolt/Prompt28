@@ -1,6 +1,8 @@
-# Prompt28 (Orion Orb) — AI Agent Guide (v3.2)
+# Prompt28 (Orion Orb) — AI Agent Guide (v3.3)
 
-**Last updated: 2026-03-19 | Version v3.2 — Railway fully retired, Supabase-only**
+**Last updated: 2026-03-19 | Version v3.3 — THIS IS THE SINGLE SOURCE OF TRUTH**
+
+> All other project-status/handoff docs (`HANDOFF.md`, `CURRENT_STATE_CLEAN_ROADMAP.md`, `CODEX_HANDOFF_v3_2.md`) are deprecated. Read only this file.
 
 This document is the single source of truth for AI coding agents working on the Prompt28 iOS project (marketed as "Orion Orb"). Read this before touching anything.
 
@@ -94,6 +96,7 @@ supabase/
 │   ├── generate/index.ts          # Generation Edge Function (deployed)
 │   └── delete-account/index.ts   # Account deletion Edge Function (deployed)
 └── migrations/
+    ├── 20240101000000_core_tables.sql       # prompts, events, telemetry_errors
     ├── 20240601000000_prompt_feedback.sql
     └── 20240602000000_trending_prompts.sql
 ```
@@ -203,7 +206,7 @@ enum PlanType: String, Codable, CaseIterable {
 
 - `GenerateResponse` — app-internal model (stored in history, displayed in ResultView)
 - `EdgeGenerateResponse` — private DTO in `GenerateViewModel.swift` for decoding Edge Function response
-- Both include optional `intent_category: String?` and `latency_ms: Int?`
+- Both include optional `intent_category: String?`, `latency_ms: Int?`, and `web_context_used: Bool?`
 
 ### PromptCatalog → PromptCategory → PromptItem
 
@@ -332,11 +335,13 @@ These are not done automatically. Each one must be completed manually:
    cd ~/Desktop/Prompt28
    supabase functions deploy generate --no-verify-jwt
    ```
-2. **Run SQL migrations** in Supabase Dashboard → SQL Editor:
+2. **Run SQL migrations** in Supabase Dashboard → SQL Editor (run in order):
+   - `supabase/migrations/20240101000000_core_tables.sql` — `prompts`, `events`, `telemetry_errors`
    - `supabase/migrations/20240601000000_prompt_feedback.sql`
    - `supabase/migrations/20240602000000_trending_prompts.sql`
-3. **Apple Sign In:** Apple Developer Portal → Services ID + `.p8` key → Supabase Dashboard → Authentication → Providers → Apple
-4. **App Store Connect IAP:** Create 4 auto-renewable subscriptions matching `StoreProductID` enum constants in `StoreManager.swift`
+3. **(Optional) Brave Search web-context enrichment:** Set `BRAVE_API_KEY` secret in Supabase Dashboard → Settings → Edge Functions → Secrets. Free tier: 2 000 req/mo at api.search.brave.com. Generation works without it — web grounding is opt-in.
+4. **Apple Sign In:** Apple Developer Portal → Services ID + `.p8` key → Supabase Dashboard → Authentication → Providers → Apple
+5. **App Store Connect IAP:** Create 4 auto-renewable subscriptions matching `StoreProductID` enum constants in `StoreManager.swift`
 
 ---
 
@@ -369,6 +374,27 @@ These are not done automatically. Each one must be completed manually:
 8. Touch `HistoryStore.swift` without understanding the full sync/test-seam architecture
 9. Change `supabase/functions/` without redeploying
 10. Introduce any Railway dependency — Railway is retired
+
+---
+
+## Version & Completion Status
+
+**v3.3 (2026-03-19) — current**
+
+| Feature | Code | Live |
+|---------|------|------|
+| Supabase Auth (email, Google, Apple) | ✅ | ✅ |
+| Edge Function `generate` (Anthropic primary, OpenAI fallback) | ✅ | ✅ needs redeploy |
+| Edge Function `delete-account` | ✅ | ✅ |
+| Server-side metering (starter plan 10/mo) | ✅ | ✅ needs redeploy |
+| Intent classifier + temporal context | ✅ | ✅ needs redeploy |
+| Brave Search web-context enrichment | ✅ | ⏳ needs redeploy + `BRAVE_API_KEY` |
+| StoreKit 2 IAP | ✅ | ⏳ App Store Connect products not created |
+| Apple Sign In | ✅ | ⏳ developer portal config needed |
+| Metal Orb GPU renderer | ✅ | ⏳ behind `is_metal_orb_enabled` flag (off by default) |
+| Supabase Realtime Trending | ✅ | ✅ needs `trending_prompts` migration run |
+| SQL migrations on Supabase | ✅ files exist | ⏳ must be run manually |
+| TestFlight | — | ⏳ pending |
 
 ---
 

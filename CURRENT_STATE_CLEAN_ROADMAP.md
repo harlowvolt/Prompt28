@@ -1,3 +1,10 @@
+# DEPRECATED — DO NOT USE
+
+> **This document is deprecated as of v3.3 (2026-03-19).**
+> **Use `AGENTS.md` as the single source of truth.**
+
+---
+
 # Orion Orb — Clean Roadmap (Railway Fully Retired, v3.2)
 
 **Last updated: 2026-03-19**
