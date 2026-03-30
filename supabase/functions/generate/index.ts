@@ -510,7 +510,7 @@ async function callGemini(system: string, userMsg: string): Promise<string> {
     throw new APIError("Gemini Key is missing from environment variables.", 500);
   }
   
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${cleanKey}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
