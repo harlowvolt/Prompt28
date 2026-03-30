@@ -512,7 +512,7 @@ async function callGemini(system: string, userMsg: string): Promise<string> {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      systemInstruction: { parts: [{ text: system }] },
+      systemInstruction: { role: "system", parts: [{ text: system }] },
       contents: [{ role: "user", parts: [{ text: userMsg }] }],
       generationConfig: {
         temperature: 0.7,
