@@ -10,8 +10,9 @@
 //     needed on the iOS side. Opt-in: only fires when BRAVE_API_KEY secret is set.
 //
 // Required Supabase secret — set ONE of these:
-//   ANTHROPIC_API_KEY   — preferred (get from console.anthropic.com)
-//   OPENAI_API_KEY      — fallback  (get from platform.openai.com)
+//   GEMINI_API_KEY      — preferred (get from aistudio.google.com)
+//   ANTHROPIC_API_KEY   — fallback 1 (get from console.anthropic.com)
+//   OPENAI_API_KEY      — fallback 2 (get from platform.openai.com)
 //
 // Optional Supabase secret (enables web-context enrichment via Brave Search):
 //   BRAVE_API_KEY       — get from api.search.brave.com (free tier: 2 000 req/mo)
@@ -25,6 +26,7 @@
 
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 const ANTHROPIC_API_KEY = Deno.env.get("ANTHROPIC_API_KEY");
 const OPENAI_API_KEY = Deno.env.get("OPENAI_API_KEY");
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
@@ -413,13 +415,15 @@ Deno.serve(async (req: Request) => {
     // ── Route to available AI provider ────────────────────────────────────────
     let rawContent: string;
 
-    if (ANTHROPIC_API_KEY) {
+    if (GEMINI_API_KEY) {
+      rawContent = await callGemini(resolvedSystem, taskInstruction);
+    } else if (ANTHROPIC_API_KEY) {
       rawContent = await callAnthropic(resolvedSystem, taskInstruction);
     } else if (OPENAI_API_KEY) {
       rawContent = await callOpenAI(resolvedSystem, taskInstruction);
     } else {
       return errorResponse(
-        "No AI API key configured. Set ANTHROPIC_API_KEY or OPENAI_API_KEY in Supabase secrets.",
+        "No AI API key configured. Set GEMINI_API_KEY, ANTHROPIC_API_KEY or OPENAI_API_KEY in Supabase secrets.",
         500,
       );
     }
@@ -475,6 +479,37 @@ Deno.serve(async (req: Request) => {
     return errorResponse("Internal server error.", 500);
   }
 });
+
+// ── Gemini ────────────────────────────────────────────────────────────────────
+async function callGemini(system: string, userMsg: string): Promise<string> {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      systemInstruction: { parts: [{ text: system }] },
+      contents: [{ parts: [{ text: userMsg }] }],
+      generationConfig: {
+        temperature: 0.7,
+        responseMimeType: "application/json"
+      }
+    }),
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    console.error("Gemini error:", res.status, text);
+    if (res.status === 400 && text.includes("API_KEY_INVALID")) throw new APIError("Gemini API key is invalid.", 500);
+    if (res.status === 429) throw new APIError("Generation quota reached. Please try again in a moment.", 429);
+    throw new APIError(`Gemini error ${res.status}`, 502);
+  }
+
+  const data = await res.json();
+  const content = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+  if (!content) throw new APIError("Empty response from Gemini.", 502);
+  return content;
+}
 
 // ── Anthropic (Claude) ────────────────────────────────────────────────────────
 async function callAnthropic(system: string, userMsg: string): Promise<string> {
