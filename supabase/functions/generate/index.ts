@@ -506,7 +506,7 @@ async function callGemini(system: string, userMsg: string): Promise<string> {
   // Ensure no hidden newline characters break the URL
   const cleanKey = GEMINI_API_KEY?.trim() ?? "";
   
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`, {
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${cleanKey}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -554,7 +554,7 @@ async function callAnthropic(system: string, userMsg: string): Promise<string> {
       "content-type": "application/json",
     },
     body: JSON.stringify({
-      model: "claude-haiku-4-5-20251001",
+      model: "claude-3-haiku-20240307",
       max_tokens: 1024,
       system,
       messages: [{ role: "user", content: userMsg }],
