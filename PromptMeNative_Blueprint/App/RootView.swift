@@ -24,7 +24,7 @@ struct RootView: View {
         appearance.backgroundColor = PromptTheme.tabBackground
         appearance.shadowColor = UIColor.clear
         appearance.selectionIndicatorImage = UIImage.tabSelectionIndicator(
-            color: UIColor(red: 0.30, green: 0.34, blue: 0.43, alpha: 0.62)
+            color: UIColor(red: 0.43, green: 0.31, blue: 0.82, alpha: 0.25)
         )
 
         appearance.stackedLayoutAppearance.selected.iconColor = PromptTheme.tabSelected
@@ -236,34 +236,34 @@ struct PromptPremiumBackground: View {
             let size = geo.size
 
             ZStack {
-                Color(hex: "#02040F")
+                Color(hex: "#0F1218")
 
                 LinearGradient(
                     colors: [
-                        Color(hex: "#0D1A40"),
-                        Color(hex: "#0A1431"),
-                        Color(hex: "#061022"),
-                        Color(hex: "#02040F")
+                        Color(hex: "#1A1D2E"),
+                        Color(hex: "#141728"),
+                        Color(hex: "#0F1220"),
+                        Color(hex: "#0F1218")
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
 
+                // Purple ambient glow — matches Figma's violet accent
                 RadialGradient(
                     colors: [
-                        Color(hex: "#1A2E59").opacity(0.30),
-                        Color(hex: "#0D1A40").opacity(0.16),
+                        Color(hex: "#4C1D95").opacity(0.22),
+                        Color(hex: "#2E1065").opacity(0.12),
                         .clear
                     ],
-                    center: .init(x: 0.50, y: 0.40),
+                    center: .init(x: 0.50, y: 0.38),
                     startRadius: 14,
                     endRadius: size.width * 0.72
                 )
 
                 RadialGradient(
                     colors: [
-                        Color(hex: "#1A2E59").opacity(0.08),
-                        Color(hex: "#0D1A40").opacity(0.04),
+                        Color(hex: "#5B21B6").opacity(0.08),
                         .clear
                     ],
                     center: .init(x: 0.64, y: 0.60),
@@ -292,12 +292,12 @@ enum PromptTheme {
     static let backgroundBase = Color(hex: "#02060D")
     static let deepShadow = Color(hex: "#050A16")
     static let plum = Color(hex: "#07101E")
-    static let mutedViolet = Color(hex: "#5D628A")
-    static let softLilac = Color(hex: "#CFD7FF")
-    static let paleLilacWhite = Color(hex: "#F2F5FF")
+    static let mutedViolet = Color(hex: "#7C3AED")
+    static let softLilac = Color(hex: "#DDD6FE")
+    static let paleLilacWhite = Color(hex: "#EDE9FE")
 
-    static let glassFill = Color(red: 0.15, green: 0.17, blue: 0.22).opacity(0.72)
-    static let glassStroke = Color.white.opacity(0.14)
+    static let glassFill = Color(red: 0.13, green: 0.11, blue: 0.20).opacity(0.72)
+    static let glassStroke = Color.white.opacity(0.12)
 
     static let backgroundGradient = LinearGradient(
         colors: [backgroundBase, deepShadow, plum, backgroundBase],
@@ -305,14 +305,15 @@ enum PromptTheme {
         endPoint: .bottom
     )
 
-    static let orbIdleGlow = Color(hex: "#95A7FF")
-    static let orbActiveGlow = Color(hex: "#A9BAFF")
-    static let orbProcessingGlow = Color(hex: "#B9C6FF")
+    static let orbIdleGlow = Color(hex: "#8B5CF6")
+    static let orbActiveGlow = Color(hex: "#A78BFA")
+    static let orbProcessingGlow = Color(hex: "#C4B5FD")
 
-    static let tabBackground = UIColor(red: 0.02, green: 0.04, blue: 0.08, alpha: 0.9)
-    static let tabShadow = UIColor(red: 0.83, green: 0.87, blue: 0.98, alpha: 0.10)
-    static let tabSelected = UIColor.white.withAlphaComponent(0.96)
-    static let tabUnselected = UIColor.white.withAlphaComponent(0.56)
+    // Vivid violet tab accent matching Figma design (#818CF8)
+    static let tabBackground = UIColor(red: 0.06, green: 0.05, blue: 0.11, alpha: 0.92)
+    static let tabShadow = UIColor(red: 0.55, green: 0.40, blue: 0.98, alpha: 0.12)
+    static let tabSelected = UIColor(red: 0.51, green: 0.40, blue: 0.98, alpha: 1.0)
+    static let tabUnselected = UIColor.white.withAlphaComponent(0.45)
 
     enum Typography {
         static func rounded(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {

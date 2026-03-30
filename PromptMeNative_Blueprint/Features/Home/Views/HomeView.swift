@@ -92,7 +92,7 @@ struct HomeView: View {
                             width: hasResult ? 190 : 300,
                             height: hasResult ? 190 : 300
                         )
-                        .shadow(color: PromptTheme.softLilac.opacity(0.42), radius: 26)
+                        .shadow(color: PromptTheme.orbIdleGlow.opacity(0.50), radius: 32)
                         .padding(.top, hasResult ? 14 : 20)
                         .animation(.spring(response: 0.4, dampingFraction: 0.82), value: hasResult)
 
@@ -262,26 +262,26 @@ struct HomeView: View {
                         RoundedRectangle(cornerRadius: 25, style: .continuous)
                             .fill(
                                 LinearGradient(
-                                    colors: [Color(hex: "#5B6388").opacity(0.90), Color(hex: "#3F4766").opacity(0.88)],
+                                    colors: [Color(hex: "#7C3AED").opacity(0.85), Color(hex: "#5B21B6").opacity(0.80)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 25, style: .continuous)
-                                    .stroke(Color.white.opacity(0.22), lineWidth: 0.8)
+                                    .stroke(Color(hex: "#A78BFA").opacity(0.40), lineWidth: 0.8)
                             )
                             .overlay(
                                 RoundedRectangle(cornerRadius: 25, style: .continuous)
                                     .fill(
                                         LinearGradient(
-                                            colors: [Color.white.opacity(0.09), .clear],
+                                            colors: [Color.white.opacity(0.10), .clear],
                                             startPoint: .top,
                                             endPoint: .center
                                         )
                                     )
                             )
-                            .shadow(color: Color(hex: "#5F709E").opacity(0.20), radius: 12, y: 4)
+                            .shadow(color: Color(hex: "#8B5CF6").opacity(0.35), radius: 14, y: 5)
                     } else {
                         RoundedRectangle(cornerRadius: 25, style: .continuous)
                             .fill(.ultraThinMaterial)
