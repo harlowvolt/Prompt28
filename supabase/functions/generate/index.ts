@@ -503,10 +503,14 @@ Deno.serve(async (req: Request) => {
 
 // ── Gemini ────────────────────────────────────────────────────────────────────
 async function callGemini(system: string, userMsg: string): Promise<string> {
-  // Ensure no hidden newline characters break the URL
-  const cleanKey = GEMINI_API_KEY?.trim() ?? "";
+  // Pull directly from Deno to ensure the freshest secret is used
+  const cleanKey = Deno.env.get("GEMINI_API_KEY")?.trim() || "";
   
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=${cleanKey}`, {
+  if (!cleanKey) {
+    throw new APIError("Gemini Key is missing from environment variables.", 500);
+  }
+  
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -516,7 +520,7 @@ async function callGemini(system: string, userMsg: string): Promise<string> {
       contents: [{ role: "user", parts: [{ text: userMsg }] }],
       generationConfig: {
         temperature: 0.7,
-        responseMimeType: "application/json"
+        // responseMimeType: "application/json"
       }
     }),
   });
