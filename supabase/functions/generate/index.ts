@@ -520,7 +520,7 @@ async function callGemini(system: string, userMsg: string): Promise<string> {
       contents: [{ role: "user", parts: [{ text: userMsg }] }],
       generationConfig: {
         temperature: 0.7,
-        // responseMimeType: "application/json"
+        responseMimeType: "application/json"
       }
     }),
   });
