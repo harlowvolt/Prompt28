@@ -413,15 +413,32 @@ Deno.serve(async (req: Request) => {
       `${userMessage}\n\nReturn ONLY a JSON object with exactly two keys — no markdown, no explanation:\n{"professional":"<full polished prompt>","template":"<fill-in-the-blank version with [PLACEHOLDER] tokens>"}`;
 
     // ── Route to available AI provider ────────────────────────────────────────
-    let rawContent: string;
+    let rawContent: string | null = null;
+    let lastError: Error | null = null;
 
-    if (GEMINI_API_KEY) {
-      rawContent = await callGemini(resolvedSystem, taskInstruction);
-    } else if (ANTHROPIC_API_KEY) {
-      rawContent = await callAnthropic(resolvedSystem, taskInstruction);
-    } else if (OPENAI_API_KEY) {
-      rawContent = await callOpenAI(resolvedSystem, taskInstruction);
-    } else {
+    const providers = [
+      { name: "Gemini",    key: GEMINI_API_KEY,    call: callGemini },
+      { name: "Anthropic", key: ANTHROPIC_API_KEY, call: callAnthropic },
+      { name: "OpenAI",    key: OPENAI_API_KEY,    call: callOpenAI },
+    ];
+
+    for (const provider of providers) {
+      if (provider.key) {
+        try {
+          console.log(`Attempting generation with ${provider.name}...`);
+          rawContent = await provider.call(resolvedSystem, taskInstruction);
+          console.log(`Generation successful with ${provider.name}.`);
+          break; // Success, exit the loop
+        } catch (err) {
+          console.error(`Generation failed with ${provider.name}:`, err.message);
+          lastError = err;
+          // Continue to the next provider
+        }
+      }
+    }
+
+    if (rawContent === null) {
+      if (lastError) throw lastError; // Re-throw the last error to be handled by the outer catch block
       return errorResponse(
         "No AI API key configured. Set GEMINI_API_KEY, ANTHROPIC_API_KEY or OPENAI_API_KEY in Supabase secrets.",
         500,
@@ -500,7 +517,7 @@ async function callGemini(system: string, userMsg: string): Promise<string> {
   if (!res.ok) {
     const text = await res.text();
     console.error("Gemini error:", res.status, text);
-    if (res.status === 400 && text.includes("API_KEY_INVALID")) throw new APIError("Gemini API key is invalid.", 500);
+    if (res.status === 400 && text.includes("API_KEY_INVALID")) throw new APIError("Invalid Gemini API key. Check GEMINI_API_KEY in Supabase secrets.", 500);
     if (res.status === 429) throw new APIError("Generation quota reached. Please try again in a moment.", 429);
     throw new APIError(`Gemini error ${res.status}`, 502);
   }
@@ -531,7 +548,7 @@ async function callAnthropic(system: string, userMsg: string): Promise<string> {
   if (!res.ok) {
     const text = await res.text();
     console.error("Anthropic error:", res.status, text);
-    if (res.status === 401) throw new APIError("Anthropic API key is invalid. Please contact support.", 500);
+    if (res.status === 401) throw new APIError("Invalid Anthropic API key. Check ANTHROPIC_API_KEY in Supabase secrets.", 500);
     if (res.status === 429) throw new APIError("Generation quota reached. Please try again in a moment.", 429);
     // Extract the actual Anthropic error message so iOS can display it
     // and so it appears clearly in Supabase Function logs.
@@ -574,7 +591,7 @@ async function callOpenAI(system: string, userMsg: string): Promise<string> {
   if (!res.ok) {
     const text = await res.text();
     console.error("OpenAI error:", res.status, text);
-    if (res.status === 401) throw new APIError("OpenAI API key is invalid. Please contact support.", 500);
+    if (res.status === 401) throw new APIError("Invalid OpenAI API key. Check OPENAI_API_KEY in Supabase secrets.", 500);
     if (res.status === 429) throw new APIError("Generation quota reached. Please try again in a moment.", 429);
     if (res.status === 402) throw new APIError("OpenAI billing issue. Please contact support.", 500);
     throw new APIError(`OpenAI error ${res.status}`, 502);
