@@ -432,7 +432,11 @@ Deno.serve(async (req: Request) => {
         } catch (err) {
           console.error(`Generation failed with ${provider.name}:`, err.message);
           lastError = err;
-          // Continue to the next provider
+          
+          // Fail fast on invalid keys so the real error isn't masked by the fallback chain
+          if (err instanceof APIError && err.message.includes("Invalid")) {
+            throw err;
+          }
         }
       }
     }
@@ -499,14 +503,17 @@ Deno.serve(async (req: Request) => {
 
 // ── Gemini ────────────────────────────────────────────────────────────────────
 async function callGemini(system: string, userMsg: string): Promise<string> {
-  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
+  // Ensure no hidden newline characters break the URL
+  const cleanKey = GEMINI_API_KEY?.trim() ?? "";
+  
+  const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${cleanKey}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
       systemInstruction: { parts: [{ text: system }] },
-      contents: [{ parts: [{ text: userMsg }] }],
+      contents: [{ role: "user", parts: [{ text: userMsg }] }],
       generationConfig: {
         temperature: 0.7,
         responseMimeType: "application/json"
@@ -519,7 +526,16 @@ async function callGemini(system: string, userMsg: string): Promise<string> {
     console.error("Gemini error:", res.status, text);
     if (res.status === 400 && text.includes("API_KEY_INVALID")) throw new APIError("Invalid Gemini API key. Check GEMINI_API_KEY in Supabase secrets.", 500);
     if (res.status === 429) throw new APIError("Generation quota reached. Please try again in a moment.", 429);
-    throw new APIError(`Gemini error ${res.status}`, 502);
+    
+    // Extract the actual error message so the app shows exactly what went wrong
+    let detail = `Gemini error ${res.status}`;
+    try {
+      const errBody = JSON.parse(text);
+      if (errBody?.error?.message) detail = `Gemini: ${errBody.error.message}`;
+    } catch {
+      if (text && text.length < 300) detail = `Gemini ${res.status}: ${text}`;
+    }
+    throw new APIError(detail, 502);
   }
 
   const data = await res.json();
