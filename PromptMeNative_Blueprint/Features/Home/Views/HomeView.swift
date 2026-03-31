@@ -14,6 +14,7 @@ struct HomeView: View {
     @State private var showPanel = false
     @State private var showLeftPanel = false
     @State private var ghostMode = false
+    @FocusState private var isInputFocused: Bool
 
     private let authManager: AuthManager
     private let router: AppRouter
@@ -80,7 +81,6 @@ struct HomeView: View {
                         navBar
                         centerContent
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        bottomArea
                     }
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -92,6 +92,9 @@ struct HomeView: View {
             }
             .toolbar(.hidden, for: .navigationBar)
             .promptClearNavigationSurfaces()
+        }
+        .safeAreaInset(edge: .bottom, spacing: 0) {
+            bottomArea
         }
         .overlay(alignment: .bottom) { copiedToast }
         .sheet(isPresented: $showTrending) {
@@ -264,7 +267,7 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Mode Pill
+    // MARK: - Platform Dropdown
 
     private func modePill(label: String, mode: PromptMode) -> some View {
         let isOn = generateViewModel.selectedMode == mode
@@ -272,6 +275,7 @@ struct HomeView: View {
             withAnimation(.easeInOut(duration: 0.18)) {
                 generateViewModel.selectedMode = mode
             }
+            preferencesStore.setMode(mode)
             HapticService.selection()
             AnalyticsService.shared.track(.modeSwitched(to: mode.rawValue))
         } label: {
@@ -307,8 +311,6 @@ struct HomeView: View {
         .animation(.easeInOut(duration: 0.18), value: isOn)
     }
 
-    // MARK: - Platform Dropdown
-
     private var platformDropdownButton: some View {
         Button {
             withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
@@ -330,10 +332,16 @@ struct HomeView: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
             .background(
-                Capsule()
+                RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(.ultraThinMaterial)
-                    .overlay(Capsule().fill(PromptTheme.glassFill))
-                    .overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 0.5))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(PromptTheme.glassFill)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+                    )
             )
         }
         .buttonStyle(.plain)
@@ -446,6 +454,13 @@ struct HomeView: View {
         .padding(.bottom, 28)
     }
 
+    private var modePillRow: some View {
+        HStack(spacing: 12) {
+            modePill(label: "✦  AI Mode", mode: .ai)
+            modePill(label: "✧  Human Mode", mode: .human)
+        }
+    }
+
     private var trendingPill: some View {
         Button { showTrending = true } label: {
             HStack(spacing: 8) {
@@ -472,13 +487,6 @@ struct HomeView: View {
         .buttonStyle(.plain)
     }
 
-    private var modePillRow: some View {
-        HStack(spacing: 12) {
-            modePill(label: "✦  AI Mode", mode: .ai)
-            modePill(label: "✧  Human Mode", mode: .human)
-        }
-    }
-
     private var trendingStrip: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
@@ -497,7 +505,7 @@ struct HomeView: View {
         Button {
             if !isTag {
                 generateViewModel.inputText = label
-                router.presentHomeSheet(.typePrompt)
+                isInputFocused = true
             }
         } label: {
             HStack(spacing: 5) {
@@ -524,101 +532,29 @@ struct HomeView: View {
     }
 
     private var inputBar: some View {
-        Button { router.presentHomeSheet(.typePrompt) } label: {
-            VStack(alignment: .leading, spacing: 16) {
-                // Placeholder text — top of card
-                Text(generateViewModel.inputText.isEmpty
-                     ? "Just talk. Messy is fine."
-                     : generateViewModel.inputText)
-                    .font(.system(size: 17, weight: .regular, design: .default))
-                    .foregroundStyle(generateViewModel.inputText.isEmpty
-                                     ? Color.white.opacity(0.35)
-                                     : Color.white.opacity(0.90))
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .lineLimit(2)
-
-                // Bottom action row
-                HStack(spacing: 8) {
-                    // Platform pill (like Grok's "Fast")
-                    HStack(spacing: 6) {
-                        Circle()
-                            .fill(Color(hex: generateViewModel.selectedPlatform.accentHex))
-                            .frame(width: 7, height: 7)
-                        Text(generateViewModel.selectedPlatform.displayName)
-                            .font(.system(size: 13, weight: .semibold, design: .default))
-                            .foregroundStyle(.white.opacity(0.80))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(
-                        Capsule()
-                            .fill(Color.white.opacity(0.07))
-                            .overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 0.5))
-                    )
-
-                    // Mode pill
-                    HStack(spacing: 5) {
-                        Text(generateViewModel.selectedMode == .ai ? "✦" : "✧")
-                            .font(.system(size: 11, weight: .bold))
-                        Text(generateViewModel.selectedMode == .ai ? "AI Mode" : "Human Mode")
-                            .font(.system(size: 13, weight: .semibold, design: .default))
-                            .foregroundStyle(.white.opacity(0.80))
-                    }
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 7)
-                    .background(
-                        Capsule()
-                            .fill(Color.white.opacity(0.07))
-                            .overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 0.5))
-                    )
-
-                    Spacer()
-
-                    // Transform button (like Grok's "Speak")
-                    Button {
-                        guard !generateViewModel.inputText.isEmpty else {
-                            router.presentHomeSheet(.typePrompt)
-                            return
-                        }
-                        Task { await generateViewModel.generate() }
-                        HapticService.impact(.medium)
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: generateViewModel.isGenerating ? "ellipsis" : "wand.and.stars")
-                                .font(.system(size: 13, weight: .bold))
-                            Text(generateViewModel.isGenerating ? "Working…" : "Transform")
-                                .font(.system(size: 14, weight: .bold, design: .default))
-                        }
-                        .foregroundStyle(.white)
-                        .padding(.horizontal, 16)
-                        .padding(.vertical, 9)
-                        .background(
-                            Capsule()
-                                .fill(LinearGradient(
-                                    colors: [Color(hex: "#8B8FFF"), Color(hex: "#A78BFA")],
-                                    startPoint: .leading,
-                                    endPoint: .trailing))
-                        )
-                        .shadow(color: Color(hex: "#8B8FFF").opacity(0.35), radius: 8, y: 2)
-                    }
-                    .buttonStyle(.plain)
-                    .disabled(generateViewModel.isGenerating)
-                }
-            }
-            .padding(.horizontal, 18)
-            .padding(.top, 18)
-            .padding(.bottom, 14)
-            .background(
-                RoundedRectangle(cornerRadius: 26, style: .continuous)
-                    .fill(Color(hex: "#07101E"))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 26, style: .continuous)
-                            .stroke(Color(hex: "#8B8FFF").opacity(0.18), lineWidth: 1)
-                    )
-                    .shadow(color: .black.opacity(0.40), radius: 16, y: 6)
-            )
+        TextField(
+            "",
+            text: $generateViewModel.inputText,
+            prompt: Text("Just talk. Messy is fine.")
+                .foregroundStyle(Color.white.opacity(0.34))
+        )
+        .font(.system(size: 17, weight: .regular, design: .default))
+        .foregroundStyle(.white.opacity(0.92))
+        .textInputAutocapitalization(.sentences)
+        .submitLabel(.go)
+        .focused($isInputFocused)
+        .onSubmit {
+            let trimmed = generateViewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+            guard !trimmed.isEmpty, !generateViewModel.isGenerating else { return }
+            Task { await generateViewModel.generate() }
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 18)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .fill(Color(hex: "#131827"))
+                .shadow(color: .black.opacity(0.24), radius: 14, y: 6)
+        )
     }
 
     // MARK: - Result Section
