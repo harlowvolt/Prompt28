@@ -51,7 +51,50 @@ struct HomeView: View {
                 supabase: supabase
             )
         )
+}
+
+private struct GhostGlyphShape: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+
+        let width = rect.width
+        let height = rect.height
+        let bottomY = height * 0.88
+        let waveWidth = width / 3
+
+        path.move(to: CGPoint(x: width * 0.18, y: bottomY))
+        path.addLine(to: CGPoint(x: width * 0.18, y: height * 0.42))
+        path.addQuadCurve(
+            to: CGPoint(x: width * 0.50, y: height * 0.10),
+            control: CGPoint(x: width * 0.18, y: height * 0.12)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: width * 0.82, y: height * 0.42),
+            control: CGPoint(x: width * 0.82, y: height * 0.12)
+        )
+        path.addLine(to: CGPoint(x: width * 0.82, y: bottomY))
+
+        path.addQuadCurve(
+            to: CGPoint(x: waveWidth * 2.15, y: bottomY - height * 0.10),
+            control: CGPoint(x: width * 0.76, y: bottomY)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: waveWidth * 1.5, y: bottomY),
+            control: CGPoint(x: waveWidth * 1.9, y: bottomY + height * 0.06)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: waveWidth * 0.85, y: bottomY - height * 0.10),
+            control: CGPoint(x: waveWidth * 1.1, y: bottomY)
+        )
+        path.addQuadCurve(
+            to: CGPoint(x: width * 0.18, y: bottomY),
+            control: CGPoint(x: waveWidth * 0.6, y: bottomY + height * 0.06)
+        )
+
+        path.closeSubpath()
+        return path
     }
+}
 
     // MARK: - Body
 
@@ -195,28 +238,27 @@ struct HomeView: View {
                 withAnimation(.easeInOut(duration: 0.2)) { ghostMode.toggle() }
                 HapticService.selection()
             } label: {
-                Image(systemName: ghostMode ? "ghost.fill" : "ghost")
-                    .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(ghostMode ? Color(hex: "#8B8FFF") : .white.opacity(0.75))
-                    .frame(width: 36, height: 36)
-                    .background(
-                        RoundedRectangle(cornerRadius: 11, style: .continuous)
-                            .fill(ghostMode
-                                  ? Color(hex: "#8B8FFF").opacity(0.18)
-                                  : Color.white.opacity(0.07))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                    .fill(ghostMode ? Color(hex: "#8B8FFF").opacity(0.10) : PromptTheme.glassFill)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                    .stroke(ghostMode
-                                            ? Color(hex: "#8B8FFF").opacity(0.45)
-                                            : Color.white.opacity(0.10),
-                                            lineWidth: ghostMode ? 1 : 0.5)
-                            )
-                    )
-                    .shadow(color: ghostMode ? Color(hex: "#8B8FFF").opacity(0.25) : .clear, radius: 8)
+                ZStack {
+                    RoundedRectangle(cornerRadius: 11, style: .continuous)
+                        .fill(ghostMode
+                              ? Color(hex: "#8B8FFF").opacity(0.18)
+                              : Color.white.opacity(0.07))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                .fill(ghostMode ? Color(hex: "#8B8FFF").opacity(0.10) : PromptTheme.glassFill)
+                        )
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                .stroke(ghostMode
+                                        ? Color(hex: "#8B8FFF").opacity(0.45)
+                                        : Color.white.opacity(0.10),
+                                        lineWidth: ghostMode ? 1 : 0.5)
+                        )
+
+                    ghostGlyph(isActive: ghostMode)
+                }
+                .frame(width: 36, height: 36)
+                .shadow(color: ghostMode ? Color(hex: "#8B8FFF").opacity(0.25) : .clear, radius: 8)
             }
             .buttonStyle(.plain)
             .animation(.easeInOut(duration: 0.2), value: ghostMode)
@@ -323,14 +365,14 @@ struct HomeView: View {
                     .fill(Color(hex: generateViewModel.selectedPlatform.accentHex))
                     .frame(width: 7, height: 7)
                 Text(generateViewModel.selectedPlatform.displayName)
-                    .font(.system(size: 13, weight: .bold, design: .default))
+                    .font(.system(size: 14, weight: .bold, design: .default))
                     .foregroundStyle(.white)
                 Image(systemName: "chevron.down")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(.white.opacity(0.55))
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 9)
+            .frame(width: 132, height: 38)
             .background(
                 RoundedRectangle(cornerRadius: 14, style: .continuous)
                     .fill(.ultraThinMaterial)
@@ -345,6 +387,27 @@ struct HomeView: View {
             )
         }
         .buttonStyle(.plain)
+    }
+
+    @ViewBuilder
+    private func ghostGlyph(isActive: Bool) -> some View {
+        let ghostColor = isActive ? Color(hex: "#8B8FFF") : Color.white.opacity(0.82)
+
+        ZStack {
+            GhostGlyphShape()
+                .fill(ghostColor)
+                .frame(width: 15, height: 16)
+
+            HStack(spacing: 4) {
+                Circle()
+                    .fill(Color.black.opacity(isActive ? 0.22 : 0.30))
+                    .frame(width: 2.2, height: 2.2)
+                Circle()
+                    .fill(Color.black.opacity(isActive ? 0.22 : 0.30))
+                    .frame(width: 2.2, height: 2.2)
+            }
+            .offset(y: -1)
+        }
     }
 
     private var platformDropdownOverlay: some View {
