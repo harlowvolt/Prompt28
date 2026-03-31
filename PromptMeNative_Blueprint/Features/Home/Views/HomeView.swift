@@ -141,7 +141,9 @@ private struct GhostGlyphShape: Shape {
             .promptClearNavigationSurfaces()
         }
         .safeAreaInset(edge: .bottom, spacing: 0) {
-            bottomArea
+            if !showLeftPanel {
+                bottomArea
+            }
         }
         .overlay(alignment: .bottom) { copiedToast }
         .sheet(isPresented: $showTrending) {
@@ -205,6 +207,11 @@ private struct GhostGlyphShape: Shape {
                 isInputFocused = true
             }
         }
+        .onChange(of: showLeftPanel) { _, isPresented in
+            if isPresented {
+                isInputFocused = false
+            }
+        }
         .task {
             settingsViewModel.bind(
                 apiClient: apiClient,
@@ -220,7 +227,12 @@ private struct GhostGlyphShape: Shape {
     private var navBar: some View {
         HStack(spacing: 10) {
             // Left: main menu panel
-            Button { showLeftPanel = true } label: {
+            Button {
+                isInputFocused = false
+                withAnimation(.easeInOut(duration: 0.22)) {
+                    showLeftPanel = true
+                }
+            } label: {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 17, weight: .medium))
                     .foregroundStyle(.white.opacity(0.85))
