@@ -399,21 +399,9 @@ private struct GhostGlyphShape: Shape {
     private func ghostGlyph(isActive: Bool) -> some View {
         let ghostColor = isActive ? Color(hex: "#8B8FFF") : Color.white.opacity(0.82)
 
-        ZStack {
-            GhostGlyphShape()
-                .fill(ghostColor)
-                .frame(width: 15, height: 16)
-
-            HStack(spacing: 4) {
-                Circle()
-                    .fill(Color.black.opacity(isActive ? 0.22 : 0.30))
-                    .frame(width: 2.2, height: 2.2)
-                Circle()
-                    .fill(Color.black.opacity(isActive ? 0.22 : 0.30))
-                    .frame(width: 2.2, height: 2.2)
-            }
-            .offset(y: -1)
-        }
+        GhostGlyphShape()
+            .fill(ghostColor)
+            .frame(width: 15, height: 16)
     }
 
     private var platformDropdownOverlay: some View {
