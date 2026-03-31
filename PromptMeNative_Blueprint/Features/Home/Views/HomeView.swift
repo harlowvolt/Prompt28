@@ -532,21 +532,41 @@ struct HomeView: View {
     }
 
     private var inputBar: some View {
-        TextField(
-            "",
-            text: $generateViewModel.inputText,
-            prompt: Text("Just talk. Messy is fine.")
-                .foregroundStyle(Color.white.opacity(0.34))
-        )
-        .font(.system(size: 17, weight: .regular, design: .default))
-        .foregroundStyle(.white.opacity(0.92))
-        .textInputAutocapitalization(.sentences)
-        .submitLabel(.go)
-        .focused($isInputFocused)
-        .onSubmit {
-            let trimmed = generateViewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty, !generateViewModel.isGenerating else { return }
-            Task { await generateViewModel.generate() }
+        HStack(spacing: 12) {
+            Button {
+                isInputFocused = true
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .frame(width: 36, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 11, style: .continuous)
+                            .fill(Color.white.opacity(0.06))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                    .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                            )
+                    )
+            }
+            .buttonStyle(.plain)
+
+            TextField(
+                "",
+                text: $generateViewModel.inputText,
+                prompt: Text("Just talk. Messy is fine.")
+                    .foregroundStyle(Color.white.opacity(0.34))
+            )
+            .font(.system(size: 17, weight: .regular, design: .default))
+            .foregroundStyle(.white.opacity(0.92))
+            .textInputAutocapitalization(.sentences)
+            .submitLabel(.go)
+            .focused($isInputFocused)
+            .onSubmit {
+                let trimmed = generateViewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+                guard !trimmed.isEmpty, !generateViewModel.isGenerating else { return }
+                Task { await generateViewModel.generate() }
+            }
         }
         .padding(.horizontal, 18)
         .padding(.vertical, 16)
