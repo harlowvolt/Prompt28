@@ -2,6 +2,7 @@ import SwiftUI
 @preconcurrency import Supabase
 
 struct HomeView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.errorState) private var errorState
     @AppStorage(ExperimentFlags.RootBackground.home) private var useRootBackgroundExperiment = false
     @State private var orbEngine: OrbEngine
@@ -617,21 +618,25 @@ private struct GhostGlyphShape: Shape {
             }
             .buttonStyle(.plain)
 
-            TextField(
-                "",
-                text: $generateViewModel.inputText,
-                prompt: Text("Just talk. Messy is fine.")
-                    .foregroundStyle(Color.white.opacity(0.34))
-            )
-            .font(.system(size: 17, weight: .regular, design: .default))
-            .foregroundStyle(.white.opacity(0.92))
-            .textInputAutocapitalization(.sentences)
-            .submitLabel(.go)
-            .focused($isInputFocused)
-            .onSubmit {
-                let trimmed = generateViewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-                guard !trimmed.isEmpty, !generateViewModel.isGenerating else { return }
-                Task { await generateViewModel.generate() }
+            ZStack(alignment: .leading) {
+                if generateViewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                    Text("Just talk. Messy is fine.")
+                        .font(.system(size: 17, weight: .regular, design: .default))
+                        .foregroundStyle(Color.white.opacity(0.34))
+                        .allowsHitTesting(false)
+                }
+
+                TextField("", text: $generateViewModel.inputText)
+                    .font(.system(size: 17, weight: .regular, design: .default))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .textInputAutocapitalization(.sentences)
+                    .submitLabel(.go)
+                    .focused($isInputFocused)
+                    .onSubmit {
+                        let trimmed = generateViewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        guard !trimmed.isEmpty, !generateViewModel.isGenerating else { return }
+                        Task { await generateViewModel.generate() }
+                    }
             }
         }
         .padding(.horizontal, 18)
@@ -829,30 +834,13 @@ private struct GhostGlyphShape: Shape {
                     }
                     .buttonStyle(.plain)
 
-                    NavigationLink(destination: HistoryView().toolbar(.hidden, for: .navigationBar)) {
-                        leftPanelRow(icon: "clock.arrow.circlepath", label: "History")
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink(destination: FavoritesView().toolbar(.hidden, for: .navigationBar)) {
-                        leftPanelRow(icon: "star.fill", label: "Saved")
-                    }
-                    .buttonStyle(.plain)
-
                     NavigationLink(destination: shareCardsPlaceholder.toolbar(.hidden, for: .navigationBar)) {
                         leftPanelRow(icon: "square.and.arrow.up.fill", label: "Share Cards")
                     }
                     .buttonStyle(.plain)
 
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.22)) {
-                            showLeftPanel = false
-                        }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
-                            router.presentHomeSheet(.settings)
-                        }
-                    } label: {
-                        leftPanelRow(icon: "gearshape.fill", label: "Settings")
+                    NavigationLink(destination: HistoryView().toolbar(.hidden, for: .navigationBar)) {
+                        leftPanelRow(icon: "clock.arrow.circlepath", label: "History")
                     }
                     .buttonStyle(.plain)
                 }
@@ -1037,17 +1025,44 @@ private struct GhostGlyphShape: Shape {
     private var shareCardsPlaceholder: some View {
         ZStack {
             Color(hex: "#02060D").ignoresSafeArea()
-            VStack(spacing: 16) {
-                Image(systemName: "square.and.arrow.up.fill")
-                    .font(.system(size: 36))
-                    .foregroundStyle(Color(hex: "#8B8FFF").opacity(0.6))
-                Text("Share Cards")
-                    .font(.system(size: 20, weight: .bold, design: .default))
-                    .foregroundStyle(.white)
-                Text("Generate a prompt to create\na shareable card.")
-                    .font(.system(size: 14, weight: .regular, design: .default))
-                    .foregroundStyle(.white.opacity(0.55))
-                    .multilineTextAlignment(.center)
+            VStack(spacing: 0) {
+                HStack(spacing: 16) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "arrow.left")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.82))
+                            .frame(width: 44, height: 44)
+                            .background(
+                                Circle()
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(Circle().stroke(Color.white.opacity(0.18), lineWidth: 0.7))
+                            )
+                    }
+                    .buttonStyle(.plain)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+
+                Spacer()
+
+                VStack(spacing: 16) {
+                    Image(systemName: "square.and.arrow.up.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(Color(hex: "#8B8FFF").opacity(0.6))
+                    Text("Share Cards")
+                        .font(.system(size: 20, weight: .bold, design: .default))
+                        .foregroundStyle(.white)
+                    Text("Generate a prompt to create\na shareable card.")
+                        .font(.system(size: 14, weight: .regular, design: .default))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .multilineTextAlignment(.center)
+                }
+
+                Spacer()
             }
         }
     }

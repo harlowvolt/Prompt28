@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct TrendingView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.appRouter) private var appRouter
     @Environment(\.apiClient) private var scopedAPIClient
     @Environment(\.supabase) private var scopedSupabase
@@ -66,10 +67,30 @@ struct TrendingView: View {
 
                     ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 0) {
+                            HStack(spacing: 16) {
+                                Button {
+                                    dismiss()
+                                } label: {
+                                    Image(systemName: "arrow.left")
+                                        .font(.system(size: 20, weight: .medium))
+                                        .foregroundStyle(.white.opacity(0.82))
+                                        .frame(width: 44, height: 44)
+                                        .background(
+                                            Circle()
+                                                .fill(.ultraThinMaterial)
+                                                .overlay(Circle().stroke(Color.white.opacity(0.18), lineWidth: 0.7))
+                                        )
+                                }
+                                .buttonStyle(.plain)
+
+                                Spacer()
+                            }
+                            .padding(.top, 8)
+
                             Text("Trending")
                                 .font(.system(size: 34, weight: .bold, design: .rounded))
                                 .foregroundStyle(PromptTheme.paleLilacWhite)
-                                .padding(.top, 8)
+                                .padding(.top, 4)
 
                             Text("Copy-paste prompts people actually use")
                                 .font(.system(size: 16, weight: .regular, design: .rounded))
