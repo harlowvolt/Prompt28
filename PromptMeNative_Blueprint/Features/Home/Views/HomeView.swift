@@ -129,11 +129,6 @@ private struct GhostGlyphShape: Shape {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
 
-                // Dropdown overlay
-                if showPlatformDropdown {
-                    platformDropdownOverlay
-                }
-
                 if showLeftPanel {
                     leftPanelOverlay
                 }
@@ -325,7 +320,7 @@ private struct GhostGlyphShape: Shape {
         }
     }
 
-    // MARK: - Platform Dropdown
+    // MARK: - Top Center Action
 
     private func modePill(label: String, mode: PromptMode) -> some View {
         let isOn = generateViewModel.selectedMode == mode
@@ -371,19 +366,17 @@ private struct GhostGlyphShape: Shape {
 
     private var platformDropdownButton: some View {
         Button {
-            withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
-                showPlatformDropdown = true
-            }
+            showTrending = true
             HapticService.selection()
         } label: {
             HStack(spacing: 7) {
-                Circle()
-                    .fill(Color(hex: generateViewModel.selectedPlatform.accentHex))
-                    .frame(width: 7, height: 7)
-                Text(generateViewModel.selectedPlatform.displayName)
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color(hex: "#8B8FFF"))
+                Text("Power Prompts")
                     .font(.system(size: 14, weight: .bold, design: .default))
                     .foregroundStyle(.white)
-                Image(systemName: "chevron.down")
+                Image(systemName: "chevron.right")
                     .font(.system(size: 10, weight: .bold))
                     .foregroundStyle(.white.opacity(0.55))
             }
