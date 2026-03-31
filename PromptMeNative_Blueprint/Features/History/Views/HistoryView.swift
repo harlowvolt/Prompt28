@@ -219,7 +219,7 @@ struct HistoryView: View {
             .buttonStyle(.plain)
 
             Text("History")
-                .font(.system(size: 28, weight: .bold, design: .rounded))
+                .font(.system(size: 24, weight: .bold, design: .rounded))
                 .foregroundStyle(PromptTheme.paleLilacWhite)
 
             Spacer()
@@ -229,7 +229,7 @@ struct HistoryView: View {
     // MARK: - Search Field
 
     private var searchField: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
             HStack(spacing: 10) {
                 Image(systemName: "magnifyingglass")
                     .font(.system(size: 15, weight: .semibold))
@@ -242,7 +242,7 @@ struct HistoryView: View {
                     .autocorrectionDisabled()
             }
             .padding(.horizontal, 16)
-            .frame(height: 54)
+            .frame(height: 50)
             .background(
                 RoundedRectangle(cornerRadius: 23, style: .continuous)
                     .fill(PromptTheme.glassFill)
@@ -251,10 +251,10 @@ struct HistoryView: View {
 
             ShareLink(item: viewModel.filteredItems.map { "[\($0.mode == .ai ? "AI" : "Human")] \($0.customName ?? $0.input)\n\($0.professional)" }.joined(separator: "\n\n---\n\n")) {
                 Text("Export")
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.84))
-                    .padding(.horizontal, 18)
-                    .frame(height: 46)
+                    .padding(.horizontal, 16)
+                    .frame(height: 42)
                     .background(
                         Capsule()
                             .fill(PromptTheme.glassFill)
@@ -267,10 +267,10 @@ struct HistoryView: View {
                 showClearAllConfirm = true
             } label: {
                 Text("Clear")
-                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
                     .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.78))
-                    .padding(.horizontal, 18)
-                    .frame(height: 46)
+                    .padding(.horizontal, 16)
+                    .frame(height: 42)
                     .background(
                         Capsule()
                             .fill(PromptTheme.glassFill)
@@ -317,117 +317,103 @@ struct HistoryView: View {
     // MARK: - History Card
 
     private func historyCard(_ item: PromptHistoryItem) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Title + mode badge on same row (tappable)
-            Button {
-                if let onSelect {
-                    onSelect(item)
-                } else {
-                    activeSheet = .detail(item.id)
-                }
-            } label: {
-                HStack(alignment: .top, spacing: 8) {
+        Button {
+            if let onSelect {
+                onSelect(item)
+            } else {
+                activeSheet = .detail(item.id)
+            }
+        } label: {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .top, spacing: 10) {
                     Text(item.customName ?? item.input)
-                        .font(.system(size: 18, weight: .semibold, design: .rounded))
+                        .font(.system(size: 16, weight: .semibold, design: .rounded))
                         .foregroundStyle(PromptTheme.paleLilacWhite)
-                        .lineLimit(1)
-                        .truncationMode(.tail)
+                        .lineLimit(2)
+                        .multilineTextAlignment(.leading)
                         .frame(maxWidth: .infinity, alignment: .leading)
+
                     modeBadge(item.mode)
                 }
-                .padding(.bottom, 6)
 
-                Text(item.professional)
-                    .font(.system(size: 15, weight: .regular, design: .rounded))
-                    .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
-                    .lineLimit(3)
+                Text(historyTimestamp(for: item.createdAt))
+                    .font(.system(size: 12, weight: .regular, design: .rounded))
+                    .foregroundStyle(PromptTheme.softLilac.opacity(0.50))
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .buttonStyle(.plain)
-
-            // Divider
-            Rectangle()
-                .fill(Color.white.opacity(0.07))
-                .frame(height: 1)
-                .padding(.vertical, 10)
-
-            // Action row
-            HStack(spacing: 8) {
-                cardActionButton(icon: "doc.on.doc.fill", label: "Copy", color: PromptTheme.softLilac) {
-                    UIPasteboard.general.string = item.professional
-                    showCopiedToast = true
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) {
-                        showCopiedToast = false
-                    }
-                }
-
-                cardActionButton(icon: "arrow.up.right.circle.fill", label: "Use", color: PromptTheme.softLilac.opacity(0.88)) {
-                    if let onSelect {
-                        onSelect(item)
-                    } else {
-                        activeSheet = .detail(item.id)
-                    }
-                }
-
-                Spacer()
-
-                Text(item.createdAt, style: .date)
-                    .font(.system(size: 12, weight: .regular, design: .rounded))
-                    .foregroundStyle(PromptTheme.softLilac.opacity(0.44))
-
-                cardActionButton(icon: "trash.fill", label: "Delete", color: Color(red: 1.0, green: 0.38, blue: 0.44)) {
-                    viewModel.delete(id: item.id)
-                }
-            }
-        }
-        .padding(16)
-        .background(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-            .fill(PromptTheme.glassFill)
-                .overlay(
-                    RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
-                )
-        )
-    }
-
-    // MARK: - Shared Helpers
-
-    private func cardActionButton(icon: String, label: String, color: Color, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            HStack(spacing: 4) {
-                Image(systemName: icon)
-                    .font(.system(size: 12, weight: .semibold))
-                Text(label)
-                    .font(.system(size: 14, weight: .semibold, design: .rounded))
-            }
-            .foregroundStyle(color)
-            .padding(.horizontal, 16)
-            .frame(height: 40)
+            .padding(16)
             .background(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
                     .fill(PromptTheme.glassFill)
                     .overlay(
-                        RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
                             .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
                     )
             )
         }
         .buttonStyle(.plain)
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                viewModel.delete(id: item.id)
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+    }
+
+    // MARK: - Shared Helpers
+
+    private func historyTimestamp(for date: Date) -> String {
+        let calendar = Calendar.current
+
+        if calendar.isDateInToday(date) {
+            return timeFormatter.string(from: date)
+        }
+
+        if calendar.isDateInYesterday(date) {
+            return "Yesterday"
+        }
+
+        let startOfToday = calendar.startOfDay(for: Date())
+        let startOfDate = calendar.startOfDay(for: date)
+        if let daysAgo = calendar.dateComponents([.day], from: startOfDate, to: startOfToday).day,
+           (2...6).contains(daysAgo) {
+            return weekdayFormatter.string(from: date)
+        }
+
+        return shortDateFormatter.string(from: date)
     }
 
     private func modeBadge(_ mode: PromptMode) -> some View {
         Text(mode == .ai ? "AI" : "HUMAN")
-            .font(.system(size: 16, weight: .bold, design: .rounded))
+            .font(.system(size: 13, weight: .bold, design: .rounded))
             .foregroundStyle(mode == .ai ? Color(red: 0.70, green: 0.53, blue: 1.0) : .white.opacity(0.82))
-            .padding(.horizontal, 14)
-            .frame(height: 34)
+            .padding(.horizontal, 12)
+            .frame(height: 30)
             .background(
                 Capsule().stroke(
                     mode == .ai ? Color(red: 0.18, green: 0.63, blue: 0.90).opacity(0.9) : Color.white.opacity(0.35),
                     lineWidth: 1
                 )
             )
+    }
+
+    private var timeFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "h:mm a"
+        return formatter
+    }
+
+    private var weekdayFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE"
+        return formatter
+    }
+
+    private var shortDateFormatter: DateFormatter {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M/d/yy"
+        return formatter
     }
 
     private var copiedToast: some View {

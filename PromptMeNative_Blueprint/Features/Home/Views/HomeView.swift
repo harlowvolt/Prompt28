@@ -514,11 +514,13 @@ private struct GhostGlyphShape: Shape {
 
     private var bottomArea: some View {
         VStack(spacing: 12) {
-            modePillRow
+            if !hasResult {
+                modePillRow
+            }
             inputBar
         }
         .padding(.horizontal, 15)
-        .padding(.bottom, 28)
+        .padding(.bottom, isInputFocused ? 10 : 28)
     }
 
     private var modePillRow: some View {
@@ -834,7 +836,12 @@ private struct GhostGlyphShape: Shape {
                     }
                     .buttonStyle(.plain)
 
-                    NavigationLink(destination: shareCardsPlaceholder.toolbar(.hidden, for: .navigationBar)) {
+                    NavigationLink(destination: FavoritesView().toolbar(.hidden, for: .navigationBar)) {
+                        leftPanelRow(icon: "star.fill", label: "Favorites")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink(destination: ShareCardsPlaceholderView().toolbar(.hidden, for: .navigationBar)) {
                         leftPanelRow(icon: "square.and.arrow.up.fill", label: "Share Cards")
                     }
                     .buttonStyle(.plain)
@@ -958,7 +965,7 @@ private struct GhostGlyphShape: Shape {
                         }
                         .buttonStyle(.plain)
 
-                        NavigationLink(destination: shareCardsPlaceholder.toolbar(.hidden, for: .navigationBar)) {
+                        NavigationLink(destination: ShareCardsPlaceholderView().toolbar(.hidden, for: .navigationBar)) {
                             panelRow(icon: "square.and.arrow.up.fill", label: "Share Cards",
                                      subtitle: "Cards from your prompts")
                         }
@@ -1020,51 +1027,6 @@ private struct GhostGlyphShape: Shape {
                         .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
                 )
         )
-    }
-
-    private var shareCardsPlaceholder: some View {
-        ZStack {
-            Color(hex: "#02060D").ignoresSafeArea()
-            VStack(spacing: 0) {
-                HStack(spacing: 16) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "arrow.left")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.82))
-                            .frame(width: 44, height: 44)
-                            .background(
-                                Circle()
-                                    .fill(.ultraThinMaterial)
-                                    .overlay(Circle().stroke(Color.white.opacity(0.18), lineWidth: 0.7))
-                            )
-                    }
-                    .buttonStyle(.plain)
-
-                    Spacer()
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 8)
-
-                Spacer()
-
-                VStack(spacing: 16) {
-                    Image(systemName: "square.and.arrow.up.fill")
-                        .font(.system(size: 36))
-                        .foregroundStyle(Color(hex: "#8B8FFF").opacity(0.6))
-                    Text("Share Cards")
-                        .font(.system(size: 20, weight: .bold, design: .default))
-                        .foregroundStyle(.white)
-                    Text("Generate a prompt to create\na shareable card.")
-                        .font(.system(size: 14, weight: .regular, design: .default))
-                        .foregroundStyle(.white.opacity(0.55))
-                        .multilineTextAlignment(.center)
-                }
-
-                Spacer()
-            }
-        }
     }
 
     // MARK: - Helpers
@@ -1142,5 +1104,56 @@ private struct GhostGlyphShape: Shape {
                     in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
             .stroke(Color.white.opacity(0.12), lineWidth: 1))
+    }
+}
+
+private struct ShareCardsPlaceholderView: View {
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            Color(hex: "#02060D").ignoresSafeArea()
+
+            VStack(spacing: 0) {
+                HStack(spacing: 16) {
+                    Button {
+                        dismiss()
+                    } label: {
+                        Image(systemName: "arrow.left")
+                            .font(.system(size: 20, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.82))
+                            .frame(width: 44, height: 44)
+                            .background(
+                                Circle()
+                                    .fill(.ultraThinMaterial)
+                                    .overlay(Circle().stroke(Color.white.opacity(0.18), lineWidth: 0.7))
+                            )
+                            .contentShape(Circle())
+                    }
+                    .buttonStyle(.plain)
+
+                    Spacer()
+                }
+                .padding(.horizontal, 24)
+                .padding(.top, 8)
+
+                Spacer()
+
+                VStack(spacing: 16) {
+                    Image(systemName: "square.and.arrow.up.fill")
+                        .font(.system(size: 36))
+                        .foregroundStyle(Color(hex: "#8B8FFF").opacity(0.6))
+                    Text("Share Cards")
+                        .font(.system(size: 20, weight: .bold, design: .default))
+                        .foregroundStyle(.white)
+                    Text("Generate a prompt to create\na shareable card.")
+                        .font(.system(size: 14, weight: .regular, design: .default))
+                        .foregroundStyle(.white.opacity(0.55))
+                        .multilineTextAlignment(.center)
+                }
+
+                Spacer()
+            }
+        }
     }
 }
