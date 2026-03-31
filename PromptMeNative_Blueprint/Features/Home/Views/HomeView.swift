@@ -202,6 +202,12 @@ private struct GhostGlyphShape: Shape {
             lastPresentedGlobalError = trimmed
             errorState?.present(title: "Voice Error", message: trimmed)
         }
+        .onAppear {
+            guard !hasResult else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                isInputFocused = true
+            }
+        }
         .task {
             settingsViewModel.bind(
                 apiClient: apiClient,
