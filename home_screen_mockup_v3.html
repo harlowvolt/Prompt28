@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt28 — Mockup v3</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg:      #02060D;
+  --violet:  #5D628A;
+  --lilac:   #CFD7FF;
+  --white:   #F2F5FF;
+  --glass:   rgba(38,43,56,0.65);
+  --stroke:  rgba(255,255,255,0.08);
+  --accent:  #8B8FFF;
+  --accent2: #A78BFA;
+  --human:   #FF8FA3;
+}
+body {
+  background: #01040A;
+  color: var(--white);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  min-height: 100vh;
+  padding: 36px 20px 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+}
+.page-title { text-align:center; }
+.page-title h1 { font-size:19px; font-weight:700; letter-spacing:-0.5px; margin-bottom:4px; }
+.page-title p  { font-size:12px; color:var(--violet); }
+
+.row {
+  display:flex; gap:24px; align-items:flex-start;
+  flex-wrap:wrap; justify-content:center;
+}
+.col { display:flex; flex-direction:column; align-items:center; gap:9px; }
+.col-label {
+  font-size:10px; font-weight:700; letter-spacing:1.2px;
+  text-transform:uppercase; color:var(--violet);
+}
+
+/* ── PHONE ── */
+.phone {
+  width:360px; height:780px;
+  background: var(--bg);
+  border-radius:48px;
+  border:1.5px solid rgba(255,255,255,0.10);
+  box-shadow: 0 0 0 6px #080C14, 0 40px 80px rgba(0,0,0,0.8);
+  overflow:hidden; position:relative;
+  display:flex; flex-direction:column; flex-shrink:0;
+}
+.notch {
+  position:absolute; top:0; left:50%; transform:translateX(-50%);
+  width:110px; height:28px; background:#080C14;
+  border-radius:0 0 16px 16px; z-index:100;
+}
+.status {
+  height:48px; padding:14px 22px 0;
+  display:flex; justify-content:space-between; align-items:center;
+  flex-shrink:0; z-index:50;
+}
+.status .time { font-size:14px; font-weight:600; letter-spacing:-0.3px; }
+.status .bat  { font-size:11px; color:var(--violet); }
+
+/* Ambient glow */
+.glow {
+  position:absolute; border-radius:50%;
+  pointer-events:none; z-index:0; transition:background 0.6s;
+}
+.g1 { top:-80px; left:-60px; width:300px; height:300px;
+  background:radial-gradient(ellipse, rgba(139,143,255,0.11) 0%, transparent 68%); }
+.g2 { bottom:100px; right:-50px; width:200px; height:200px;
+  background:radial-gradient(ellipse, rgba(93,98,138,0.07) 0%, transparent 70%); }
+.phone.human .g1 {
+  background:radial-gradient(ellipse, rgba(255,143,163,0.10) 0%, transparent 68%);
+}
+
+/* Scroll */
+.scroll { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; position:relative; z-index:1; }
+.scroll::-webkit-scrollbar { display:none; }
+.pad { padding:4px 18px 96px; }
+
+/* Header */
+.hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:28px; }
+.hdr-sub  { font-size:11px; color:var(--violet); font-weight:500; margin-bottom:2px; }
+.hdr-name { font-size:20px; font-weight:700; letter-spacing:-0.5px; }
+.avatar {
+  width:34px; height:34px; border-radius:50%;
+  background:linear-gradient(135deg,#8B8FFF,#CFD7FF);
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:700; color:#02060D;
+  box-shadow:0 0 0 2px rgba(139,143,255,0.2);
+}
+
+/* Mode toggle */
+.mode-wrap { margin-bottom:20px; }
+.mode-eyebrow {
+  font-size:10px; font-weight:700; letter-spacing:1.1px;
+  text-transform:uppercase; color:var(--violet); margin-bottom:8px;
+}
+.mode-toggle {
+  display:grid; grid-template-columns:1fr 1fr; gap:6px;
+}
+.mode-btn {
+  padding:12px 10px; border-radius:16px;
+  border:1px solid var(--stroke);
+  background:rgba(255,255,255,0.03);
+  display:flex; flex-direction:column; align-items:center; gap:3px;
+  cursor:pointer;
+}
+.mode-btn .mi   { font-size:17px; }
+.mode-btn .mn   { font-size:12px; font-weight:700; color:var(--violet); }
+.mode-btn .md   { font-size:10px; color:var(--violet); opacity:0.6; text-align:center; line-height:1.3; }
+.mode-btn.ai-on {
+  background:linear-gradient(135deg,rgba(139,143,255,0.16),rgba(139,143,255,0.06));
+  border-color:rgba(139,143,255,0.38);
+  box-shadow:0 4px 18px rgba(139,143,255,0.12);
+}
+.mode-btn.ai-on .mn { color:var(--lilac); }
+.mode-btn.hm-on {
+  background:linear-gradient(135deg,rgba(255,143,163,0.16),rgba(255,143,163,0.06));
+  border-color:rgba(255,143,163,0.38);
+  box-shadow:0 4px 18px rgba(255,143,163,0.12);
+}
+.mode-btn.hm-on .mn { color:#FFB3C6; }
+
+/* Input card */
+.input-card {
+  background:var(--glass);
+  border:1px solid var(--stroke);
+  border-radius:22px;
+  padding:16px;
+  backdrop-filter:blur(14px);
+  margin-bottom:18px;
+  box-shadow:0 6px 28px rgba(0,0,0,0.22), inset 0 1px 0 rgba(255,255,255,0.05);
+}
+.input-hint { font-size:13px; color:rgba(93,98,138,0.75); margin-bottom:12px; }
+.typed {
+  font-size:15px; color:var(--white); font-weight:400; line-height:1.55;
+  padding-bottom:14px; margin-bottom:14px;
+  border-bottom:1px solid rgba(255,255,255,0.05);
+}
+.input-foot { display:flex; justify-content:space-between; align-items:center; }
+.i-tools { display:flex; gap:7px; }
+.itool {
+  width:30px; height:30px; border-radius:9px;
+  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.07);
+  display:flex; align-items:center; justify-content:center; font-size:13px;
+}
+.go-btn {
+  height:34px; padding:0 15px; border-radius:10px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  border:none; color:#fff; font-size:13px; font-weight:700;
+  cursor:pointer; display:flex; align-items:center; gap:5px;
+  box-shadow:0 3px 12px rgba(139,143,255,0.32); letter-spacing:-0.1px;
+}
+.phone.human .go-btn {
+  background:linear-gradient(135deg,#FF8FA3,#FF6B8A);
+  box-shadow:0 3px 12px rgba(255,143,163,0.32);
+}
+
+/* Platform row */
+.plat-eyebrow {
+  font-size:10px; font-weight:700; letter-spacing:1.1px;
+  text-transform:uppercase; color:var(--violet); margin-bottom:8px;
+}
+.plat-row { display:flex; gap:6px; margin-bottom:22px; overflow-x:auto; scrollbar-width:none; }
+.plat-row::-webkit-scrollbar { display:none; }
+.plat {
+  flex-shrink:0; height:26px; padding:0 10px; border-radius:8px;
+  background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.07);
+  font-size:11px; font-weight:600; color:var(--violet);
+  display:flex; align-items:center; gap:5px; white-space:nowrap;
+}
+.plat.on { background:rgba(139,143,255,0.11); border-color:rgba(139,143,255,0.28); color:var(--lilac); }
+.phone.human .plat.on { background:rgba(255,143,163,0.11); border-color:rgba(255,143,163,0.28); color:#FFB3C6; }
+.dot { width:5px; height:5px; border-radius:50%; }
+
+/* Trending */
+.sec-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.sec-t { font-size:12px; font-weight:700; color:var(--lilac); }
+.sec-m { font-size:11px; color:var(--violet); }
+.trend-scroll { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; }
+.trend-scroll::-webkit-scrollbar { display:none; }
+.tpill {
+  flex-shrink:0; width:152px;
+  background:var(--glass); border:1px solid var(--stroke);
+  border-radius:16px; padding:12px 13px;
+  backdrop-filter:blur(8px);
+}
+.tp-tag  { font-size:9px; font-weight:800; letter-spacing:0.8px; text-transform:uppercase; color:var(--accent); margin-bottom:4px; }
+.tp-text { font-size:12px; color:var(--lilac); line-height:1.35; font-weight:500; margin-bottom:5px; }
+.tp-uses { font-size:10px; color:var(--violet); }
+
+/* ── RESULT SCREEN ── */
+.back-row { display:flex; align-items:center; gap:8px; margin-bottom:22px; }
+.back-arr { font-size:18px; color:var(--violet); }
+.back-title { font-size:16px; font-weight:700; letter-spacing:-0.4px; }
+
+.result-card {
+  background:linear-gradient(160deg,#07101E,#02060D);
+  border:1px solid rgba(139,143,255,0.14);
+  border-radius:22px; padding:18px; margin-bottom:14px;
+  position:relative; overflow:hidden;
+}
+.result-card::before {
+  content:''; position:absolute; top:-50px; right:-50px;
+  width:140px; height:140px;
+  background:radial-gradient(circle,rgba(139,143,255,0.11) 0%,transparent 70%);
+  border-radius:50%;
+}
+.phone.human .result-card { border-color:rgba(255,143,163,0.14); }
+.phone.human .result-card::before {
+  background:radial-gradient(circle,rgba(255,143,163,0.10) 0%,transparent 70%);
+}
+
+.rbadge {
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(139,143,255,0.10); border:1px solid rgba(139,143,255,0.22);
+  border-radius:7px; padding:3px 9px;
+  font-size:9px; font-weight:800; color:var(--accent);
+  letter-spacing:0.8px; text-transform:uppercase; margin-bottom:13px;
+}
+.rbadge.hm { background:rgba(255,143,163,0.10); border-color:rgba(255,143,163,0.22); color:var(--human); }
+
+.r-you-lbl { font-size:10px; color:var(--violet); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:3px; }
+.r-you-txt { font-size:13px; color:rgba(207,215,255,0.45); font-style:italic; line-height:1.4; margin-bottom:13px; }
+.r-div { height:1px; background:rgba(255,255,255,0.05); margin-bottom:13px; }
+.r-out-lbl { font-size:10px; color:var(--violet); font-weight:600; text-transform:uppercase; letter-spacing:0.5px; margin-bottom:8px; }
+.r-out-txt { font-size:13px; color:var(--white); line-height:1.65; }
+.r-out-txt.mono { font-family:'SF Mono','Courier New',monospace; font-size:12px; color:var(--lilac); }
+
+.act-row { display:flex; gap:7px; margin-bottom:10px; }
+.abtn {
+  flex:1; height:42px; border-radius:13px; border:none;
+  font-size:12px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:5px;
+}
+.a-copy {
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; box-shadow:0 3px 14px rgba(139,143,255,0.28);
+}
+.phone.human .a-copy {
+  background:linear-gradient(135deg,#FF8FA3,#FF6B8A);
+  box-shadow:0 3px 14px rgba(255,143,163,0.28);
+}
+.a-ghost { background:rgba(255,255,255,0.05); border:1px solid var(--stroke); color:var(--lilac); }
+.refine {
+  width:100%; height:38px; border-radius:12px;
+  background:rgba(139,143,255,0.07); border:1px solid rgba(139,143,255,0.18);
+  color:var(--lilac); font-size:12px; font-weight:600;
+  display:flex; align-items:center; justify-content:center; gap:5px; margin-bottom:18px;
+}
+.phone.human .refine {
+  background:rgba(255,143,163,0.07); border-color:rgba(255,143,163,0.18); color:#FFB3C6;
+}
+
+/* ── SHARE CARD ── */
+.overlay {
+  position:absolute; inset:0; z-index:200;
+  background:rgba(2,6,13,0.72); backdrop-filter:blur(7px);
+  display:flex; flex-direction:column; justify-content:flex-end;
+}
+.sheet {
+  background:#07101E;
+  border:1px solid rgba(139,143,255,0.18);
+  border-radius:28px 28px 0 0;
+  padding:18px 18px 36px;
+  box-shadow:0 -12px 40px rgba(139,143,255,0.10);
+}
+.drag { width:32px; height:4px; border-radius:2px; background:rgba(255,255,255,0.10); margin:0 auto 16px; }
+.sheet-ttl { font-size:14px; font-weight:700; margin-bottom:13px; }
+
+.sc-box {
+  background:linear-gradient(135deg,#0A1428,#02060D);
+  border:1px solid rgba(139,143,255,0.16); border-radius:18px;
+  padding:16px; margin-bottom:13px; position:relative; overflow:hidden;
+}
+.sc-box::after {
+  content:''; position:absolute; top:-30px; right:-30px;
+  width:90px; height:90px;
+  background:radial-gradient(circle,rgba(139,143,255,0.13) 0%,transparent 70%);
+  border-radius:50%;
+}
+.sc-brand { font-size:9px; font-weight:800; letter-spacing:2px; text-transform:uppercase; color:var(--accent); margin-bottom:7px; }
+.sc-og    { font-size:11px; color:rgba(93,98,138,0.7); font-style:italic; margin-bottom:8px; line-height:1.4; }
+.sc-out   { font-size:12px; color:var(--white); line-height:1.55; }
+.sc-foot  { display:flex; justify-content:space-between; align-items:center; margin-top:11px; }
+.sc-wm    { font-size:9px; color:rgba(93,98,138,0.45); }
+.sc-tag   { font-size:9px; font-weight:700; color:var(--accent); background:rgba(139,143,255,0.10); padding:2px 7px; border-radius:4px; }
+
+.sh-row { display:flex; gap:7px; margin-bottom:8px; }
+.sh-btn {
+  flex:1; height:42px; border-radius:13px; border:none;
+  font-size:12px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:5px;
+}
+.sh-main { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; box-shadow:0 3px 14px rgba(139,143,255,0.28); }
+.sh-ghost { background:rgba(255,255,255,0.06); border:1px solid var(--stroke); color:var(--lilac); flex:none; padding:0 14px; }
+
+/* Tab bar */
+.tabbar {
+  position:absolute; bottom:0; left:0; right:0; height:82px;
+  background:rgba(2,6,13,0.95); backdrop-filter:blur(24px);
+  border-top:1px solid rgba(255,255,255,0.06);
+  display:flex; align-items:flex-start; padding:10px 6px 0; z-index:100;
+}
+.tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; }
+.tico {
+  width:28px; height:28px; border-radius:9px;
+  display:flex; align-items:center; justify-content:center; font-size:16px;
+}
+.tab.on .tico { background:rgba(139,143,255,0.15); }
+.tlbl { font-size:10px; font-weight:600; color:var(--violet); }
+.tab.on .tlbl { color:var(--lilac); }
+.tdot { width:4px; height:4px; border-radius:50%; background:var(--accent); opacity:0; }
+.tab.on .tdot { opacity:1; }
+</style>
+</head>
+<body>
+
+<div class="page-title">
+  <h1>Prompt28 · Mockup v3</h1>
+  <p>Simple · Aesthetic · Helpful</p>
+</div>
+
+<div class="row">
+
+  <!-- ① HOME -->
+  <div class="col">
+    <div class="col-label">① Home</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="glow g1"></div><div class="glow g2"></div>
+      <div class="status"><span class="time">9:41</span><span class="bat">100%</span></div>
+      <div class="scroll"><div class="pad">
+
+        <div class="hdr">
+          <div><div class="hdr-sub">Good morning</div><div class="hdr-name">Natalie ✦</div></div>
+          <div class="avatar">N</div>
+        </div>
+
+        <div class="mode-wrap">
+          <div class="mode-eyebrow">Output style</div>
+          <div class="mode-toggle">
+            <div class="mode-btn ai-on">
+              <span class="mi">✦</span>
+              <span class="mn">AI Mode</span>
+              <span class="md">Structured &amp; optimized</span>
+            </div>
+            <div class="mode-btn">
+              <span class="mi">🫂</span>
+              <span class="mn">Human Mode</span>
+              <span class="md">First-person &amp; natural</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="input-card">
+          <div class="input-hint">Just talk. Messy is fine.</div>
+          <div class="typed">I want to start a business but I have no idea where to begin...</div>
+          <div class="input-foot">
+            <div class="i-tools">
+              <div class="itool">🎤</div>
+              <div class="itool">📎</div>
+            </div>
+            <button class="go-btn">✦ Transform</button>
+          </div>
+        </div>
+
+        <div class="plat-eyebrow">Format for</div>
+        <div class="plat-row">
+          <div class="plat on"><div class="dot" style="background:#8B8FFF"></div>Claude</div>
+          <div class="plat"><div class="dot" style="background:#74B9FF"></div>ChatGPT</div>
+          <div class="plat"><div class="dot" style="background:#81ECEC"></div>Gemini</div>
+          <div class="plat"><div class="dot" style="background:#FD79A8"></div>Grok</div>
+        </div>
+
+        <div class="sec-hdr">
+          <span class="sec-t">🔥 What's Working</span>
+          <span class="sec-m">All →</span>
+        </div>
+        <div class="trend-scroll">
+          <div class="tpill"><div class="tp-tag">Career</div><div class="tp-text">Rewrite my bio without sounding cringe</div><div class="tp-uses">14.2k uses</div></div>
+          <div class="tpill"><div class="tp-tag">Daily</div><div class="tp-text">Plan my week like a high performer</div><div class="tp-uses">9.8k uses</div></div>
+          <div class="tpill"><div class="tp-tag">Social</div><div class="tp-text">Make this text less passive aggressive</div><div class="tp-uses">7.1k uses</div></div>
+        </div>
+
+      </div></div>
+      <div class="tabbar">
+        <div class="tab on"><div class="tico">⌂</div><div class="tlbl">Home</div><div class="tdot"></div></div>
+        <div class="tab"><div class="tico">🕐</div><div class="tlbl">History</div><div class="tdot"></div></div>
+        <div class="tab"><div class="tico">🔥</div><div class="tlbl">Trending</div><div class="tdot"></div></div>
+        <div class="tab"><div class="tico">⚙</div><div class="tlbl">Settings</div><div class="tdot"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ② RESULT AI -->
+  <div class="col">
+    <div class="col-label">② Result — AI Mode</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="glow g1"></div>
+      <div class="status"><span class="time">9:41</span><span class="bat">100%</span></div>
+      <div class="scroll"><div class="pad">
+
+        <div class="back-row"><span class="back-arr">‹</span><span class="back-title">Your Prompt</span></div>
+
+        <div class="result-card">
+          <div class="rbadge">✦ AI Mode · Claude</div>
+          <div class="r-you-lbl">You said</div>
+          <div class="r-you-txt">"I want to start a business but I have no idea where to begin..."</div>
+          <div class="r-div"></div>
+          <div class="r-out-lbl">Transformed into</div>
+          <div class="r-out-txt mono">Act as an expert business strategist.
+
+I'm exploring starting a business but feel overwhelmed.
+
+Please:
+1. Ask me 3 targeted questions about my idea
+2. Identify my 3 biggest obstacles
+3. Give me a 30-day action plan
+
+Be direct and specific.</div>
+        </div>
+
+        <div class="plat-eyebrow">Also format for</div>
+        <div class="plat-row">
+          <div class="plat on"><div class="dot" style="background:#8B8FFF"></div>Claude</div>
+          <div class="plat"><div class="dot" style="background:#74B9FF"></div>ChatGPT</div>
+          <div class="plat"><div class="dot" style="background:#81ECEC"></div>Gemini</div>
+          <div class="plat"><div class="dot" style="background:#FD79A8"></div>Grok</div>
+        </div>
+
+        <div class="act-row">
+          <button class="abtn a-copy">📋 Copy</button>
+          <button class="abtn a-ghost">🔖 Save</button>
+          <button class="abtn a-ghost">⬆ Share</button>
+        </div>
+        <button class="refine">✦ Refine this prompt</button>
+
+      </div></div>
+      <div class="tabbar">
+        <div class="tab on"><div class="tico">⌂</div><div class="tlbl">Home</div><div class="tdot"></div></div>
+        <div class="tab"><div class="tico">🕐</div><div class="tlbl">History</div><div class="tdot"></div></div>
+        <div class="tab"><div class="tico">🔥</div><div class="tlbl">Trending</div><div class="tdot"></div></div>
+        <div class="tab"><div class="tico">⚙</div><div class="tlbl">Settings</div><div class="tdot"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ③ RESULT HUMAN -->
+  <div class="col">
+    <div class="col-label">③ Result — Human Mode</div>
+    <div class="phone human">
+      <div class="notch"></div>
+      <div class="glow g1"></div>
+      <div class="status"><span class="time">9:41</span><span class="bat">100%</span></div>
+      <div class="scroll"><div class="pad">
+
+        <div class="back-row"><span class="back-arr">‹</span><span class="back-title">Your Prompt</span></div>
+
+        <div class="result-card" style="border-color:rgba(255,143,163,0.14);">
+          <div style="position:absolute;top:-50px;right:-50px;width:140px;height:140px;background:radial-gradient(circle,rgba(255,143,163,0.10) 0%,transparent 70%);border-radius:50%;"></div>
+          <div class="rbadge hm">🫂 Human Mode</div>
+          <div class="r-you-lbl">You said</div>
+          <div class="r-you-txt">"I want to start a business but I have no idea where to begin..."</div>
+          <div class="r-div"></div>
+          <div class="r-out-lbl">Transformed into</div>
+          <div class="r-out-txt">I've been thinking about starting my own business for a while now, but honestly I don't know where to start and it feels overwhelming.
+
+I need you to help me think through this. Ask me a few questions first so you actually understand what I'm going for — then help me figure out one realistic thing I could do this week.
+
+Talk to me like a person, not a consultant.</div>
+        </div>
+
+        <div class="plat-eyebrow">Also format for</div>
+        <div class="plat-row">
+          <div class="plat on" style="background:rgba(255,143,163,0.11);border-color:rgba(255,143,163,0.28);color:#FFB3C6;"><div class="dot" style="background:#FF8FA3"></div>Claude</div>
+          <div class="plat"><div class="dot" style="background:#74B9FF"></div>ChatGPT</div>
+          <div class="plat"><div class="dot" style="background:#81ECEC"></div>Gemini</div>
+          <div class="plat"><div class="dot" style="background:#FD79A8"></div>Grok</div>
+        </div>
+
+        <div class="act-row">
+          <button class="abtn a-copy">📋 Copy</button>
+          <button class="abtn a-ghost">🔖 Save</button>
+          <button class="abtn a-ghost">⬆ Share</button>
+        </div>
+        <button class="refine" style="background:rgba(255,143,163,0.07);border-color:rgba(255,143,163,0.18);color:#FFB3C6;">🫂 Refine this prompt</button>
+
+      </div></div>
+      <div class="tabbar">
+        <div class="tab on"><div class="tico">⌂</div><div class="tlbl">Home</div><div class="tdot"></div></div>
+        <div class="tab"><div class="tico">🕐</div><div class="tlbl">History</div><div class="tdot"></div></div>
+        <div class="tab"><div class="tico">🔥</div><div class="tlbl">Trending</div><div class="tdot"></div></div>
+        <div class="tab"><div class="tico">⚙</div><div class="tlbl">Settings</div><div class="tdot"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ④ SHARE -->
+  <div class="col">
+    <div class="col-label">④ Share Card</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="glow g1"></div>
+      <div class="status"><span class="time">9:41</span><span class="bat">100%</span></div>
+      <div class="scroll" style="filter:blur(4px) brightness(0.35);pointer-events:none;"><div class="pad">
+        <div class="back-row"><span class="back-arr">‹</span><span class="back-title">Your Prompt</span></div>
+        <div class="result-card"><div class="rbadge">✦ AI Mode · Claude</div><div class="r-out-txt mono">Act as an expert business strategist. I'm starting a business but feel overwhelmed. Ask me 3 questions, identify obstacles, give me a 30-day plan.</div></div>
+      </div></div>
+
+      <div class="overlay">
+        <div class="sheet">
+          <div class="drag"></div>
+          <div class="sheet-ttl">Share your prompt</div>
+          <div class="sc-box">
+            <div class="sc-brand">✦ Prompt28</div>
+            <div class="sc-og">"I want to start a business but I have no idea where to begin..."</div>
+            <div class="sc-out">Act as an expert business strategist. I'm starting a business but feel overwhelmed. Ask me 3 questions, identify my obstacles, give me a 30-day action plan. Be direct.</div>
+            <div class="sc-foot">
+              <span class="sc-wm">prompt28.app</span>
+              <span class="sc-tag">✦ AI Mode</span>
+            </div>
+          </div>
+          <div class="sh-row">
+            <button class="sh-btn sh-main">⬆ Share to Stories</button>
+            <button class="sh-btn sh-ghost">Copy</button>
+          </div>
+          <div class="sh-row">
+            <button class="sh-btn sh-ghost">𝕏 Post</button>
+            <button class="sh-btn sh-ghost">💬 Message</button>
+            <button class="sh-btn sh-ghost">Save</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tabbar">
+        <div class="tab on"><div class="tico">⌂</div><div class="tlbl">Home</div><div class="tdot"></div></div>
+        <div class="tab"><div class="tico">🕐</div><div class="tlbl">History</div><div class="tdot"></div></div>
+        <div class="tab"><div class="tico">🔥</div><div class="tlbl">Trending</div><div class="tdot"></div></div>
+        <div class="tab"><div class="tico">⚙</div><div class="tlbl">Settings</div><div class="tdot"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div style="text-align:center;font-size:12px;color:var(--violet);line-height:2;margin-top:8px;">
+  messy thought → <span style="color:var(--accent);font-weight:700;">✦ Transform</span> → polished prompt → copy into any AI → save · share · go viral
+</div>
+
+</body>
+</html>

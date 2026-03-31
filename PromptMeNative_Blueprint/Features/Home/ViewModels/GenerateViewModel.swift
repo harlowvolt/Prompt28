@@ -9,6 +9,7 @@ final class GenerateViewModel {
     var inputText = ""
     var refinementText = ""
     var selectedMode: PromptMode = .ai
+    var selectedPlatform: TargetPlatform = .claude
     private(set) var isGenerating = false
     private(set) var latestResult: GenerateResponse?
     private(set) var latestInput: String = ""
@@ -135,6 +136,7 @@ final class GenerateViewModel {
                 input: cleanedInput,
                 refinement: refinement?.isEmpty == true ? nil : refinement,
                 mode: selectedMode,
+                platform: selectedPlatform,
                 systemPrompt: nil
             )
 

@@ -8,6 +8,8 @@ struct HomeView: View {
     @State private var generateViewModel: GenerateViewModel
     @State private var settingsViewModel = SettingsViewModel()
     @State private var lastPresentedGlobalError = ""
+    @State private var showPlatformDropdown = false
+    @State private var isListening = false
 
     private let authManager: AuthManager
     private let router: AppRouter
@@ -33,9 +35,7 @@ struct HomeView: View {
         self.preferencesStore = preferencesStore
         self.historyStore = historyStore
         self.usageTracker = usageTracker
-
         self._orbEngine = State(wrappedValue: orbEngineFactory.makeOrbEngine())
-
         self._generateViewModel = State(
             wrappedValue: GenerateViewModel(
                 authManager: authManager,
@@ -48,97 +48,43 @@ struct HomeView: View {
         )
     }
 
+    // MARK: - Body
+
     var body: some View {
         NavigationStack {
             ZStack {
+                // Background
                 if useRootBackgroundExperiment {
-                    Color.clear
-                        .ignoresSafeArea()
+                    Color.clear.ignoresSafeArea()
                 } else {
-                    PromptPremiumBackground()
-                        .ignoresSafeArea()
+                    PromptPremiumBackground().ignoresSafeArea()
                 }
 
-                VStack(spacing: 0) {
-                    topBar
-                        .padding(.horizontal, 24)
-                        .padding(.top, 16)
-
-                    if !hasResult {
-                        greetingHeader
-                            .padding(.top, 16)
-
-                        modePicker(hPad: 32)
-                            .padding(.top, 18)
-
-                        Text(generateViewModel.selectedMode == .ai
-                             ? "Standard AI prompt style"
-                             : "Writes like a real person, not an AI")
-                            .font(.system(size: 13, weight: .regular, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.40))
-                            .padding(.top, 14)
-                    }
-
-                    if case .microphoneDenied = orbEngine.permissionStatus {
-                        permissionDeniedBanner(message: "Microphone access is required to use the Orb.")
-                            .padding(.top, 18)
-                    } else if case .speechDenied = orbEngine.permissionStatus {
-                        permissionDeniedBanner(message: "Speech recognition access is required to use the Orb.")
-                            .padding(.top, 18)
-                    }
-
-                    OrbView(engine: orbEngine, onTranscript: generateFromText)
-                        .frame(
-                            width: hasResult ? 190 : 300,
-                            height: hasResult ? 190 : 300
-                        )
-                        .shadow(color: PromptTheme.orbIdleGlow.opacity(0.50), radius: 32)
-                        .padding(.top, hasResult ? 14 : 20)
-                        .animation(.spring(response: 0.4, dampingFraction: 0.82), value: hasResult)
-
-                    transcriptSection(hPad: 24)
-                        .padding(.top, 14)
-
-                    // Prompts-remaining pill — visible to starter plan users only when idle.
-                    if !hasResult, let remaining = generateViewModel.promptsRemaining {
-                        usagePill(remaining: remaining)
-                            .padding(.top, 10)
-                            .transition(.opacity.combined(with: .scale(scale: 0.92)))
-                    }
-
-                    if hasResult {
+                if hasResult {
+                    // ── Result state: show result screen ──────────────────
+                    VStack(spacing: 0) {
+                        navBar
                         resultSection(hPad: 0)
                             .frame(maxHeight: .infinity)
                             .transition(.move(edge: .bottom).combined(with: .opacity))
-                    } else {
-                        Button { router.presentHomeSheet(.typePrompt) } label: {
-                            Text("Type instead")
-                                .font(.system(size: 17, weight: .medium, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.78))
-                                .frame(maxWidth: .infinity)
-                                .frame(height: 50)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 25, style: .continuous)
-                                        .fill(.ultraThinMaterial)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 25, style: .continuous)
-                                                .fill(PromptTheme.glassFill)
-                                        )
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 25, style: .continuous)
-                                                .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
-                                        )
-                                )
-                        }
-                        .buttonStyle(.plain)
-                        .padding(.horizontal, 32)
-                        .padding(.top, 18)
-
-                        Spacer()
                     }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                    .padding(.bottom, AppSpacing.bottomContentClearance)
+                } else {
+                    // ── Idle state: main home layout ──────────────────────
+                    VStack(spacing: 0) {
+                        navBar
+                        centerContent
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        bottomArea
+                    }
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
-                .padding(.bottom, AppSpacing.bottomContentClearance)
+
+                // Dropdown overlay
+                if showPlatformDropdown {
+                    platformDropdownOverlay
+                }
             }
             .toolbar(.hidden, for: .navigationBar)
             .promptClearNavigationSurfaces()
@@ -150,19 +96,13 @@ struct HomeView: View {
         )) { sheet in
             switch sheet {
             case .typePrompt:
-                // TypePromptView owns its own NavigationStack, title, toolbar,
-                // presentationDetents, and PromptPremiumBackground.
                 TypePromptView(viewModel: generateViewModel)
-
             case .settings:
-                SettingsView {
-                    router.dismissHomeSheet()
-                }
-                .presentationDetents([.large])
-                .presentationDragIndicator(.visible)
-                .presentationBackground(.regularMaterial)
-                .presentationCornerRadius(32)
-
+                SettingsView { router.dismissHomeSheet() }
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationBackground(.regularMaterial)
+                    .presentationCornerRadius(32)
             case .upgrade:
                 UpgradeView(viewModel: settingsViewModel)
                     .presentationDetents([.large])
@@ -174,8 +114,6 @@ struct HomeView: View {
         .onChange(of: generateViewModel.showPaywall) { _, show in
             if show {
                 router.presentHomeSheet(.upgrade)
-                // Reset immediately so the next generate attempt can re-trigger the paywall.
-                // Without this, showPaywall stays true and .onChange never fires again.
                 generateViewModel.showPaywall = false
             }
         }
@@ -203,46 +141,111 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Top Bar
+    // MARK: - Nav Bar
 
-    private var topBar: some View {
-        HStack {
+    private var navBar: some View {
+        HStack(spacing: 10) {
+            // Left: settings (hamburger style)
+            Button { router.presentHomeSheet(.settings) } label: {
+                Image(systemName: "line.3.horizontal")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(PromptTheme.softLilac.opacity(0.85))
+                    .frame(width: 36, height: 36)
+                    .background(navIconBackground)
+            }
+            .buttonStyle(.plain)
+
+            // Brand name
+            Text("Orbit Orb")
+                .font(.system(size: 17, weight: .bold, design: .default))
+                .foregroundStyle(PromptTheme.paleLilacWhite)
+                .tracking(-0.3)
+
             Spacer()
 
-            Button { router.presentHomeSheet(.settings) } label: {
-                Image(systemName: "gearshape.fill")
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(.white.opacity(0.82))
-                    .frame(width: 44, height: 44)
-                    .background(
-                        Circle()
-                            .fill(.ultraThinMaterial)
-                            .overlay(Circle().fill(PromptTheme.glassFill))
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.white.opacity(0.14), lineWidth: 0.5)
-                            )
-                    )
-                    .shadow(color: .black.opacity(0.20), radius: 10, y: 6)
+            // Usage pill (starter plan only)
+            if !hasResult, let remaining = generateViewModel.promptsRemaining {
+                usagePill(remaining: remaining)
+                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
+            }
+
+            // Right: history clock
+            Button {
+                // Route to history tab
+                router.selectedTab = .history
+            } label: {
+                Image(systemName: "clock")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(PromptTheme.softLilac.opacity(0.85))
+                    .frame(width: 36, height: 36)
+                    .background(navIconBackground)
             }
             .buttonStyle(.plain)
         }
+        .padding(.horizontal, 18)
+        .padding(.top, 10)
+        .padding(.bottom, 4)
     }
 
-    // MARK: - Mode Picker
+    private var navIconBackground: some View {
+        RoundedRectangle(cornerRadius: 11, style: .continuous)
+            .fill(.ultraThinMaterial)
+            .overlay(
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .fill(PromptTheme.glassFill)
+            )
+            .overlay(
+                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                    .stroke(Color.white.opacity(0.10), lineWidth: 0.5)
+            )
+    }
 
-    private func modePicker(hPad: CGFloat) -> some View {
-        HStack(spacing: 14) {
-            modePill(label: "AI Mode", mode: .ai)
-            modePill(label: "Human Mode", mode: .human)
+    // MARK: - Center Content
+
+    private var centerContent: some View {
+        VStack(spacing: 22) {
+            // Permission banners
+            if case .microphoneDenied = orbEngine.permissionStatus {
+                permissionDeniedBanner(message: "Microphone access is required for voice input.")
+                    .padding(.horizontal, 20)
+            } else if case .speechDenied = orbEngine.permissionStatus {
+                permissionDeniedBanner(message: "Speech recognition is required for voice input.")
+                    .padding(.horizontal, 20)
+            }
+
+            // Orbital logo
+            OrbitLogoView()
+                .frame(width: 176, height: 176)
+
+            // Greeting
+            VStack(spacing: 4) {
+                Text("What do you want to")
+                    .font(.system(size: 22, weight: .semibold, design: .default))
+                    .foregroundStyle(PromptTheme.paleLilacWhite)
+                Text("transform today?")
+                    .font(.system(size: 22, weight: .semibold, design: .default))
+                    .foregroundStyle(PromptTheme.softLilac)
+            }
+            .multilineTextAlignment(.center)
+            .tracking(-0.4)
+
+            // Mode pills — prominent, full-width
+            HStack(spacing: 10) {
+                modePill(label: "✦  AI Mode", mode: .ai)
+                modePill(label: "🫂  Human Mode", mode: .human)
+            }
+            .padding(.horizontal, 22)
+
+            // Platform dropdown button
+            platformDropdownButton
         }
-        .frame(maxWidth: .infinity)
-        .padding(.horizontal, hPad)
+        .padding(.vertical, 8)
     }
+
+    // MARK: - Mode Pill
 
     private func modePill(label: String, mode: PromptMode) -> some View {
-        let isSelected = generateViewModel.selectedMode == mode
-
+        let isOn = generateViewModel.selectedMode == mode
         return Button {
             withAnimation(.easeInOut(duration: 0.18)) {
                 generateViewModel.selectedMode = mode
@@ -251,52 +254,341 @@ struct HomeView: View {
             AnalyticsService.shared.track(.modeSwitched(to: mode.rawValue))
         } label: {
             Text(label)
-                .font(.system(size: 14, weight: .semibold, design: .rounded))
-                .minimumScaleFactor(0.7)
-                .lineLimit(1)
-                .foregroundStyle(isSelected ? .white : .white.opacity(0.66))
+                .font(.system(size: 14, weight: .bold, design: .default))
+                .foregroundStyle(isOn ? PromptTheme.paleLilacWhite : PromptTheme.mutedViolet)
                 .frame(maxWidth: .infinity)
-                .frame(height: 50)
+                .frame(height: 48)
                 .background {
-                    if isSelected {
-                        RoundedRectangle(cornerRadius: 25, style: .continuous)
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(isOn
+                              ? LinearGradient(
+                                    colors: [Color(hex: "#8B8FFF").opacity(0.22),
+                                             Color(hex: "#A78BFA").opacity(0.12)],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing)
+                              : LinearGradient(
+                                    colors: [PromptTheme.glassFill, PromptTheme.glassFill],
+                                    startPoint: .topLeading,
+                                    endPoint: .bottomTrailing))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .stroke(isOn
+                                        ? Color(hex: "#8B8FFF").opacity(0.38)
+                                        : Color.white.opacity(0.08),
+                                        lineWidth: 1)
+                        )
+                }
+                .shadow(color: isOn ? Color(hex: "#8B8FFF").opacity(0.18) : .clear,
+                        radius: 12, y: 4)
+        }
+        .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.18), value: isOn)
+    }
+
+    // MARK: - Platform Dropdown
+
+    private var platformDropdownButton: some View {
+        Button {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.82)) {
+                showPlatformDropdown = true
+            }
+            HapticService.selection()
+        } label: {
+            HStack(spacing: 7) {
+                Circle()
+                    .fill(Color(hex: generateViewModel.selectedPlatform.accentHex))
+                    .frame(width: 7, height: 7)
+                Text(generateViewModel.selectedPlatform.displayName)
+                    .font(.system(size: 13, weight: .bold, design: .default))
+                    .foregroundStyle(PromptTheme.softLilac)
+                Image(systemName: "chevron.down")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(PromptTheme.mutedViolet)
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 9)
+            .background(
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .overlay(Capsule().fill(PromptTheme.glassFill))
+                    .overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 0.5))
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var platformDropdownOverlay: some View {
+        ZStack(alignment: .top) {
+            // Dismiss tap
+            Color.clear
+                .contentShape(Rectangle())
+                .ignoresSafeArea()
+                .onTapGesture {
+                    withAnimation(.easeOut(duration: 0.20)) {
+                        showPlatformDropdown = false
+                    }
+                }
+
+            VStack(spacing: 0) {
+                // Position roughly below nav + logo area
+                Spacer().frame(height: 90)
+
+                dropdownSheet
+                    .padding(.horizontal, 70)
+                    .transition(.scale(scale: 0.92, anchor: .top).combined(with: .opacity))
+            }
+        }
+    }
+
+    private var dropdownSheet: some View {
+        VStack(spacing: 0) {
+            Text("Format for")
+                .font(.system(size: 10, weight: .bold, design: .default))
+                .foregroundStyle(PromptTheme.mutedViolet)
+                .tracking(0.8)
+                .textCase(.uppercase)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 14)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+
+            ForEach(TargetPlatform.allCases) { platform in
+                Button {
+                    withAnimation(.easeInOut(duration: 0.18)) {
+                        generateViewModel.selectedPlatform = platform
+                        showPlatformDropdown = false
+                    }
+                    HapticService.selection()
+                } label: {
+                    HStack(spacing: 11) {
+                        Circle()
+                            .fill(Color(hex: platform.accentHex))
+                            .frame(width: 9, height: 9)
+                        Text(platform.displayName)
+                            .font(.system(size: 14, weight: .semibold, design: .default))
+                            .foregroundStyle(PromptTheme.paleLilacWhite)
+                        Spacer()
+                        if generateViewModel.selectedPlatform == platform {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 12, weight: .bold))
+                                .foregroundStyle(Color(hex: "#8B8FFF"))
+                        }
+                    }
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 11)
+                    .background(
+                        generateViewModel.selectedPlatform == platform
+                            ? Color(hex: "#8B8FFF").opacity(0.10)
+                            : Color.clear
+                    )
+                }
+                .buttonStyle(.plain)
+
+                if platform != TargetPlatform.allCases.last {
+                    Divider()
+                        .background(Color.white.opacity(0.06))
+                        .padding(.horizontal, 12)
+                }
+            }
+
+            Divider()
+                .background(Color.white.opacity(0.06))
+                .padding(.horizontal, 12)
+
+            Text("Adapts prompt style for each platform")
+                .font(.system(size: 11, weight: .regular, design: .default))
+                .foregroundStyle(PromptTheme.mutedViolet.opacity(0.75))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+        }
+        .background(
+            RoundedRectangle(cornerRadius: 18, style: .continuous)
+                .fill(Color(hex: "#0D1525"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .stroke(Color(hex: "#8B8FFF").opacity(0.20), lineWidth: 1)
+                )
+        )
+        .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
+        .shadow(color: Color(hex: "#8B8FFF").opacity(0.10), radius: 20, y: 4)
+    }
+
+    // MARK: - Bottom Area
+
+    private var bottomArea: some View {
+        VStack(spacing: 10) {
+            trendingStrip
+            inputBar
+        }
+        .padding(.horizontal, 15)
+        .padding(.bottom, 28)
+    }
+
+    private var trendingStrip: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 8) {
+                trendingChip(label: "Trending", isTag: true)
+                trendingChip(label: "Rewrite my bio")
+                trendingChip(label: "Plan my week")
+                trendingChip(label: "Cold email")
+                trendingChip(label: "Say no nicely")
+                trendingChip(label: "Better LinkedIn")
+            }
+            .padding(.horizontal, 2)
+        }
+    }
+
+    private func trendingChip(label: String, isTag: Bool = false) -> some View {
+        Button {
+            if !isTag {
+                generateViewModel.inputText = label
+                router.presentHomeSheet(.typePrompt)
+            }
+        } label: {
+            HStack(spacing: 5) {
+                if isTag {
+                    Circle()
+                        .fill(Color(hex: "#8B8FFF"))
+                        .frame(width: 5, height: 5)
+                }
+                Text(label)
+                    .font(.system(size: 11, weight: isTag ? .bold : .semibold, design: .default))
+                    .foregroundStyle(isTag ? PromptTheme.softLilac : PromptTheme.mutedViolet)
+                    .tracking(isTag ? 0.3 : 0)
+            }
+            .padding(.horizontal, 12)
+            .frame(height: 30)
+            .background(
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .overlay(Capsule().fill(PromptTheme.glassFill))
+                    .overlay(Capsule().stroke(Color.white.opacity(0.07), lineWidth: 0.5))
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var inputBar: some View {
+        HStack(spacing: 10) {
+            // + button → type prompt sheet
+            Button { router.presentHomeSheet(.typePrompt) } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 16, weight: .medium))
+                    .foregroundStyle(PromptTheme.mutedViolet)
+                    .frame(width: 30, height: 30)
+                    .background(
+                        RoundedRectangle(cornerRadius: 9, style: .continuous)
+                            .fill(Color.white.opacity(0.06))
+                    )
+            }
+            .buttonStyle(.plain)
+
+            // Tappable placeholder → type prompt
+            Button { router.presentHomeSheet(.typePrompt) } label: {
+                Text(orbEngine.isRecording ? primaryTranscriptText : "Just talk. Messy is fine.")
+                    .font(.system(size: 15, weight: .regular, design: .default))
+                    .foregroundStyle(
+                        orbEngine.isRecording
+                            ? PromptTheme.softLilac.opacity(0.80)
+                            : PromptTheme.mutedViolet.opacity(0.65)
+                    )
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+            }
+            .buttonStyle(.plain)
+
+            // Mic button — toggles voice input
+            Button {
+                HapticService.impact(.medium)
+                if orbEngine.isRecording {
+                    orbEngine.stopListening()
+                    isListening = false
+                } else {
+                    orbEngine.onFinalTranscript = { transcript in
+                        generateFromText(transcript)
+                    }
+                    orbEngine.startListening()
+                    isListening = true
+                }
+            } label: {
+                Image(systemName: orbEngine.isRecording ? "waveform" : "mic")
+                    .font(.system(size: 14, weight: .medium))
+                    .foregroundStyle(orbEngine.isRecording
+                                     ? Color(hex: "#8B8FFF")
+                                     : PromptTheme.mutedViolet)
+                    .frame(width: 32, height: 32)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(orbEngine.isRecording
+                                  ? Color(hex: "#8B8FFF").opacity(0.15)
+                                  : Color.white.opacity(0.06))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                    .stroke(orbEngine.isRecording
+                                            ? Color(hex: "#8B8FFF").opacity(0.35)
+                                            : Color.clear,
+                                            lineWidth: 1)
+                            )
+                    )
+            }
+            .buttonStyle(.plain)
+            .animation(.easeInOut(duration: 0.2), value: orbEngine.isRecording)
+
+            // Send / Transform button
+            Button {
+                guard !generateViewModel.inputText.isEmpty else {
+                    router.presentHomeSheet(.typePrompt)
+                    return
+                }
+                Task { await generateViewModel.generate() }
+                HapticService.impact(.medium)
+            } label: {
+                Image(systemName: generateViewModel.isGenerating ? "ellipsis" : "arrow.up")
+                    .font(.system(size: 14, weight: .bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 36, height: 36)
+                    .background(
+                        RoundedRectangle(cornerRadius: 11, style: .continuous)
                             .fill(
                                 LinearGradient(
-                                    colors: [Color(hex: "#7C3AED").opacity(0.85), Color(hex: "#5B21B6").opacity(0.80)],
+                                    colors: [Color(hex: "#8B8FFF"), Color(hex: "#A78BFA")],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 25, style: .continuous)
-                                    .stroke(Color(hex: "#A78BFA").opacity(0.40), lineWidth: 0.8)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 25, style: .continuous)
-                                    .fill(
-                                        LinearGradient(
-                                            colors: [Color.white.opacity(0.10), .clear],
-                                            startPoint: .top,
-                                            endPoint: .center
-                                        )
-                                    )
-                            )
-                            .shadow(color: Color(hex: "#8B5CF6").opacity(0.35), radius: 14, y: 5)
-                    } else {
-                        RoundedRectangle(cornerRadius: 25, style: .continuous)
-                            .fill(.ultraThinMaterial)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 25, style: .continuous)
-                                    .fill(PromptTheme.glassFill)
-                            )
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 25, style: .continuous)
-                                    .stroke(Color.white.opacity(0.12), lineWidth: 0.5)
-                            )
-                    }
-                }
+                    )
+                    .shadow(color: Color(hex: "#8B8FFF").opacity(0.30), radius: 8, y: 3)
+            }
+            .buttonStyle(.plain)
+            .disabled(generateViewModel.isGenerating)
         }
-        .buttonStyle(.plain)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .fill(Color(hex: "#07101E"))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20, style: .continuous)
+                        .stroke(Color(hex: "#8B8FFF").opacity(0.15), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.30), radius: 10, y: 4)
+        )
+    }
+
+    // MARK: - Result Section
+
+    private func resultSection(hPad: CGFloat) -> some View {
+        ScrollView(showsIndicators: false) {
+            VStack(spacing: AppSpacing.element) {
+                ResultView(viewModel: generateViewModel)
+                if let err = generateViewModel.errorMessage {
+                    errorBanner(text: err).padding(.horizontal, hPad)
+                }
+                Color.clear.frame(height: 20)
+            }
+            .padding(.top, AppSpacing.element)
+        }
     }
 
     // MARK: - Usage Pill
@@ -304,67 +596,26 @@ struct HomeView: View {
     @ViewBuilder
     private func usagePill(remaining: Int) -> some View {
         let isCritical = remaining <= 2
-        let isExhausted = remaining == 0
-
-        Button {
-            // Tap navigates to paywall so users can upgrade
-            generateViewModel.showPaywall = true
-        } label: {
-            HStack(spacing: 6) {
-                Image(systemName: isExhausted ? "lock.fill" : "sparkle")
-                    .font(.system(size: 11, weight: .semibold))
+        Button { generateViewModel.showPaywall = true } label: {
+            HStack(spacing: 5) {
+                Image(systemName: remaining == 0 ? "lock.fill" : "sparkle")
+                    .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(isCritical ? .yellow.opacity(0.90) : PromptTheme.softLilac.opacity(0.72))
-
-                Text(isExhausted
-                     ? "Upgrade for unlimited prompts"
-                     : "\(remaining) of \(UsageTracker.freeMonthlyLimit) free prompts left")
-                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                Text(remaining == 0
+                     ? "Upgrade"
+                     : "\(remaining) left")
+                    .font(.system(size: 12, weight: .semibold, design: .default))
                     .foregroundStyle(isCritical ? .white.opacity(0.92) : PromptTheme.softLilac.opacity(0.78))
             }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 7)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 5)
             .background(
                 Capsule()
-                    .fill(isCritical
-                          ? Color.yellow.opacity(0.10)
-                          : PromptTheme.glassFill)
-                    .overlay(
-                        Capsule()
-                            .stroke(isCritical
-                                    ? Color.yellow.opacity(0.30)
-                                    : Color.white.opacity(0.10),
-                                    lineWidth: 0.5)
-                    )
+                    .fill(isCritical ? Color.yellow.opacity(0.10) : PromptTheme.glassFill)
+                    .overlay(Capsule().stroke(isCritical ? Color.yellow.opacity(0.30) : Color.white.opacity(0.09), lineWidth: 0.5))
             )
         }
         .buttonStyle(.plain)
-        .animation(.easeInOut(duration: 0.2), value: remaining)
-    }
-
-    // MARK: - Orb + Transcript + Result
-
-    private func transcriptSection(hPad: CGFloat) -> some View {
-        Text(primaryTranscriptText)
-            .font(.system(size: 15, weight: .regular, design: .rounded))
-            .foregroundStyle(.white.opacity(0.58))
-            .multilineTextAlignment(.center)
-            .padding(.horizontal, hPad)
-    }
-
-    private func resultSection(hPad: CGFloat) -> some View {
-        ScrollView(showsIndicators: false) {
-            VStack(spacing: AppSpacing.element) {
-                ResultView(viewModel: generateViewModel)
-
-                if let err = generateViewModel.errorMessage {
-                    errorBanner(text: err)
-                        .padding(.horizontal, hPad)
-                }
-
-                Color.clear.frame(height: 20)
-            }
-            .padding(.top, AppSpacing.element)
-        }
     }
 
     // MARK: - Toast
@@ -373,7 +624,7 @@ struct HomeView: View {
         Group {
             if generateViewModel.showCopiedToast {
                 Text("Copied to clipboard")
-                    .font(.footnote.weight(.semibold))
+                    .font(.system(size: 13, weight: .semibold, design: .default))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 10)
                     .background(
@@ -388,69 +639,42 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Greeting
-
-    private var firstName: String {
-        let raw = authManager.currentUser?.name ?? ""
-        let first = raw.split(separator: " ").first.map(String.init) ?? ""
-        return first.isEmpty ? "there" : first
-    }
-
-    private var greetingHeader: some View {
-        VStack(spacing: 10) {
-            Text("\(firstName),")
-                .font(.system(size: 34, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-
-            Text("What do you want to make today?")
-                .font(.system(size: 16, weight: .regular, design: .rounded))
-                .foregroundStyle(.white.opacity(0.58))
-        }
-        .multilineTextAlignment(.center)
-        .frame(maxWidth: .infinity)
-    }
-
     // MARK: - Helpers
 
-    private var hasResult: Bool { !generateViewModel.latestPromptText.isEmpty }
-    private var orbTransitions: any OrbEngineProtocol { orbEngine }
+    private var hasResult: Bool {
+        !generateViewModel.latestPromptText.isEmpty
+    }
 
     private func generateFromText(_ finalText: String) {
         Task {
-            let transitions = orbTransitions
-            transitions.markGenerating()
+            let engine = orbEngine
+            engine.markGenerating()
             await generateViewModel.generateFromOrb(text: finalText)
             if let error = generateViewModel.errorMessage {
-                transitions.markFailure(error)
+                engine.markFailure(error)
             } else {
-                transitions.markSuccess()
+                engine.markSuccess()
             }
-            transitions.markIdle()
+            engine.markIdle()
         }
     }
 
     private var primaryTranscriptText: String {
-        if let error = generateViewModel.errorMessage,
-           !error.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty { return error }
         let live = orbEngine.transcript.trimmingCharacters(in: .whitespacesAndNewlines)
         if orbEngine.isRecording, !live.isEmpty { return live }
-        let finalized = orbEngine.finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !finalized.isEmpty { return finalized }
-        if generateViewModel.isGenerating { return "Sending to Orion Orb..." }
-        let latest = generateViewModel.latestInput.trimmingCharacters(in: .whitespacesAndNewlines)
-        if !latest.isEmpty { return latest }
-        if orbEngine.isRecording || orbEngine.state == .listening { return "Listening..." }
-        if orbEngine.state == .transcribing || orbEngine.state == .generating { return "Processing..." }
-        return "Tap to speak"
+        let final = orbEngine.finalTranscript.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !final.isEmpty { return final }
+        return "Listening..."
     }
+
+    // MARK: - Banners
 
     private func permissionDeniedBanner(message: String) -> some View {
         VStack(spacing: AppSpacing.elementTight) {
             HStack(spacing: 10) {
-                Image(systemName: "mic.slash.fill")
-                    .foregroundStyle(.yellow)
+                Image(systemName: "mic.slash.fill").foregroundStyle(.yellow)
                 Text(message)
-                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .font(.system(size: 14, weight: .medium, design: .default))
                     .foregroundStyle(PromptTheme.paleLilacWhite)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
@@ -460,10 +684,9 @@ struct HomeView: View {
                 }
             } label: {
                 Text("Open iOS Settings")
-                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+                    .font(.system(size: 13, weight: .semibold, design: .default))
                     .foregroundStyle(.white)
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 8)
+                    .padding(.horizontal, 16).padding(.vertical, 8)
                     .background(Capsule().fill(PromptTheme.mutedViolet.opacity(0.5)))
                     .overlay(Capsule().stroke(.white.opacity(0.2), lineWidth: 1))
             }
@@ -473,33 +696,23 @@ struct HomeView: View {
         .background(
             RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .fill(Color.yellow.opacity(0.08))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 16, style: .continuous)
-                        .stroke(Color.yellow.opacity(0.25), lineWidth: 1)
-                )
+                .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .stroke(Color.yellow.opacity(0.25), lineWidth: 1))
         )
-        .padding(.horizontal, 24)
     }
 
     private func errorBanner(text: String) -> some View {
         HStack(spacing: 10) {
-            Image(systemName: "exclamationmark.triangle.fill")
-                .foregroundStyle(.yellow)
-
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.yellow)
             Text(text)
-                .font(PromptTheme.Typography.rounded(14, .medium))
+                .font(.system(size: 14, weight: .medium, design: .default))
                 .foregroundStyle(PromptTheme.paleLilacWhite)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(PromptTheme.Spacing.s)
-        .background(
-            PromptTheme.premiumMaterial,
-            in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
-        )
-        .overlay(
-            RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
-                .stroke(Color.white.opacity(0.12), lineWidth: 1)
-        )
+        .background(PromptTheme.premiumMaterial,
+                    in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
+            .stroke(Color.white.opacity(0.12), lineWidth: 1))
     }
 }
-

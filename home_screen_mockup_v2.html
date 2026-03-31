@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prompt28 — Mockup v2</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+:root {
+  --bg:       #02060D;
+  --plum:     #07101E;
+  --violet:   #5D628A;
+  --lilac:    #CFD7FF;
+  --white:    #F2F5FF;
+  --glass:    rgba(38,43,56,0.72);
+  --stroke:   rgba(255,255,255,0.09);
+  --accent:   #8B8FFF;
+  --accent2:  #A78BFA;
+  --human:    #FF8FA3;
+}
+body {
+  background: #01040A;
+  color: var(--white);
+  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  min-height: 100vh;
+  padding: 32px 20px 60px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+h1 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--white);
+  letter-spacing: -0.5px;
+  margin-bottom: 4px;
+  text-align: center;
+}
+.subtitle {
+  font-size: 13px;
+  color: var(--violet);
+  margin-bottom: 32px;
+  text-align: center;
+}
+.screens-row {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+.screen-wrap { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.screen-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--violet);
+}
+
+/* ─── PHONE ─── */
+.phone {
+  width: 375px;
+  height: 812px;
+  background: var(--bg);
+  border-radius: 50px;
+  border: 1.5px solid rgba(255,255,255,0.11);
+  box-shadow: 0 0 0 6px #080C14, 0 40px 80px rgba(0,0,0,0.75);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+.notch {
+  position: absolute;
+  top:0; left:50%; transform:translateX(-50%);
+  width:120px; height:30px;
+  background:#080C14;
+  border-radius: 0 0 18px 18px;
+  z-index:100;
+}
+.status {
+  height:50px;
+  padding: 12px 22px 0;
+  display:flex; justify-content:space-between; align-items:center;
+  flex-shrink:0; z-index:50;
+}
+.status .time { font-size:15px; font-weight:600; letter-spacing:-0.3px; }
+.status .bat  { font-size:11px; color:var(--violet); }
+
+/* Glow */
+.glow {
+  position:absolute; pointer-events:none;
+  border-radius:50%; z-index:0;
+  transition: background 0.5s;
+}
+.glow-top {
+  top:-100px; left:-80px;
+  width:320px; height:320px;
+  background: radial-gradient(ellipse, rgba(139,143,255,0.12) 0%, transparent 70%);
+}
+.glow-bot {
+  bottom:80px; right:-60px;
+  width:220px; height:220px;
+  background: radial-gradient(ellipse, rgba(93,98,138,0.08) 0%, transparent 70%);
+}
+
+/* ─── SCROLL ─── */
+.scroll { flex:1; overflow-y:auto; overflow-x:hidden; scrollbar-width:none; position:relative; z-index:1; }
+.scroll::-webkit-scrollbar { display:none; }
+.pad { padding: 6px 18px 100px; }
+
+/* ─── HEADER ─── */
+.hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:26px; }
+.hdr-left .sub  { font-size:12px; color:var(--violet); font-weight:500; margin-bottom:2px; }
+.hdr-left .name { font-size:21px; font-weight:700; letter-spacing:-0.5px; }
+.avatar {
+  width:36px; height:36px; border-radius:50%;
+  background: linear-gradient(135deg,#8B8FFF,#CFD7FF);
+  display:flex; align-items:center; justify-content:center;
+  font-size:14px; font-weight:700; color:#02060D;
+  box-shadow: 0 0 0 2px rgba(139,143,255,0.25);
+}
+
+/* ─── MODE PILLS ─── */
+.mode-row { display:flex; gap:8px; margin-bottom:20px; }
+.mode-pill {
+  flex:1; padding:11px 8px;
+  border-radius:16px;
+  border: 1px solid var(--stroke);
+  background: rgba(255,255,255,0.04);
+  display:flex; flex-direction:column; align-items:center; gap:4px;
+  cursor:pointer; transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+}
+.mode-pill .pill-icon { font-size:18px; }
+.mode-pill .pill-name { font-size:12px; font-weight:700; color:var(--violet); letter-spacing:-0.1px; }
+.mode-pill .pill-desc { font-size:10px; color:var(--violet); text-align:center; line-height:1.3; opacity:0.7; }
+.mode-pill.active-ai {
+  background: linear-gradient(135deg, rgba(139,143,255,0.18), rgba(139,143,255,0.07));
+  border-color: rgba(139,143,255,0.4);
+  box-shadow: 0 4px 20px rgba(139,143,255,0.15);
+}
+.mode-pill.active-ai .pill-name { color:var(--lilac); }
+.mode-pill.active-human {
+  background: linear-gradient(135deg, rgba(255,143,163,0.18), rgba(255,143,163,0.07));
+  border-color: rgba(255,143,163,0.4);
+  box-shadow: 0 4px 20px rgba(255,143,163,0.15);
+}
+.mode-pill.active-human .pill-name { color:#FFB3C6; }
+
+/* ─── INPUT ─── */
+.input-card {
+  background: var(--glass);
+  border: 1px solid var(--stroke);
+  border-radius:24px;
+  padding:16px;
+  backdrop-filter:blur(12px);
+  margin-bottom:20px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.06);
+}
+.input-hint { font-size:13px; color:rgba(93,98,138,0.8); margin-bottom:14px; line-height:1.5; }
+.typed-text {
+  font-size:16px; color:var(--white); font-weight:500;
+  line-height:1.5; min-height:52px; margin-bottom:14px;
+  border-bottom:1px solid rgba(255,255,255,0.05); padding-bottom:14px;
+}
+.input-row { display:flex; justify-content:space-between; align-items:center; }
+.input-tools { display:flex; gap:7px; }
+.itool {
+  width:30px; height:30px; border-radius:9px;
+  background: rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.07);
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; cursor:pointer;
+}
+.gen-btn {
+  height:34px; padding:0 16px;
+  border-radius:11px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border:none; color:#fff; font-size:13px; font-weight:700;
+  cursor:pointer; display:flex; align-items:center; gap:5px;
+  box-shadow: 0 4px 14px rgba(139,143,255,0.35);
+  letter-spacing:-0.1px;
+}
+
+/* ─── SECTION ─── */
+.sec-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+.sec-title { font-size:13px; font-weight:700; color:var(--lilac); }
+.sec-more { font-size:12px; color:var(--violet); cursor:pointer; }
+
+/* ─── STARTER CARDS ─── */
+.starter {
+  background:var(--glass); border:1px solid var(--stroke); border-radius:18px;
+  padding:13px 15px; margin-bottom:8px; display:flex; align-items:center; gap:11px;
+  cursor:pointer; transition:all 0.2s; backdrop-filter:blur(8px);
+}
+.starter:last-child { margin-bottom:0; }
+.starter:hover { border-color:rgba(139,143,255,0.22); transform:translateY(-1px); }
+.st-emoji { font-size:19px; flex-shrink:0; }
+.st-body { flex:1; }
+.st-cat { font-size:10px; font-weight:700; color:var(--violet); text-transform:uppercase; letter-spacing:0.7px; margin-bottom:2px; }
+.st-text { font-size:13px; color:var(--lilac); line-height:1.35; font-weight:500; }
+.st-arr { color:var(--violet); font-size:13px; }
+
+/* ─── RESULT SCREEN ─── */
+.result-top {
+  background: linear-gradient(160deg, #07101E 0%, #02060D 100%);
+  border-radius:22px;
+  border:1px solid rgba(139,143,255,0.15);
+  padding:18px;
+  margin-bottom:14px;
+  position:relative;
+  overflow:hidden;
+}
+.result-top::before {
+  content:'';
+  position:absolute;
+  top:-40px; right:-40px;
+  width:140px; height:140px;
+  background: radial-gradient(circle, rgba(139,143,255,0.12) 0%, transparent 70%);
+  border-radius:50%;
+}
+.result-badge {
+  display:inline-flex; align-items:center; gap:5px;
+  background:rgba(139,143,255,0.12); border:1px solid rgba(139,143,255,0.25);
+  border-radius:8px; padding:4px 9px;
+  font-size:10px; font-weight:700; color:var(--accent);
+  letter-spacing:0.5px; text-transform:uppercase; margin-bottom:12px;
+}
+.result-badge.human-badge {
+  background:rgba(255,143,163,0.12); border-color:rgba(255,143,163,0.25); color:var(--human);
+}
+.original-label { font-size:10px; color:var(--violet); margin-bottom:4px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+.original-text { font-size:13px; color:rgba(207,215,255,0.5); font-style:italic; margin-bottom:14px; line-height:1.4; }
+.divider { height:1px; background:rgba(255,255,255,0.06); margin-bottom:14px; }
+.result-label { font-size:10px; color:var(--violet); margin-bottom:8px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; }
+.result-text { font-size:14px; color:var(--white); line-height:1.6; font-weight:400; }
+.result-text.ai-text { font-family:'SF Mono', 'Courier New', monospace; font-size:12.5px; color:#CFD7FF; line-height:1.65; }
+
+.action-row { display:flex; gap:8px; margin-bottom:16px; }
+.act-btn {
+  flex:1; height:44px; border-radius:14px; border:none;
+  font-size:13px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  transition:all 0.2s; letter-spacing:-0.1px;
+}
+.act-copy {
+  background: linear-gradient(135deg,var(--accent),var(--accent2));
+  color:#fff; box-shadow:0 4px 16px rgba(139,143,255,0.3);
+}
+.act-save {
+  background:rgba(255,255,255,0.06); border:1px solid var(--stroke); color:var(--lilac);
+}
+.act-share {
+  background:rgba(255,255,255,0.06); border:1px solid var(--stroke); color:var(--lilac);
+}
+.refine-btn {
+  width:100%; height:40px; border-radius:13px;
+  background:rgba(139,143,255,0.08); border:1px solid rgba(139,143,255,0.2);
+  color:var(--lilac); font-size:13px; font-weight:600; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+  margin-bottom:20px;
+}
+
+/* Platform row */
+.platform-row { display:flex; gap:6px; margin-bottom:20px; overflow-x:auto; scrollbar-width:none; }
+.platform-row::-webkit-scrollbar { display:none; }
+.plat {
+  flex-shrink:0; height:28px; padding:0 11px; border-radius:9px;
+  background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.08);
+  font-size:11px; font-weight:600; color:var(--violet);
+  display:flex; align-items:center; gap:5px; cursor:pointer; white-space:nowrap;
+  transition:all 0.2s;
+}
+.plat.on { background:rgba(139,143,255,0.12); border-color:rgba(139,143,255,0.3); color:var(--lilac); }
+.dot { width:6px; height:6px; border-radius:50%; }
+
+/* ─── SHARE CARD ─── */
+.share-overlay {
+  position:absolute; inset:0; z-index:200;
+  background:rgba(2,6,13,0.7); backdrop-filter:blur(6px);
+  display:flex; flex-direction:column; justify-content:flex-end;
+}
+.share-sheet {
+  background: #07101E;
+  border:1px solid rgba(139,143,255,0.2);
+  border-radius:30px 30px 0 0;
+  padding:20px 18px 36px;
+  box-shadow:0 -16px 50px rgba(139,143,255,0.12);
+}
+.sheet-drag { width:36px; height:4px; border-radius:2px; background:rgba(255,255,255,0.12); margin:0 auto 18px; }
+.sheet-title { font-size:14px; font-weight:700; color:var(--white); margin-bottom:14px; }
+.share-card-box {
+  background: linear-gradient(135deg, #0A1428, #02060D);
+  border:1px solid rgba(139,143,255,0.18);
+  border-radius:20px; padding:18px; margin-bottom:14px;
+  position:relative; overflow:hidden;
+}
+.share-card-box::after {
+  content:'';
+  position:absolute; top:-30px; right:-30px;
+  width:100px; height:100px;
+  background:radial-gradient(circle, rgba(139,143,255,0.15) 0%, transparent 70%);
+  border-radius:50%;
+}
+.sc-brand { font-size:10px; font-weight:800; letter-spacing:2px; color:var(--accent); text-transform:uppercase; margin-bottom:8px; }
+.sc-original { font-size:11px; color:rgba(93,98,138,0.8); font-style:italic; margin-bottom:10px; }
+.sc-result { font-size:12.5px; color:var(--white); line-height:1.55; font-weight:400; }
+.sc-footer { display:flex; justify-content:space-between; align-items:center; margin-top:12px; }
+.sc-footer .wm { font-size:10px; color:rgba(93,98,138,0.5); }
+.sc-footer .mode-tag { font-size:10px; font-weight:700; color:var(--accent); background:rgba(139,143,255,0.1); padding:2px 7px; border-radius:5px; }
+.share-btns { display:flex; gap:8px; }
+.sh-btn {
+  flex:1; height:44px; border-radius:14px; border:none;
+  font-size:13px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; justify-content:center; gap:6px;
+}
+.sh-share { background:linear-gradient(135deg,var(--accent),var(--accent2)); color:#fff; box-shadow:0 4px 16px rgba(139,143,255,0.3); }
+.sh-copy  { background:rgba(255,255,255,0.07); border:1px solid var(--stroke); color:var(--lilac); }
+
+/* ─── TAB BAR ─── */
+.tab-bar {
+  position:absolute; bottom:0; left:0; right:0;
+  height:86px; background:rgba(3,8,18,0.94);
+  backdrop-filter:blur(24px); border-top:1px solid rgba(255,255,255,0.06);
+  display:flex; align-items:flex-start; padding:10px 8px 0; z-index:100;
+}
+.tab { flex:1; display:flex; flex-direction:column; align-items:center; gap:4px; cursor:pointer; padding:4px 0; }
+.tab-ico {
+  width:30px; height:30px; border-radius:10px;
+  display:flex; align-items:center; justify-content:center; font-size:17px;
+  transition: all 0.25s cubic-bezier(0.34,1.56,0.64,1);
+}
+.tab.on .tab-ico { background:rgba(139,143,255,0.16); transform:scale(1.08); }
+.tab-lbl { font-size:10px; font-weight:600; color:var(--violet); letter-spacing:0.1px; }
+.tab.on .tab-lbl { color:var(--lilac); }
+.tab-dot { width:4px; height:4px; border-radius:50%; background:var(--accent); opacity:0; transition:opacity 0.2s; }
+.tab.on .tab-dot { opacity:1; }
+
+/* ─── TRENDING PILLS ─── */
+.trend-row { display:flex; gap:9px; overflow-x:auto; scrollbar-width:none; padding-bottom:2px; }
+.trend-row::-webkit-scrollbar { display:none; }
+.trend-pill {
+  flex-shrink:0; background:var(--glass); border:1px solid var(--stroke);
+  border-radius:16px; padding:11px 13px; max-width:170px; cursor:pointer;
+  transition:all 0.2s; backdrop-filter:blur(8px);
+}
+.trend-pill:hover { border-color:rgba(139,143,255,0.2); transform:translateY(-1px); }
+.tp-tag { font-size:10px; font-weight:700; letter-spacing:0.7px; text-transform:uppercase; color:var(--accent); margin-bottom:4px; }
+.tp-text { font-size:12px; color:var(--lilac); line-height:1.35; font-weight:500; margin-bottom:4px; }
+.tp-uses { font-size:11px; color:var(--violet); }
+</style>
+</head>
+<body>
+
+<h1>Prompt28 — Redesigned Flow</h1>
+<p class="subtitle">The prompt operating system · messy thought in → polished prompt out</p>
+
+<div class="screens-row">
+
+  <!-- ════════════ SCREEN 1: HOME / INPUT ════════════ -->
+  <div class="screen-wrap">
+    <div class="screen-label">① Home — Input</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="glow glow-top"></div>
+      <div class="glow glow-bot"></div>
+      <div class="status"><span class="time">9:41</span><span class="bat">●●● 100%</span></div>
+      <div class="scroll"><div class="pad">
+
+        <div class="hdr">
+          <div class="hdr-left">
+            <div class="sub">Good morning</div>
+            <div class="name">Natalie ✦</div>
+          </div>
+          <div class="avatar">N</div>
+        </div>
+
+        <!-- Mode pills -->
+        <div style="font-size:11px;font-weight:700;color:var(--violet);letter-spacing:1px;text-transform:uppercase;margin-bottom:10px;">Choose your output style</div>
+        <div class="mode-row">
+          <div class="mode-pill active-ai">
+            <span class="pill-icon">✦</span>
+            <span class="pill-name">AI Mode</span>
+            <span class="pill-desc">Structured, optimized for any AI platform</span>
+          </div>
+          <div class="mode-pill">
+            <span class="pill-icon">🫂</span>
+            <span class="pill-name">Human Mode</span>
+            <span class="pill-desc">First-person, natural, like you're speaking</span>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div class="input-card">
+          <div class="input-hint">Just talk. Messy is fine — we'll clean it up.</div>
+          <div class="typed-text">I want to start a business but I don't even know where to begin honestly...</div>
+          <div class="input-row">
+            <div class="input-tools">
+              <div class="itool">🎤</div>
+              <div class="itool">📎</div>
+            </div>
+            <button class="gen-btn">✦ Transform</button>
+          </div>
+        </div>
+
+        <!-- Platform -->
+        <div style="font-size:11px;font-weight:700;color:var(--violet);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px;">Format for</div>
+        <div class="platform-row" style="margin-bottom:22px;">
+          <div class="plat on"><div class="dot" style="background:#8B8FFF"></div>Claude</div>
+          <div class="plat"><div class="dot" style="background:#74B9FF"></div>ChatGPT</div>
+          <div class="plat"><div class="dot" style="background:#81ECEC"></div>Gemini</div>
+          <div class="plat"><div class="dot" style="background:#FD79A8"></div>Grok</div>
+        </div>
+
+        <!-- Starters -->
+        <div class="sec-hdr">
+          <span class="sec-title">Easy starters</span>
+          <span class="sec-more">More →</span>
+        </div>
+        <div class="starter"><span class="st-emoji">💼</span><div class="st-body"><div class="st-cat">Work</div><div class="st-text">I need to say no to my boss without it being awkward</div></div><span class="st-arr">›</span></div>
+        <div class="starter"><span class="st-emoji">🧠</span><div class="st-body"><div class="st-cat">Think better</div><div class="st-text">I'm stuck on a decision and going in circles</div></div><span class="st-arr">›</span></div>
+        <div class="starter"><span class="st-emoji">📱</span><div class="st-body"><div class="st-cat">Create</div><div class="st-text">Make a prompt for Claude to help me build my app</div></div><span class="st-arr">›</span></div>
+
+        <!-- Trending -->
+        <div class="sec-hdr" style="margin-top:20px;">
+          <span class="sec-title">🔥 What's Working</span>
+          <span class="sec-more">All →</span>
+        </div>
+        <div class="trend-row">
+          <div class="trend-pill"><div class="tp-tag">Career</div><div class="tp-text">Rewrite my LinkedIn bio without the cringe</div><div class="tp-uses">14.2k uses</div></div>
+          <div class="trend-pill"><div class="tp-tag">Daily</div><div class="tp-text">Plan my week like a high performer would</div><div class="tp-uses">9.8k uses</div></div>
+          <div class="trend-pill"><div class="tp-tag">Social</div><div class="tp-text">Make this text less passive aggressive</div><div class="tp-uses">7.1k uses</div></div>
+        </div>
+
+      </div></div>
+      <div class="tab-bar">
+        <div class="tab on"><div class="tab-ico">⌂</div><div class="tab-lbl">Home</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-ico">🕐</div><div class="tab-lbl">History</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-ico">🔥</div><div class="tab-lbl">Trending</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-ico">⚙</div><div class="tab-lbl">Settings</div><div class="tab-dot"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ SCREEN 2: RESULT — AI MODE ════════════ -->
+  <div class="screen-wrap">
+    <div class="screen-label">② Result — AI Mode</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="glow glow-top"></div>
+      <div class="status"><span class="time">9:41</span><span class="bat">●●● 100%</span></div>
+      <div class="scroll"><div class="pad">
+
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;">
+          <div style="font-size:18px;cursor:pointer;color:var(--violet);">‹</div>
+          <div style="font-size:17px;font-weight:700;letter-spacing:-0.4px;">Your Prompt</div>
+        </div>
+
+        <!-- Result card -->
+        <div class="result-top">
+          <div class="result-badge">✦ AI Mode · Claude</div>
+          <div class="original-label">You said</div>
+          <div class="original-text">"I want to start a business but I don't even know where to begin honestly..."</div>
+          <div class="divider"></div>
+          <div class="result-label">Transformed into</div>
+          <div class="result-text ai-text">Act as an expert business strategist and startup mentor.
+
+I'm exploring starting a new business but feel overwhelmed and don't know where to begin.
+
+Please guide me by:
+1. Asking me 3 targeted questions about my idea and goals
+2. Identifying my 3 biggest potential obstacles based on my answers
+3. Giving me a concrete 30-day action plan
+
+Be direct, practical, and specific. No generic advice.</div>
+        </div>
+
+        <!-- Platform row -->
+        <div style="font-size:11px;font-weight:700;color:var(--violet);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px;">Also format for</div>
+        <div class="platform-row">
+          <div class="plat on"><div class="dot" style="background:#8B8FFF"></div>Claude</div>
+          <div class="plat"><div class="dot" style="background:#74B9FF"></div>ChatGPT</div>
+          <div class="plat"><div class="dot" style="background:#81ECEC"></div>Gemini</div>
+          <div class="plat"><div class="dot" style="background:#FD79A8"></div>Grok</div>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-row">
+          <button class="act-btn act-copy">📋 Copy</button>
+          <button class="act-btn act-save">🔖 Save</button>
+          <button class="act-btn act-share">⬆ Share</button>
+        </div>
+        <button class="refine-btn">✦ Refine this prompt</button>
+
+        <!-- Follow-ups -->
+        <div class="sec-hdr">
+          <span class="sec-title">Try next</span>
+        </div>
+        <div class="starter"><span class="st-emoji">💰</span><div class="st-body"><div class="st-cat">Finance</div><div class="st-text">Now help me figure out startup costs</div></div><span class="st-arr">›</span></div>
+        <div class="starter"><span class="st-emoji">🎯</span><div class="st-body"><div class="st-cat">Strategy</div><div class="st-text">Help me validate my business idea first</div></div><span class="st-arr">›</span></div>
+
+      </div></div>
+      <div class="tab-bar">
+        <div class="tab on"><div class="tab-ico">⌂</div><div class="tab-lbl">Home</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-ico">🕐</div><div class="tab-lbl">History</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-ico">🔥</div><div class="tab-lbl">Trending</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-ico">⚙</div><div class="tab-lbl">Settings</div><div class="tab-dot"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ SCREEN 3: RESULT — HUMAN MODE ════════════ -->
+  <div class="screen-wrap">
+    <div class="screen-label">③ Result — Human Mode</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="glow glow-top" style="background:radial-gradient(ellipse, rgba(255,143,163,0.10) 0%, transparent 70%);"></div>
+      <div class="status"><span class="time">9:41</span><span class="bat">●●● 100%</span></div>
+      <div class="scroll"><div class="pad">
+
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;">
+          <div style="font-size:18px;cursor:pointer;color:var(--violet);">‹</div>
+          <div style="font-size:17px;font-weight:700;letter-spacing:-0.4px;">Your Prompt</div>
+        </div>
+
+        <!-- Result card — human -->
+        <div class="result-top" style="border-color:rgba(255,143,163,0.15);">
+          <div style="position:absolute;top:-40px;right:-40px;width:140px;height:140px;background:radial-gradient(circle, rgba(255,143,163,0.10) 0%, transparent 70%);border-radius:50%;"></div>
+          <div class="result-badge human-badge">🫂 Human Mode</div>
+          <div class="original-label">You said</div>
+          <div class="original-text">"I want to start a business but I don't even know where to begin honestly..."</div>
+          <div class="divider"></div>
+          <div class="result-label">Transformed into</div>
+          <div class="result-text">I've been thinking about starting my own business for a while, but honestly I don't know where to start and it feels overwhelming.
+
+I need you to help me think through this. Can you start by asking me a few questions so you actually understand what I'm going for? Then help me figure out a realistic first step — something I could actually do this week.
+
+Don't give me a generic list. Talk to me like a person.</div>
+        </div>
+
+        <!-- Platform row -->
+        <div style="font-size:11px;font-weight:700;color:var(--violet);letter-spacing:1px;text-transform:uppercase;margin-bottom:9px;">Also format for</div>
+        <div class="platform-row">
+          <div class="plat" style="background:rgba(255,143,163,0.12);border-color:rgba(255,143,163,0.3);color:#FFB3C6;"><div class="dot" style="background:#FF8FA3"></div>Claude</div>
+          <div class="plat"><div class="dot" style="background:#74B9FF"></div>ChatGPT</div>
+          <div class="plat"><div class="dot" style="background:#81ECEC"></div>Gemini</div>
+          <div class="plat"><div class="dot" style="background:#FD79A8"></div>Grok</div>
+        </div>
+
+        <!-- Actions -->
+        <div class="action-row">
+          <button class="act-btn act-copy" style="background:linear-gradient(135deg,#FF8FA3,#FF6B8A);box-shadow:0 4px 16px rgba(255,143,163,0.3);">📋 Copy</button>
+          <button class="act-btn act-save">🔖 Save</button>
+          <button class="act-btn act-share">⬆ Share</button>
+        </div>
+        <button class="refine-btn" style="background:rgba(255,143,163,0.08);border-color:rgba(255,143,163,0.22);color:#FFB3C6;">🫂 Refine this prompt</button>
+
+        <div class="sec-hdr">
+          <span class="sec-title">Try next</span>
+        </div>
+        <div class="starter"><span class="st-emoji">💰</span><div class="st-body"><div class="st-cat">Finance</div><div class="st-text">Now help me figure out startup costs</div></div><span class="st-arr">›</span></div>
+        <div class="starter"><span class="st-emoji">🎯</span><div class="st-body"><div class="st-cat">Strategy</div><div class="st-text">Help me validate my business idea first</div></div><span class="st-arr">›</span></div>
+
+      </div></div>
+      <div class="tab-bar">
+        <div class="tab on"><div class="tab-ico">⌂</div><div class="tab-lbl">Home</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-ico">🕐</div><div class="tab-lbl">History</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-ico">🔥</div><div class="tab-lbl">Trending</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-ico">⚙</div><div class="tab-lbl">Settings</div><div class="tab-dot"></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════ SCREEN 4: SHARE CARD ════════════ -->
+  <div class="screen-wrap">
+    <div class="screen-label">④ Share Card</div>
+    <div class="phone">
+      <div class="notch"></div>
+      <div class="glow glow-top"></div>
+      <div class="status"><span class="time">9:41</span><span class="bat">●●● 100%</span></div>
+      <!-- blurred bg -->
+      <div class="scroll" style="filter:blur(4px) brightness(0.4);pointer-events:none;"><div class="pad">
+        <div class="hdr"><div class="hdr-left"><div class="name">Your Prompt</div></div></div>
+        <div class="result-top"><div class="result-badge">✦ AI Mode · Claude</div><div class="result-text ai-text">Act as an expert business strategist and startup mentor. I'm exploring starting a new business but feel overwhelmed...</div></div>
+      </div></div>
+
+      <!-- Share sheet -->
+      <div class="share-overlay">
+        <div class="share-sheet">
+          <div class="sheet-drag"></div>
+          <div class="sheet-title">Share your prompt ✦</div>
+
+          <div class="share-card-box">
+            <div class="sc-brand">✦ Prompt28</div>
+            <div class="sc-original">"I want to start a business but I don't know where to begin..."</div>
+            <div class="sc-result">Act as an expert business strategist. I'm starting a business but feel overwhelmed. Ask me 3 questions, identify my biggest obstacles, then give me a 30-day action plan.</div>
+            <div class="sc-footer">
+              <span class="wm">prompt28.app</span>
+              <span class="mode-tag">✦ AI Mode</span>
+            </div>
+          </div>
+
+          <div class="share-btns" style="margin-bottom:10px;">
+            <button class="sh-btn sh-share">⬆ Share to Stories</button>
+            <button class="sh-btn sh-copy">Copy</button>
+          </div>
+          <div class="share-btns">
+            <button class="sh-btn sh-copy" style="flex:none;padding:0 16px;">𝕏 Post</button>
+            <button class="sh-btn sh-copy" style="flex:none;padding:0 16px;">💬 Message</button>
+            <button class="sh-btn sh-copy" style="flex:none;padding:0 16px;">Save Image</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab on"><div class="tab-ico">⌂</div><div class="tab-lbl">Home</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-ico">🕐</div><div class="tab-lbl">History</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-ico">🔥</div><div class="tab-lbl">Trending</div><div class="tab-dot"></div></div>
+        <div class="tab"><div class="tab-ico">⚙</div><div class="tab-lbl">Settings</div><div class="tab-dot"></div></div>
+      </div>
+    </div>
+  </div>
+
+</div><!-- end screens row -->
+
+<!-- Flow caption -->
+<div style="margin-top:36px;text-align:center;max-width:760px;">
+  <div style="font-size:13px;color:var(--violet);line-height:1.8;">
+    <span style="color:var(--lilac);font-weight:700;">The loop:</span>
+    Type something messy →
+    <span style="color:var(--accent);">✦ Transform</span> →
+    Get a polished prompt →
+    Copy it into Claude / ChatGPT / Gemini / Grok →
+    Save it, share it, go viral →
+    Others discover it in <span style="color:var(--accent);">Trending</span>
+  </div>
+</div>
+
+</body>
+</html>
