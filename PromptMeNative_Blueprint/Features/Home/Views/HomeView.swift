@@ -12,6 +12,8 @@ struct HomeView: View {
     @State private var isListening = false
     @State private var showTrending = false
     @State private var showPanel = false
+    @State private var showLeftPanel = false
+    @State private var ghostMode = false
 
     private let authManager: AuthManager
     private let router: AppRouter
@@ -99,6 +101,13 @@ struct HomeView: View {
                 .presentationBackground(.regularMaterial)
                 .presentationCornerRadius(32)
         }
+        .sheet(isPresented: $showLeftPanel) {
+            leftPanelSheet
+                .presentationDetents([.large])
+                .presentationDragIndicator(.hidden)
+                .presentationBackground(Color(hex: "#02060D"))
+                .presentationCornerRadius(32)
+        }
         .sheet(isPresented: $showPanel) {
             panelSheet
                 .presentationDetents([.large])
@@ -161,42 +170,53 @@ struct HomeView: View {
 
     private var navBar: some View {
         HStack(spacing: 10) {
-            // Left: settings (hamburger style)
-            Button { router.presentHomeSheet(.settings) } label: {
+            // Left: main menu panel
+            Button { showLeftPanel = true } label: {
                 Image(systemName: "line.3.horizontal")
                     .font(.system(size: 17, weight: .medium))
-                    .foregroundStyle(PromptTheme.softLilac.opacity(0.85))
+                    .foregroundStyle(.white.opacity(0.85))
                     .frame(width: 36, height: 36)
                     .background(navIconBackground)
-            }
-            .buttonStyle(.plain)
-
-            // Trending button (top-left)
-            Button { showTrending = true } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: "chart.line.uptrend.xyaxis")
-                        .font(.system(size: 13, weight: .bold))
-                        .foregroundStyle(.white)
-                    Text("Trending")
-                        .font(.system(size: 15, weight: .bold, design: .default))
-                        .foregroundStyle(.white)
-                }
             }
             .buttonStyle(.plain)
 
             Spacer()
 
-            // Right: panel button (History / Saves / Share Cards / Settings)
+            // Platform dropdown — centered in nav bar
+            platformDropdownButton
+
+            Spacer()
+
+            // Right: ghost mode toggle
             Button {
-                showPanel = true
+                withAnimation(.easeInOut(duration: 0.2)) { ghostMode.toggle() }
+                HapticService.selection()
             } label: {
-                Image(systemName: "square.grid.2x2")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(PromptTheme.softLilac.opacity(0.85))
+                Image(systemName: ghostMode ? "ghost.fill" : "ghost")
+                    .font(.system(size: 17, weight: .medium))
+                    .foregroundStyle(ghostMode ? Color(hex: "#8B8FFF") : .white.opacity(0.75))
                     .frame(width: 36, height: 36)
-                    .background(navIconBackground)
+                    .background(
+                        RoundedRectangle(cornerRadius: 11, style: .continuous)
+                            .fill(ghostMode
+                                  ? Color(hex: "#8B8FFF").opacity(0.18)
+                                  : Color.white.opacity(0.07))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                    .fill(ghostMode ? Color(hex: "#8B8FFF").opacity(0.10) : PromptTheme.glassFill)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 11, style: .continuous)
+                                    .stroke(ghostMode
+                                            ? Color(hex: "#8B8FFF").opacity(0.45)
+                                            : Color.white.opacity(0.10),
+                                            lineWidth: ghostMode ? 1 : 0.5)
+                            )
+                    )
+                    .shadow(color: ghostMode ? Color(hex: "#8B8FFF").opacity(0.25) : .clear, radius: 8)
             }
             .buttonStyle(.plain)
+            .animation(.easeInOut(duration: 0.2), value: ghostMode)
         }
         .padding(.horizontal, 18)
         .padding(.top, 10)
@@ -231,10 +251,6 @@ struct HomeView: View {
                     .padding(.top, 12)
             }
 
-            // Platform dropdown — top center
-            platformDropdownButton
-                .padding(.top, 18)
-
             Spacer()
 
             // Logo — centered
@@ -261,7 +277,7 @@ struct HomeView: View {
         } label: {
             Text(label)
                 .font(.system(size: 14, weight: .bold, design: .default))
-                .foregroundStyle(isOn ? PromptTheme.paleLilacWhite : PromptTheme.mutedViolet)
+                .foregroundStyle(isOn ? Color.white : Color.white.opacity(0.50))
                 .frame(maxWidth: .infinity)
                 .frame(height: 50)
                 .background {
@@ -306,10 +322,10 @@ struct HomeView: View {
                     .frame(width: 7, height: 7)
                 Text(generateViewModel.selectedPlatform.displayName)
                     .font(.system(size: 13, weight: .bold, design: .default))
-                    .foregroundStyle(PromptTheme.softLilac)
+                    .foregroundStyle(.white)
                 Image(systemName: "chevron.down")
                     .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(PromptTheme.mutedViolet)
+                    .foregroundStyle(.white.opacity(0.55))
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 9)
@@ -350,7 +366,7 @@ struct HomeView: View {
         VStack(spacing: 0) {
             Text("Format for")
                 .font(.system(size: 10, weight: .bold, design: .default))
-                .foregroundStyle(PromptTheme.mutedViolet)
+                .foregroundStyle(.white.opacity(0.55))
                 .tracking(0.8)
                 .textCase(.uppercase)
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -372,7 +388,7 @@ struct HomeView: View {
                             .frame(width: 9, height: 9)
                         Text(platform.displayName)
                             .font(.system(size: 14, weight: .semibold, design: .default))
-                            .foregroundStyle(PromptTheme.paleLilacWhite)
+                            .foregroundStyle(.white)
                         Spacer()
                         if generateViewModel.selectedPlatform == platform {
                             Image(systemName: "checkmark")
@@ -403,7 +419,7 @@ struct HomeView: View {
 
             Text("Adapts prompt style for each platform")
                 .font(.system(size: 11, weight: .regular, design: .default))
-                .foregroundStyle(PromptTheme.mutedViolet.opacity(0.75))
+                .foregroundStyle(.white.opacity(0.45))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 9)
         }
@@ -438,11 +454,11 @@ struct HomeView: View {
                     .foregroundStyle(Color(hex: "#8B8FFF"))
                 Text("See What's Trending")
                     .font(.system(size: 13, weight: .bold, design: .default))
-                    .foregroundStyle(PromptTheme.softLilac)
+                    .foregroundStyle(.white)
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundStyle(PromptTheme.mutedViolet)
+                    .foregroundStyle(.white.opacity(0.55))
             }
             .padding(.horizontal, 18)
             .frame(height: 44)
@@ -492,7 +508,7 @@ struct HomeView: View {
                 }
                 Text(label)
                     .font(.system(size: 11, weight: isTag ? .bold : .semibold, design: .default))
-                    .foregroundStyle(isTag ? PromptTheme.softLilac : PromptTheme.mutedViolet)
+                    .foregroundStyle(isTag ? Color.white : Color.white.opacity(0.55))
                     .tracking(isTag ? 0.3 : 0)
             }
             .padding(.horizontal, 12)
@@ -508,124 +524,101 @@ struct HomeView: View {
     }
 
     private var inputBar: some View {
-        HStack(spacing: 10) {
-            // + button → type prompt sheet
-            Button { router.presentHomeSheet(.typePrompt) } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(PromptTheme.mutedViolet)
-                    .frame(width: 30, height: 30)
-                    .background(
-                        RoundedRectangle(cornerRadius: 9, style: .continuous)
-                            .fill(Color.white.opacity(0.06))
-                    )
-            }
-            .buttonStyle(.plain)
-
-            // Tappable placeholder → type prompt
-            Button { router.presentHomeSheet(.typePrompt) } label: {
-                Text(orbEngine.isRecording ? primaryTranscriptText : "Just talk. Messy is fine.")
-                    .font(.system(size: 15, weight: .regular, design: .default))
-                    .foregroundStyle(
-                        orbEngine.isRecording
-                            ? PromptTheme.softLilac.opacity(0.80)
-                            : PromptTheme.mutedViolet.opacity(0.65)
-                    )
+        Button { router.presentHomeSheet(.typePrompt) } label: {
+            VStack(alignment: .leading, spacing: 16) {
+                // Placeholder text — top of card
+                Text(generateViewModel.inputText.isEmpty
+                     ? "Just talk. Messy is fine."
+                     : generateViewModel.inputText)
+                    .font(.system(size: 17, weight: .regular, design: .default))
+                    .foregroundStyle(generateViewModel.inputText.isEmpty
+                                     ? Color.white.opacity(0.35)
+                                     : Color.white.opacity(0.90))
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-            }
-            .buttonStyle(.plain)
+                    .lineLimit(2)
 
-            // Mic button — toggles voice input
-            Button {
-                HapticService.impact(.medium)
-                if orbEngine.isRecording {
-                    orbEngine.stopListening()
-                    isListening = false
-                } else {
-                    let engine = orbEngine
-                    let vm = generateViewModel
-                    engine.onFinalTranscript = { transcript in
-                        Task { @MainActor in
-                            engine.markGenerating()
-                            await vm.generateFromOrb(text: transcript)
-                            if let err = vm.errorMessage {
-                                engine.markFailure(err)
-                            } else {
-                                engine.markSuccess()
-                            }
-                            engine.markIdle()
-                        }
+                // Bottom action row
+                HStack(spacing: 8) {
+                    // Platform pill (like Grok's "Fast")
+                    HStack(spacing: 6) {
+                        Circle()
+                            .fill(Color(hex: generateViewModel.selectedPlatform.accentHex))
+                            .frame(width: 7, height: 7)
+                        Text(generateViewModel.selectedPlatform.displayName)
+                            .font(.system(size: 13, weight: .semibold, design: .default))
+                            .foregroundStyle(.white.opacity(0.80))
                     }
-                    engine.startListening()
-                    isListening = true
-                }
-            } label: {
-                ZStack {
-                    Circle()
-                        .fill(orbEngine.isRecording
-                              ? Color(hex: "#8B8FFF").opacity(0.20)
-                              : Color.white.opacity(0.07))
-                        .overlay(
-                            Circle()
-                                .stroke(orbEngine.isRecording
-                                        ? Color(hex: "#8B8FFF").opacity(0.50)
-                                        : Color.white.opacity(0.10),
-                                        lineWidth: 1)
-                        )
-                    Image(systemName: orbEngine.isRecording ? "waveform" : "mic.fill")
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(orbEngine.isRecording
-                                         ? Color(hex: "#8B8FFF")
-                                         : PromptTheme.softLilac)
-                }
-                .frame(width: 40, height: 40)
-                .shadow(color: orbEngine.isRecording ? Color(hex: "#8B8FFF").opacity(0.30) : .clear,
-                        radius: 8)
-            }
-            .buttonStyle(.plain)
-            .animation(.easeInOut(duration: 0.2), value: orbEngine.isRecording)
-
-            // Send / Transform button
-            Button {
-                guard !generateViewModel.inputText.isEmpty else {
-                    router.presentHomeSheet(.typePrompt)
-                    return
-                }
-                Task { await generateViewModel.generate() }
-                HapticService.impact(.medium)
-            } label: {
-                Image(systemName: generateViewModel.isGenerating ? "ellipsis" : "arrow.up")
-                    .font(.system(size: 14, weight: .bold))
-                    .foregroundStyle(.white)
-                    .frame(width: 36, height: 36)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
                     .background(
-                        RoundedRectangle(cornerRadius: 11, style: .continuous)
-                            .fill(
-                                LinearGradient(
-                                    colors: [Color(hex: "#8B8FFF"), Color(hex: "#A78BFA")],
-                                    startPoint: .topLeading,
-                                    endPoint: .bottomTrailing
-                                )
-                            )
+                        Capsule()
+                            .fill(Color.white.opacity(0.07))
+                            .overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 0.5))
                     )
-                    .shadow(color: Color(hex: "#8B8FFF").opacity(0.30), radius: 8, y: 3)
+
+                    // Mode pill
+                    HStack(spacing: 5) {
+                        Text(generateViewModel.selectedMode == .ai ? "✦" : "✧")
+                            .font(.system(size: 11, weight: .bold))
+                        Text(generateViewModel.selectedMode == .ai ? "AI Mode" : "Human Mode")
+                            .font(.system(size: 13, weight: .semibold, design: .default))
+                            .foregroundStyle(.white.opacity(0.80))
+                    }
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 7)
+                    .background(
+                        Capsule()
+                            .fill(Color.white.opacity(0.07))
+                            .overlay(Capsule().stroke(Color.white.opacity(0.10), lineWidth: 0.5))
+                    )
+
+                    Spacer()
+
+                    // Transform button (like Grok's "Speak")
+                    Button {
+                        guard !generateViewModel.inputText.isEmpty else {
+                            router.presentHomeSheet(.typePrompt)
+                            return
+                        }
+                        Task { await generateViewModel.generate() }
+                        HapticService.impact(.medium)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: generateViewModel.isGenerating ? "ellipsis" : "wand.and.stars")
+                                .font(.system(size: 13, weight: .bold))
+                            Text(generateViewModel.isGenerating ? "Working…" : "Transform")
+                                .font(.system(size: 14, weight: .bold, design: .default))
+                        }
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 9)
+                        .background(
+                            Capsule()
+                                .fill(LinearGradient(
+                                    colors: [Color(hex: "#8B8FFF"), Color(hex: "#A78BFA")],
+                                    startPoint: .leading,
+                                    endPoint: .trailing))
+                        )
+                        .shadow(color: Color(hex: "#8B8FFF").opacity(0.35), radius: 8, y: 2)
+                    }
+                    .buttonStyle(.plain)
+                    .disabled(generateViewModel.isGenerating)
+                }
             }
-            .buttonStyle(.plain)
-            .disabled(generateViewModel.isGenerating)
+            .padding(.horizontal, 18)
+            .padding(.top, 18)
+            .padding(.bottom, 14)
+            .background(
+                RoundedRectangle(cornerRadius: 26, style: .continuous)
+                    .fill(Color(hex: "#07101E"))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 26, style: .continuous)
+                            .stroke(Color(hex: "#8B8FFF").opacity(0.18), lineWidth: 1)
+                    )
+                    .shadow(color: .black.opacity(0.40), radius: 16, y: 6)
+            )
         }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 12)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(Color(hex: "#07101E"))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(Color(hex: "#8B8FFF").opacity(0.15), lineWidth: 1)
-                )
-                .shadow(color: .black.opacity(0.30), radius: 10, y: 4)
-        )
+        .buttonStyle(.plain)
     }
 
     // MARK: - Result Section
@@ -652,12 +645,12 @@ struct HomeView: View {
             HStack(spacing: 5) {
                 Image(systemName: remaining == 0 ? "lock.fill" : "sparkle")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundStyle(isCritical ? .yellow.opacity(0.90) : PromptTheme.softLilac.opacity(0.72))
+                    .foregroundStyle(isCritical ? .yellow.opacity(0.90) : .white.opacity(0.72))
                 Text(remaining == 0
                      ? "Upgrade"
                      : "\(remaining) left")
                     .font(.system(size: 12, weight: .semibold, design: .default))
-                    .foregroundStyle(isCritical ? .white.opacity(0.92) : PromptTheme.softLilac.opacity(0.78))
+                    .foregroundStyle(isCritical ? .white.opacity(0.92) : .white.opacity(0.78))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
@@ -684,11 +677,203 @@ struct HomeView: View {
                             .fill(PromptTheme.glassFill)
                             .overlay(Capsule().stroke(PromptTheme.glassStroke, lineWidth: 1))
                     )
-                    .foregroundStyle(PromptTheme.paleLilacWhite)
+                    .foregroundStyle(.white)
                     .padding(.bottom, 18)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
             }
         }
+    }
+
+    // MARK: - Left Panel (Grok-style)
+
+    private var leftPanelSheet: some View {
+        NavigationStack {
+            ZStack {
+                Color(hex: "#02060D").ignoresSafeArea()
+
+                VStack(spacing: 0) {
+
+                    // ── Header ──────────────────────────────────────────
+                    HStack(spacing: 12) {
+                        // Avatar circle
+                        ZStack {
+                            Circle()
+                                .fill(LinearGradient(
+                                    colors: [Color(hex: "#5D628A"), Color(hex: "#8B8FFF")],
+                                    startPoint: .topLeading, endPoint: .bottomTrailing))
+                                .frame(width: 40, height: 40)
+                            Text("O")
+                                .font(.system(size: 17, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
+
+                        Text("Orbit Orb")
+                            .font(.system(size: 17, weight: .bold, design: .default))
+                            .foregroundStyle(.white)
+
+                        Spacer()
+
+                        // Close / go-back button
+                        Button { showLeftPanel = false } label: {
+                            HStack(spacing: 1) {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .bold))
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 12, weight: .bold))
+                            }
+                            .foregroundStyle(.white.opacity(0.60))
+                            .frame(width: 40, height: 40)
+                            .background(Circle().fill(Color.white.opacity(0.07)))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.top, 28)
+                    .padding(.bottom, 20)
+
+                    // ── Promo Banner ─────────────────────────────────────
+                    HStack(spacing: 12) {
+                        ZStack {
+                            Circle()
+                                .fill(Color.white.opacity(0.15))
+                                .frame(width: 34, height: 34)
+                            Image(systemName: "sparkles")
+                                .font(.system(size: 14, weight: .semibold))
+                                .foregroundStyle(.white)
+                        }
+                        VStack(alignment: .leading, spacing: 2) {
+                            Text("Try 10 prompts for free")
+                                .font(.system(size: 14, weight: .bold, design: .default))
+                                .foregroundStyle(.white)
+                            Text("No account needed to start")
+                                .font(.system(size: 12, weight: .regular, design: .default))
+                                .foregroundStyle(.white.opacity(0.70))
+                        }
+                        Spacer()
+                        Button {
+                            showLeftPanel = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                router.presentHomeSheet(.upgrade)
+                            }
+                        } label: {
+                            Text("Try Now")
+                                .font(.system(size: 13, weight: .bold, design: .default))
+                                .foregroundStyle(.white)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 8)
+                                .background(Capsule().fill(Color.white.opacity(0.22)))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.vertical, 14)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(LinearGradient(
+                                colors: [Color(hex: "#5D628A"), Color(hex: "#8B8FFF")],
+                                startPoint: .leading, endPoint: .trailing))
+                    )
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 20)
+
+                    // ── Nav Rows ─────────────────────────────────────────
+                    VStack(spacing: 2) {
+                        NavigationLink(destination: HistoryView().toolbar(.hidden, for: .navigationBar)) {
+                            leftPanelRow(icon: "clock.arrow.circlepath", label: "History")
+                        }
+                        .buttonStyle(.plain)
+
+                        NavigationLink(destination: FavoritesView().toolbar(.hidden, for: .navigationBar)) {
+                            leftPanelRow(icon: "star.fill", label: "Saved")
+                        }
+                        .buttonStyle(.plain)
+
+                        NavigationLink(destination: shareCardsPlaceholder.toolbar(.hidden, for: .navigationBar)) {
+                            leftPanelRow(icon: "square.and.arrow.up.fill", label: "Share Cards")
+                        }
+                        .buttonStyle(.plain)
+
+                        Button {
+                            showLeftPanel = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                router.presentHomeSheet(.settings)
+                            }
+                        } label: {
+                            leftPanelRow(icon: "gearshape.fill", label: "Settings")
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 16)
+
+                    Spacer()
+
+                    // ── Search Bar ───────────────────────────────────────
+                    HStack(spacing: 12) {
+                        HStack(spacing: 8) {
+                            Image(systemName: "magnifyingglass")
+                                .font(.system(size: 14, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.40))
+                            Text("Search")
+                                .font(.system(size: 15, weight: .regular, design: .default))
+                                .foregroundStyle(.white.opacity(0.35))
+                            Spacer()
+                        }
+                        .padding(.horizontal, 14)
+                        .frame(height: 46)
+                        .background(
+                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                .fill(Color.white.opacity(0.07))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .stroke(Color.white.opacity(0.09), lineWidth: 0.5)
+                                )
+                        )
+
+                        Button {
+                            showLeftPanel = false
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                                router.presentHomeSheet(.settings)
+                            }
+                        } label: {
+                            Image(systemName: "gearshape.fill")
+                                .font(.system(size: 16, weight: .medium))
+                                .foregroundStyle(.white.opacity(0.60))
+                                .frame(width: 46, height: 46)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                        .fill(Color.white.opacity(0.07))
+                                )
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 32)
+                }
+            }
+            .toolbar(.hidden, for: .navigationBar)
+        }
+    }
+
+    private func leftPanelRow(icon: String, label: String) -> some View {
+        HStack(spacing: 14) {
+            Image(systemName: icon)
+                .font(.system(size: 17, weight: .medium))
+                .foregroundStyle(.white.opacity(0.70))
+                .frame(width: 26)
+            Text(label)
+                .font(.system(size: 16, weight: .medium, design: .default))
+                .foregroundStyle(.white)
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.30))
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 16)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.white.opacity(0.04))
+        )
     }
 
     // MARK: - Panel Sheet
@@ -703,12 +888,12 @@ struct HomeView: View {
                     HStack {
                         Text("Orbit Orb")
                             .font(.system(size: 18, weight: .bold, design: .default))
-                            .foregroundStyle(PromptTheme.paleLilacWhite)
+                            .foregroundStyle(.white)
                         Spacer()
                         Button { showPanel = false } label: {
                             Image(systemName: "xmark")
                                 .font(.system(size: 13, weight: .semibold))
-                                .foregroundStyle(PromptTheme.mutedViolet)
+                                .foregroundStyle(.white.opacity(0.55))
                                 .frame(width: 30, height: 30)
                                 .background(Circle().fill(Color.white.opacity(0.07)))
                         }
@@ -774,15 +959,15 @@ struct HomeView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
                     .font(.system(size: 15, weight: .semibold, design: .default))
-                    .foregroundStyle(PromptTheme.paleLilacWhite)
+                    .foregroundStyle(.white)
                 Text(subtitle)
                     .font(.system(size: 12, weight: .regular, design: .default))
-                    .foregroundStyle(PromptTheme.mutedViolet)
+                    .foregroundStyle(.white.opacity(0.55))
             }
             Spacer()
             Image(systemName: "chevron.right")
                 .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(PromptTheme.mutedViolet.opacity(0.5))
+                .foregroundStyle(.white.opacity(0.40))
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 14)
@@ -805,10 +990,10 @@ struct HomeView: View {
                     .foregroundStyle(Color(hex: "#8B8FFF").opacity(0.6))
                 Text("Share Cards")
                     .font(.system(size: 20, weight: .bold, design: .default))
-                    .foregroundStyle(PromptTheme.paleLilacWhite)
+                    .foregroundStyle(.white)
                 Text("Generate a prompt to create\na shareable card.")
                     .font(.system(size: 14, weight: .regular, design: .default))
-                    .foregroundStyle(PromptTheme.mutedViolet)
+                    .foregroundStyle(.white.opacity(0.55))
                     .multilineTextAlignment(.center)
             }
         }
@@ -850,7 +1035,7 @@ struct HomeView: View {
                 Image(systemName: "mic.slash.fill").foregroundStyle(.yellow)
                 Text(message)
                     .font(.system(size: 14, weight: .medium, design: .default))
-                    .foregroundStyle(PromptTheme.paleLilacWhite)
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity, alignment: .leading)
             }
             Button {
@@ -881,7 +1066,7 @@ struct HomeView: View {
             Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.yellow)
             Text(text)
                 .font(.system(size: 14, weight: .medium, design: .default))
-                .foregroundStyle(PromptTheme.paleLilacWhite)
+                .foregroundStyle(.white)
                 .frame(maxWidth: .infinity, alignment: .leading)
         }
         .padding(PromptTheme.Spacing.s)
