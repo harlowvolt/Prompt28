@@ -855,25 +855,27 @@ private struct GhostGlyphShape: Shape {
 
                 Spacer()
 
-                // ── Search Bar ───────────────────────────────────────
-                HStack(spacing: 12) {
-                    HStack(spacing: 8) {
+                // ── Search / Settings / New Chat ─────────────────────
+                HStack(spacing: 14) {
+                    HStack(spacing: 12) {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.40))
+                            .font(.system(size: 20, weight: .regular))
+                            .foregroundStyle(.white.opacity(0.34))
+
                         Text("Search")
-                            .font(.system(size: 15, weight: .regular, design: .default))
-                            .foregroundStyle(.white.opacity(0.35))
+                            .font(.system(size: 17, weight: .regular, design: .rounded))
+                            .foregroundStyle(.white.opacity(0.38))
+
                         Spacer()
                     }
-                    .padding(.horizontal, 14)
-                    .frame(height: 46)
+                    .padding(.horizontal, 18)
+                    .frame(height: 60)
                     .background(
-                        RoundedRectangle(cornerRadius: 14, style: .continuous)
-                            .fill(Color.white.opacity(0.07))
+                        Capsule()
+                            .fill(Color.white.opacity(0.08))
                             .overlay(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .stroke(Color.white.opacity(0.09), lineWidth: 0.5)
+                                Capsule()
+                                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
                             )
                     )
 
@@ -885,13 +887,41 @@ private struct GhostGlyphShape: Shape {
                             router.presentHomeSheet(.settings)
                         }
                     } label: {
-                        Image(systemName: "gearshape.fill")
-                            .font(.system(size: 16, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.60))
-                            .frame(width: 46, height: 46)
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 24, weight: .regular))
+                            .foregroundStyle(.white.opacity(0.88))
+                            .frame(width: 60, height: 60)
                             .background(
-                                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                    .fill(Color.white.opacity(0.07))
+                                Circle()
+                                    .fill(Color.white.opacity(0.08))
+                                    .overlay(
+                                        Circle()
+                                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                                    )
+                            )
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        generateViewModel.resetConversation()
+                        withAnimation(.easeInOut(duration: 0.22)) {
+                            showLeftPanel = false
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                            isInputFocused = true
+                        }
+                    } label: {
+                        Image(systemName: "square.and.pencil")
+                            .font(.system(size: 24, weight: .regular))
+                            .foregroundStyle(.white.opacity(0.88))
+                            .frame(width: 60, height: 60)
+                            .background(
+                                Circle()
+                                    .fill(Color.white.opacity(0.08))
+                                    .overlay(
+                                        Circle()
+                                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                                    )
                             )
                     }
                     .buttonStyle(.plain)
