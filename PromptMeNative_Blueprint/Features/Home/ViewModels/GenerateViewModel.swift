@@ -104,6 +104,16 @@ final class GenerateViewModel {
         await runGenerate(input: latestResult.professional, refinement: refinementText)
     }
 
+    func resetConversation() {
+        inputText = ""
+        refinementText = ""
+        latestResult = nil
+        latestInput = ""
+        latestHistoryItemID = nil
+        errorMessage = nil
+        showCopiedToast = false
+    }
+
     private func runGenerate(input: String, refinement: String?) async {
         let cleanedInput = input.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !cleanedInput.isEmpty else {
