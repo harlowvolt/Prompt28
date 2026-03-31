@@ -16,6 +16,7 @@
 		CCAA00001100000000000011 /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000001 /* SupabaseConfig.swift */; };
 		CCAA00001100000000000014 /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000004 /* TelemetryService.swift */; };
 		CCAB0BAD2F5D780200C29A7E /* TypePromptView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B862F5D780200C29A7E /* TypePromptView.swift */; };
+		CCORBIT001122334455667701 /* OrbitLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCORBIT001122334455667700 /* OrbitLogoView.swift */; };
 		CCAB0BAF2F5D780200C29A7E /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B7D2F5D780200C29A7E /* HistoryView.swift */; };
 		CCAB0BB02F5D780200C29A7E /* FavoritesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B7C2F5D780200C29A7E /* FavoritesView.swift */; };
 		CCAB0BB12F5D780200C29A7E /* UpgradeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAB0B8C2F5D780200C29A7E /* UpgradeView.swift */; };
@@ -136,6 +137,7 @@
 		CCAB0B802F5D780200C29A7E /* GenerateViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GenerateViewModel.swift; sourceTree = "<group>"; };
 		CCAB0B812F5D780200C29A7E /* HomeViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeViewModel.swift; sourceTree = "<group>"; };
 		CCAB0B832F5D780200C29A7E /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		CCORBIT001122334455667700 /* OrbitLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrbitLogoView.swift; sourceTree = "<group>"; };
 		CCAB0B842F5D780200C29A7E /* OrbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrbView.swift; sourceTree = "<group>"; };
 		CCAB0C002F5D780200C29A7E /* MetalOrbView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetalOrbView.swift; sourceTree = "<group>"; };
 		CCAB0B852F5D780200C29A7E /* ResultView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ResultView.swift; sourceTree = "<group>"; };
@@ -408,6 +410,7 @@
 			isa = PBXGroup;
 			children = (
 				CCAB0B832F5D780200C29A7E /* HomeView.swift */,
+				CCORBIT001122334455667700 /* OrbitLogoView.swift */,
 				CCAB0B842F5D780200C29A7E /* OrbView.swift */,
 				CCAB0C002F5D780200C29A7E /* MetalOrbView.swift */,
 				CCAB0B852F5D780200C29A7E /* ResultView.swift */,
@@ -837,6 +840,7 @@
 				CCAB0BE12F5D780200C29A7E /* SettingsView.swift in Sources */,
 				CCAB0BE22F5D780200C29A7E /* TrendingView.swift in Sources */,
 				CCAB0BE32F5D780200C29A7E /* HomeView.swift in Sources */,
+				CCORBIT001122334455667701 /* OrbitLogoView.swift in Sources */,
 				CCAB0BF12F5D780200C29A7E /* AppUI.swift in Sources */,
 				CCAB0BF22F5D780200C29A7E /* HomeViewModel.swift in Sources */,
 				CCDE00000000000000000002 /* HapticService.swift in Sources */,

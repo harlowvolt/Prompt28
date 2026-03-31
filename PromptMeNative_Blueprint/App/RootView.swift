@@ -154,44 +154,11 @@ struct RootView: View {
         .promptClearNavigationSurfaces()
     }
 
-    // MARK: - iPhone Tab Bar
+    // MARK: - iPhone (no tab bar)
 
     private var mainTabs: some View {
-        TabView(selection: Binding(
-            get: { appRouter?.selectedTab ?? .home },
-            set: { tab in
-                appRouter?.switchTab(tab)
-            }
-        )) {
-            homeView
-                .tabItem {
-                    Label("Home", systemImage: "house.fill")
-                }
-                .tag(MainTab.home)
-
-            FavoritesView()
-                .tabItem {
-                    Label("Favorites", systemImage: "star.fill")
-                }
-                .tag(MainTab.favorites)
-
-            HistoryView()
-                .tabItem {
-                    Label("History", systemImage: "clock.arrow.circlepath")
-                }
-                .tag(MainTab.history)
-
-            TrendingView()
-                .tabItem {
-                    Label("Trending", systemImage: "flame.fill")
-                }
-                .tag(MainTab.trending)
-        }
-        .scrollContentBackground(.hidden)
-        .toolbarBackground(.hidden, for: .tabBar)
-        .toolbarBackground(.hidden, for: .navigationBar)
-        .background(TabBarRaiser(extraInset: 4))
-        .promptClearNavigationSurfaces()
+        homeView
+            .promptClearNavigationSurfaces()
     }
 
     @ViewBuilder

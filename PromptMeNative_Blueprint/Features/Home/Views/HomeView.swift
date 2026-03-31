@@ -10,6 +10,8 @@ struct HomeView: View {
     @State private var lastPresentedGlobalError = ""
     @State private var showPlatformDropdown = false
     @State private var isListening = false
+    @State private var showTrending = false
+    @State private var showPanel = false
 
     private let authManager: AuthManager
     private let router: AppRouter
@@ -90,6 +92,20 @@ struct HomeView: View {
             .promptClearNavigationSurfaces()
         }
         .overlay(alignment: .bottom) { copiedToast }
+        .sheet(isPresented: $showTrending) {
+            TrendingView()
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(.regularMaterial)
+                .presentationCornerRadius(32)
+        }
+        .sheet(isPresented: $showPanel) {
+            panelSheet
+                .presentationDetents([.large])
+                .presentationDragIndicator(.visible)
+                .presentationBackground(Color(hex: "#02060D"))
+                .presentationCornerRadius(32)
+        }
         .sheet(item: Binding(
             get: { router.homeSheet },
             set: { router.homeSheet = $0 }
@@ -163,18 +179,11 @@ struct HomeView: View {
 
             Spacer()
 
-            // Usage pill (starter plan only)
-            if !hasResult, let remaining = generateViewModel.promptsRemaining {
-                usagePill(remaining: remaining)
-                    .transition(.opacity.combined(with: .scale(scale: 0.92)))
-            }
-
-            // Right: history clock
+            // Right: panel button (History / Saves / Share Cards / Settings)
             Button {
-                // Route to history tab
-                router.selectedTab = .history
+                showPanel = true
             } label: {
-                Image(systemName: "clock")
+                Image(systemName: "square.grid.2x2")
                     .font(.system(size: 16, weight: .medium))
                     .foregroundStyle(PromptTheme.softLilac.opacity(0.85))
                     .frame(width: 36, height: 36)
@@ -203,43 +212,33 @@ struct HomeView: View {
     // MARK: - Center Content
 
     private var centerContent: some View {
-        VStack(spacing: 22) {
+        VStack(spacing: 0) {
             // Permission banners
             if case .microphoneDenied = orbEngine.permissionStatus {
                 permissionDeniedBanner(message: "Microphone access is required for voice input.")
                     .padding(.horizontal, 20)
+                    .padding(.top, 12)
             } else if case .speechDenied = orbEngine.permissionStatus {
                 permissionDeniedBanner(message: "Speech recognition is required for voice input.")
                     .padding(.horizontal, 20)
+                    .padding(.top, 12)
             }
 
-            // Orbital logo
-            OrbitLogoView()
-                .frame(width: 176, height: 176)
-
-            // Greeting
-            VStack(spacing: 4) {
-                Text("What do you want to")
-                    .font(.system(size: 22, weight: .semibold, design: .default))
-                    .foregroundStyle(PromptTheme.paleLilacWhite)
-                Text("transform today?")
-                    .font(.system(size: 22, weight: .semibold, design: .default))
-                    .foregroundStyle(PromptTheme.softLilac)
-            }
-            .multilineTextAlignment(.center)
-            .tracking(-0.4)
-
-            // Mode pills — prominent, full-width
-            HStack(spacing: 10) {
-                modePill(label: "✦  AI Mode", mode: .ai)
-                modePill(label: "🫂  Human Mode", mode: .human)
-            }
-            .padding(.horizontal, 22)
-
-            // Platform dropdown button
+            // Platform dropdown — top center
             platformDropdownButton
+                .padding(.top, 18)
+
+            Spacer()
+
+            // Logo — small, dark, centered
+            OrbitLogoView()
+                .frame(width: 82, height: 82)
+                .opacity(0.28)
+                .colorMultiply(Color(hex: "#2A1A4A"))
+                .allowsHitTesting(false)
+
+            Spacer()
         }
-        .padding(.vertical, 8)
     }
 
     // MARK: - Mode Pill
@@ -257,13 +256,13 @@ struct HomeView: View {
                 .font(.system(size: 14, weight: .bold, design: .default))
                 .foregroundStyle(isOn ? PromptTheme.paleLilacWhite : PromptTheme.mutedViolet)
                 .frame(maxWidth: .infinity)
-                .frame(height: 48)
+                .frame(height: 50)
                 .background {
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                    Capsule()
                         .fill(isOn
                               ? LinearGradient(
-                                    colors: [Color(hex: "#8B8FFF").opacity(0.22),
-                                             Color(hex: "#A78BFA").opacity(0.12)],
+                                    colors: [Color(hex: "#8B8FFF").opacity(0.28),
+                                             Color(hex: "#A78BFA").opacity(0.16)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing)
                               : LinearGradient(
@@ -271,15 +270,15 @@ struct HomeView: View {
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing))
                         .overlay(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            Capsule()
                                 .stroke(isOn
-                                        ? Color(hex: "#8B8FFF").opacity(0.38)
+                                        ? Color(hex: "#8B8FFF").opacity(0.45)
                                         : Color.white.opacity(0.08),
                                         lineWidth: 1)
                         )
                 }
-                .shadow(color: isOn ? Color(hex: "#8B8FFF").opacity(0.18) : .clear,
-                        radius: 12, y: 4)
+                .shadow(color: isOn ? Color(hex: "#8B8FFF").opacity(0.22) : .clear,
+                        radius: 14, y: 4)
         }
         .buttonStyle(.plain)
         .animation(.easeInOut(duration: 0.18), value: isOn)
@@ -416,12 +415,46 @@ struct HomeView: View {
     // MARK: - Bottom Area
 
     private var bottomArea: some View {
-        VStack(spacing: 10) {
-            trendingStrip
+        VStack(spacing: 12) {
+            trendingPill
+            modePillRow
             inputBar
         }
         .padding(.horizontal, 15)
         .padding(.bottom, 28)
+    }
+
+    private var trendingPill: some View {
+        Button { showTrending = true } label: {
+            HStack(spacing: 8) {
+                Image(systemName: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 12, weight: .bold))
+                    .foregroundStyle(Color(hex: "#8B8FFF"))
+                Text("See What's Trending")
+                    .font(.system(size: 13, weight: .bold, design: .default))
+                    .foregroundStyle(PromptTheme.softLilac)
+                Spacer()
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(PromptTheme.mutedViolet)
+            }
+            .padding(.horizontal, 18)
+            .frame(height: 44)
+            .background(
+                Capsule()
+                    .fill(.ultraThinMaterial)
+                    .overlay(Capsule().fill(PromptTheme.glassFill))
+                    .overlay(Capsule().stroke(Color(hex: "#8B8FFF").opacity(0.20), lineWidth: 1))
+            )
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var modePillRow: some View {
+        HStack(spacing: 12) {
+            modePill(label: "✦  AI Mode", mode: .ai)
+            modePill(label: "✧  Human Mode", mode: .human)
+        }
     }
 
     private var trendingStrip: some View {
@@ -505,32 +538,45 @@ struct HomeView: View {
                     orbEngine.stopListening()
                     isListening = false
                 } else {
-                    orbEngine.onFinalTranscript = { transcript in
-                        generateFromText(transcript)
+                    let engine = orbEngine
+                    let vm = generateViewModel
+                    engine.onFinalTranscript = { transcript in
+                        Task { @MainActor in
+                            engine.markGenerating()
+                            await vm.generateFromOrb(text: transcript)
+                            if let err = vm.errorMessage {
+                                engine.markFailure(err)
+                            } else {
+                                engine.markSuccess()
+                            }
+                            engine.markIdle()
+                        }
                     }
-                    orbEngine.startListening()
+                    engine.startListening()
                     isListening = true
                 }
             } label: {
-                Image(systemName: orbEngine.isRecording ? "waveform" : "mic")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(orbEngine.isRecording
-                                     ? Color(hex: "#8B8FFF")
-                                     : PromptTheme.mutedViolet)
-                    .frame(width: 32, height: 32)
-                    .background(
-                        RoundedRectangle(cornerRadius: 10, style: .continuous)
-                            .fill(orbEngine.isRecording
-                                  ? Color(hex: "#8B8FFF").opacity(0.15)
-                                  : Color.white.opacity(0.06))
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 10, style: .continuous)
-                                    .stroke(orbEngine.isRecording
-                                            ? Color(hex: "#8B8FFF").opacity(0.35)
-                                            : Color.clear,
-                                            lineWidth: 1)
-                            )
-                    )
+                ZStack {
+                    Circle()
+                        .fill(orbEngine.isRecording
+                              ? Color(hex: "#8B8FFF").opacity(0.20)
+                              : Color.white.opacity(0.07))
+                        .overlay(
+                            Circle()
+                                .stroke(orbEngine.isRecording
+                                        ? Color(hex: "#8B8FFF").opacity(0.50)
+                                        : Color.white.opacity(0.10),
+                                        lineWidth: 1)
+                        )
+                    Image(systemName: orbEngine.isRecording ? "waveform" : "mic.fill")
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(orbEngine.isRecording
+                                         ? Color(hex: "#8B8FFF")
+                                         : PromptTheme.softLilac)
+                }
+                .frame(width: 40, height: 40)
+                .shadow(color: orbEngine.isRecording ? Color(hex: "#8B8FFF").opacity(0.30) : .clear,
+                        radius: 8)
             }
             .buttonStyle(.plain)
             .animation(.easeInOut(duration: 0.2), value: orbEngine.isRecording)
@@ -635,6 +681,129 @@ struct HomeView: View {
                     .foregroundStyle(PromptTheme.paleLilacWhite)
                     .padding(.bottom, 18)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
+            }
+        }
+    }
+
+    // MARK: - Panel Sheet
+
+    private var panelSheet: some View {
+        NavigationStack {
+            ZStack {
+                Color(hex: "#02060D").ignoresSafeArea()
+
+                VStack(spacing: 0) {
+                    // Header
+                    HStack {
+                        Text("Orbit Orb")
+                            .font(.system(size: 18, weight: .bold, design: .default))
+                            .foregroundStyle(PromptTheme.paleLilacWhite)
+                        Spacer()
+                        Button { showPanel = false } label: {
+                            Image(systemName: "xmark")
+                                .font(.system(size: 13, weight: .semibold))
+                                .foregroundStyle(PromptTheme.mutedViolet)
+                                .frame(width: 30, height: 30)
+                                .background(Circle().fill(Color.white.opacity(0.07)))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 24)
+                    .padding(.top, 28)
+                    .padding(.bottom, 20)
+
+                    // Rows
+                    VStack(spacing: 2) {
+                        NavigationLink(destination: HistoryView().toolbar(.hidden, for: .navigationBar)) {
+                            panelRow(icon: "clock.arrow.circlepath", label: "History",
+                                     subtitle: "Your generated prompts")
+                        }
+                        .buttonStyle(.plain)
+
+                        NavigationLink(destination: FavoritesView().toolbar(.hidden, for: .navigationBar)) {
+                            panelRow(icon: "star.fill", label: "Saves",
+                                     subtitle: "Bookmarked prompts")
+                        }
+                        .buttonStyle(.plain)
+
+                        NavigationLink(destination: shareCardsPlaceholder.toolbar(.hidden, for: .navigationBar)) {
+                            panelRow(icon: "square.and.arrow.up.fill", label: "Share Cards",
+                                     subtitle: "Cards from your prompts")
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 16)
+
+                    Spacer()
+
+                    // Settings pinned at bottom
+                    Button {
+                        showPanel = false
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                            router.presentHomeSheet(.settings)
+                        }
+                    } label: {
+                        panelRow(icon: "gearshape.fill", label: "Settings",
+                                 subtitle: "Preferences & account")
+                    }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 16)
+                    .padding(.bottom, 32)
+                }
+            }
+            .toolbar(.hidden, for: .navigationBar)
+        }
+    }
+
+    private func panelRow(icon: String, label: String, subtitle: String) -> some View {
+        HStack(spacing: 16) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                    .fill(Color(hex: "#8B8FFF").opacity(0.12))
+                    .frame(width: 44, height: 44)
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .medium))
+                    .foregroundStyle(Color(hex: "#8B8FFF"))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(label)
+                    .font(.system(size: 15, weight: .semibold, design: .default))
+                    .foregroundStyle(PromptTheme.paleLilacWhite)
+                Text(subtitle)
+                    .font(.system(size: 12, weight: .regular, design: .default))
+                    .foregroundStyle(PromptTheme.mutedViolet)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(PromptTheme.mutedViolet.opacity(0.5))
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(Color.white.opacity(0.04))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                        .stroke(Color.white.opacity(0.06), lineWidth: 0.5)
+                )
+        )
+    }
+
+    private var shareCardsPlaceholder: some View {
+        ZStack {
+            Color(hex: "#02060D").ignoresSafeArea()
+            VStack(spacing: 16) {
+                Image(systemName: "square.and.arrow.up.fill")
+                    .font(.system(size: 36))
+                    .foregroundStyle(Color(hex: "#8B8FFF").opacity(0.6))
+                Text("Share Cards")
+                    .font(.system(size: 20, weight: .bold, design: .default))
+                    .foregroundStyle(PromptTheme.paleLilacWhite)
+                Text("Generate a prompt to create\na shareable card.")
+                    .font(.system(size: 14, weight: .regular, design: .default))
+                    .foregroundStyle(PromptTheme.mutedViolet)
+                    .multilineTextAlignment(.center)
             }
         }
     }
