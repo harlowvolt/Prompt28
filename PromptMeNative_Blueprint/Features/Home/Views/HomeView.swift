@@ -845,37 +845,55 @@ private struct GhostGlyphShape: Shape {
                         leftPanelRow(icon: "square.and.arrow.up.fill", label: "Share Cards")
                     }
                     .buttonStyle(.plain)
-
-                    NavigationLink(destination: HistoryView().toolbar(.hidden, for: .navigationBar)) {
-                        leftPanelRow(icon: "clock.arrow.circlepath", label: "History")
-                    }
-                    .buttonStyle(.plain)
                 }
                 .padding(.horizontal, 16)
 
-                Spacer()
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("History")
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.46))
+                        .padding(.horizontal, 20)
+                        .padding(.top, 16)
+
+                    VStack(spacing: 8) {
+                        ForEach(recentHistoryItems, id: \.id) { item in
+                            Button {
+                                generateViewModel.restoreFromHistory(item)
+                                withAnimation(.easeInOut(duration: 0.22)) {
+                                    showLeftPanel = false
+                                }
+                            } label: {
+                                historyPreviewRow(item)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.horizontal, 16)
+                }
+
+                Spacer(minLength: 20)
 
                 // ── Search / Settings / New Chat ─────────────────────
-                HStack(spacing: 14) {
-                    HStack(spacing: 12) {
+                HStack(spacing: 10) {
+                    HStack(spacing: 10) {
                         Image(systemName: "magnifyingglass")
-                            .font(.system(size: 20, weight: .regular))
-                            .foregroundStyle(.white.opacity(0.34))
+                            .font(.system(size: 17, weight: .regular))
+                            .foregroundStyle(.white.opacity(0.36))
 
                         Text("Search")
-                            .font(.system(size: 17, weight: .regular, design: .rounded))
+                            .font(.system(size: 15, weight: .regular, design: .rounded))
                             .foregroundStyle(.white.opacity(0.38))
 
                         Spacer()
                     }
-                    .padding(.horizontal, 18)
-                    .frame(height: 60)
+                    .padding(.horizontal, 16)
+                    .frame(height: 50)
                     .background(
                         Capsule()
-                            .fill(Color.white.opacity(0.08))
+                            .fill(Color.white.opacity(0.06))
                             .overlay(
                                 Capsule()
-                                    .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                                    .stroke(Color.white.opacity(0.08), lineWidth: 0.8)
                             )
                     )
 
@@ -888,15 +906,15 @@ private struct GhostGlyphShape: Shape {
                         }
                     } label: {
                         Image(systemName: "gearshape")
-                            .font(.system(size: 24, weight: .regular))
+                            .font(.system(size: 20, weight: .regular))
                             .foregroundStyle(.white.opacity(0.88))
-                            .frame(width: 60, height: 60)
+                            .frame(width: 50, height: 50)
                             .background(
                                 Circle()
-                                    .fill(Color.white.opacity(0.08))
+                                    .fill(Color.white.opacity(0.06))
                                     .overlay(
                                         Circle()
-                                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                                            .stroke(Color.white.opacity(0.08), lineWidth: 0.8)
                                     )
                             )
                     }
@@ -912,15 +930,15 @@ private struct GhostGlyphShape: Shape {
                         }
                     } label: {
                         Image(systemName: "square.and.pencil")
-                            .font(.system(size: 24, weight: .regular))
+                            .font(.system(size: 20, weight: .regular))
                             .foregroundStyle(.white.opacity(0.88))
-                            .frame(width: 60, height: 60)
+                            .frame(width: 50, height: 50)
                             .background(
                                 Circle()
-                                    .fill(Color.white.opacity(0.08))
+                                    .fill(Color.white.opacity(0.06))
                                     .overlay(
                                         Circle()
-                                            .stroke(Color.white.opacity(0.10), lineWidth: 1)
+                                            .stroke(Color.white.opacity(0.08), lineWidth: 0.8)
                                     )
                             )
                     }
@@ -952,6 +970,57 @@ private struct GhostGlyphShape: Shape {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .fill(Color.white.opacity(0.04))
         )
+    }
+
+    private var recentHistoryItems: [PromptHistoryItem] {
+        historyStore.items
+            .sorted { $0.createdAt > $1.createdAt }
+            .prefix(5)
+            .map { $0 }
+    }
+
+    private func historyPreviewRow(_ item: PromptHistoryItem) -> some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.customName ?? item.input)
+                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.92))
+                    .lineLimit(1)
+
+                Text(leftPanelHistoryTimestamp(for: item.createdAt))
+                    .font(.system(size: 11, weight: .regular, design: .rounded))
+                    .foregroundStyle(.white.opacity(0.38))
+            }
+
+            Spacer()
+
+            Text(item.mode == .ai ? "AI" : "Human")
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundStyle(item.mode == .ai ? Color(hex: "#8B8FFF") : .white.opacity(0.72))
+                .padding(.horizontal, 10)
+                .frame(height: 24)
+                .background(
+                    Capsule()
+                        .fill(Color.white.opacity(0.04))
+                        .overlay(Capsule().stroke(Color.white.opacity(0.08), lineWidth: 0.6))
+                )
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(Color.white.opacity(0.04))
+        )
+    }
+
+    private func leftPanelHistoryTimestamp(for date: Date) -> String {
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) { return "Today" }
+        if calendar.isDateInYesterday(date) { return "Yesterday" }
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "M/d/yy"
+        return formatter.string(from: date)
     }
 
     // MARK: - Panel Sheet
