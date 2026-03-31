@@ -171,11 +171,18 @@ struct HomeView: View {
             }
             .buttonStyle(.plain)
 
-            // Brand name
-            Text("Orbit Orb")
-                .font(.system(size: 17, weight: .bold, design: .default))
-                .foregroundStyle(PromptTheme.paleLilacWhite)
-                .tracking(-0.3)
+            // Trending button (top-left)
+            Button { showTrending = true } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "chart.line.uptrend.xyaxis")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                    Text("Trending")
+                        .font(.system(size: 15, weight: .bold, design: .default))
+                        .foregroundStyle(.white)
+                }
+            }
+            .buttonStyle(.plain)
 
             Spacer()
 
@@ -230,10 +237,10 @@ struct HomeView: View {
 
             Spacer()
 
-            // Logo — small, dark, centered
+            // Logo — centered
             OrbitLogoView()
-                .frame(width: 82, height: 82)
-                .opacity(0.28)
+                .frame(width: 128, height: 128)
+                .opacity(0.50)
                 .colorMultiply(Color(hex: "#2A1A4A"))
                 .allowsHitTesting(false)
 
@@ -416,7 +423,6 @@ struct HomeView: View {
 
     private var bottomArea: some View {
         VStack(spacing: 12) {
-            trendingPill
             modePillRow
             inputBar
         }
