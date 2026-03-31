@@ -132,6 +132,10 @@ private struct GhostGlyphShape: Shape {
                 if showPlatformDropdown {
                     platformDropdownOverlay
                 }
+
+                if showLeftPanel {
+                    leftPanelOverlay
+                }
             }
             .toolbar(.hidden, for: .navigationBar)
             .promptClearNavigationSurfaces()
@@ -145,13 +149,6 @@ private struct GhostGlyphShape: Shape {
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
                 .presentationBackground(.regularMaterial)
-                .presentationCornerRadius(32)
-        }
-        .sheet(isPresented: $showLeftPanel) {
-            leftPanelSheet
-                .presentationDetents([.large])
-                .presentationDragIndicator(.hidden)
-                .presentationBackground(Color(hex: "#02060D"))
                 .presentationCornerRadius(32)
         }
         .sheet(isPresented: $showPanel) {
@@ -699,171 +696,202 @@ private struct GhostGlyphShape: Shape {
 
     // MARK: - Left Panel (Grok-style)
 
-    private var leftPanelSheet: some View {
-        NavigationStack {
-            ZStack {
-                Color(hex: "#02060D").ignoresSafeArea()
-
-                VStack(spacing: 0) {
-
-                    // ── Header ──────────────────────────────────────────
-                    HStack(spacing: 12) {
-                        // Avatar circle
-                        ZStack {
-                            Circle()
-                                .fill(LinearGradient(
-                                    colors: [Color(hex: "#5D628A"), Color(hex: "#8B8FFF")],
-                                    startPoint: .topLeading, endPoint: .bottomTrailing))
-                                .frame(width: 40, height: 40)
-                            Text("O")
-                                .font(.system(size: 17, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-
-                        Text("Orbit Orb")
-                            .font(.system(size: 17, weight: .bold, design: .default))
-                            .foregroundStyle(.white)
-
-                        Spacer()
-
-                        // Close / go-back button
-                        Button { showLeftPanel = false } label: {
-                            HStack(spacing: 1) {
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 12, weight: .bold))
-                                Image(systemName: "chevron.right")
-                                    .font(.system(size: 12, weight: .bold))
-                            }
-                            .foregroundStyle(.white.opacity(0.60))
-                            .frame(width: 40, height: 40)
-                            .background(Circle().fill(Color.white.opacity(0.07)))
-                        }
-                        .buttonStyle(.plain)
+    private var leftPanelOverlay: some View {
+        ZStack(alignment: .leading) {
+            Color.black.opacity(0.28)
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    withAnimation(.easeInOut(duration: 0.22)) {
+                        showLeftPanel = false
                     }
-                    .padding(.horizontal, 20)
-                    .padding(.top, 28)
-                    .padding(.bottom, 20)
+                }
 
-                    // ── Promo Banner ─────────────────────────────────────
-                    HStack(spacing: 12) {
-                        ZStack {
-                            Circle()
-                                .fill(Color.white.opacity(0.15))
-                                .frame(width: 34, height: 34)
-                            Image(systemName: "sparkles")
-                                .font(.system(size: 14, weight: .semibold))
-                                .foregroundStyle(.white)
-                        }
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Try 10 prompts for free")
-                                .font(.system(size: 14, weight: .bold, design: .default))
-                                .foregroundStyle(.white)
-                            Text("No account needed to start")
-                                .font(.system(size: 12, weight: .regular, design: .default))
-                                .foregroundStyle(.white.opacity(0.70))
-                        }
-                        Spacer()
-                        Button {
-                            showLeftPanel = false
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                                router.presentHomeSheet(.upgrade)
-                            }
-                        } label: {
-                            Text("Try Now")
-                                .font(.system(size: 13, weight: .bold, design: .default))
-                                .foregroundStyle(.white)
-                                .padding(.horizontal, 14)
-                                .padding(.vertical, 8)
-                                .background(Capsule().fill(Color.white.opacity(0.22)))
-                        }
-                        .buttonStyle(.plain)
-                    }
-                    .padding(.horizontal, 16)
-                    .padding(.vertical, 14)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+            leftPanelContent
+                .frame(maxWidth: 320)
+                .frame(maxHeight: .infinity)
+                .transition(.move(edge: .leading).combined(with: .opacity))
+        }
+        .animation(.easeInOut(duration: 0.22), value: showLeftPanel)
+    }
+
+    private var leftPanelContent: some View {
+        ZStack {
+            Color(hex: "#02060D").ignoresSafeArea()
+
+            VStack(spacing: 0) {
+
+                // ── Header ──────────────────────────────────────────
+                HStack(spacing: 12) {
+                    // Avatar circle
+                    ZStack {
+                        Circle()
                             .fill(LinearGradient(
                                 colors: [Color(hex: "#5D628A"), Color(hex: "#8B8FFF")],
-                                startPoint: .leading, endPoint: .trailing))
-                    )
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 20)
-
-                    // ── Nav Rows ─────────────────────────────────────────
-                    VStack(spacing: 2) {
-                        NavigationLink(destination: HistoryView().toolbar(.hidden, for: .navigationBar)) {
-                            leftPanelRow(icon: "clock.arrow.circlepath", label: "History")
-                        }
-                        .buttonStyle(.plain)
-
-                        NavigationLink(destination: FavoritesView().toolbar(.hidden, for: .navigationBar)) {
-                            leftPanelRow(icon: "star.fill", label: "Saved")
-                        }
-                        .buttonStyle(.plain)
-
-                        NavigationLink(destination: shareCardsPlaceholder.toolbar(.hidden, for: .navigationBar)) {
-                            leftPanelRow(icon: "square.and.arrow.up.fill", label: "Share Cards")
-                        }
-                        .buttonStyle(.plain)
-
-                        Button {
-                            showLeftPanel = false
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                                router.presentHomeSheet(.settings)
-                            }
-                        } label: {
-                            leftPanelRow(icon: "gearshape.fill", label: "Settings")
-                        }
-                        .buttonStyle(.plain)
+                                startPoint: .topLeading, endPoint: .bottomTrailing))
+                            .frame(width: 40, height: 40)
+                        Text("O")
+                            .font(.system(size: 17, weight: .bold))
+                            .foregroundStyle(.white)
                     }
-                    .padding(.horizontal, 16)
+
+                    Text("Orbit Orb")
+                        .font(.system(size: 17, weight: .bold, design: .default))
+                        .foregroundStyle(.white)
 
                     Spacer()
 
-                    // ── Search Bar ───────────────────────────────────────
-                    HStack(spacing: 12) {
-                        HStack(spacing: 8) {
-                            Image(systemName: "magnifyingglass")
-                                .font(.system(size: 14, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.40))
-                            Text("Search")
-                                .font(.system(size: 15, weight: .regular, design: .default))
-                                .foregroundStyle(.white.opacity(0.35))
-                            Spacer()
-                        }
-                        .padding(.horizontal, 14)
-                        .frame(height: 46)
-                        .background(
-                            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                .fill(Color.white.opacity(0.07))
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .stroke(Color.white.opacity(0.09), lineWidth: 0.5)
-                                )
-                        )
-
-                        Button {
+                    // Close / go-back button
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.22)) {
                             showLeftPanel = false
-                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                                router.presentHomeSheet(.settings)
-                            }
-                        } label: {
-                            Image(systemName: "gearshape.fill")
-                                .font(.system(size: 16, weight: .medium))
-                                .foregroundStyle(.white.opacity(0.60))
-                                .frame(width: 46, height: 46)
-                                .background(
-                                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                                        .fill(Color.white.opacity(0.07))
-                                )
                         }
-                        .buttonStyle(.plain)
+                    } label: {
+                        HStack(spacing: 1) {
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 12, weight: .bold))
+                            Image(systemName: "chevron.left")
+                                .font(.system(size: 12, weight: .bold))
+                        }
+                        .foregroundStyle(.white.opacity(0.60))
+                        .frame(width: 40, height: 40)
+                        .background(Circle().fill(Color.white.opacity(0.07)))
                     }
-                    .padding(.horizontal, 16)
-                    .padding(.bottom, 32)
+                    .buttonStyle(.plain)
                 }
+                .padding(.horizontal, 20)
+                .padding(.top, 28)
+                .padding(.bottom, 20)
+
+                // ── Promo Banner ─────────────────────────────────────
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(Color.white.opacity(0.15))
+                            .frame(width: 34, height: 34)
+                        Image(systemName: "sparkles")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white)
+                    }
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Try 10 prompts for free")
+                            .font(.system(size: 14, weight: .bold, design: .default))
+                            .foregroundStyle(.white)
+                        Text("No account needed to start")
+                            .font(.system(size: 12, weight: .regular, design: .default))
+                            .foregroundStyle(.white.opacity(0.70))
+                    }
+                    Spacer()
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.22)) {
+                            showLeftPanel = false
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                            router.presentHomeSheet(.upgrade)
+                        }
+                    } label: {
+                        Text("Try Now")
+                            .font(.system(size: 13, weight: .bold, design: .default))
+                            .foregroundStyle(.white)
+                            .padding(.horizontal, 14)
+                            .padding(.vertical, 8)
+                            .background(Capsule().fill(Color.white.opacity(0.22)))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(
+                    RoundedRectangle(cornerRadius: 18, style: .continuous)
+                        .fill(LinearGradient(
+                            colors: [Color(hex: "#5D628A"), Color(hex: "#8B8FFF")],
+                            startPoint: .leading, endPoint: .trailing))
+                )
+                .padding(.horizontal, 16)
+                .padding(.bottom, 20)
+
+                // ── Nav Rows ─────────────────────────────────────────
+                VStack(spacing: 2) {
+                    NavigationLink(destination: TrendingView().toolbar(.hidden, for: .navigationBar)) {
+                        leftPanelRow(icon: "chart.line.uptrend.xyaxis", label: "Trending")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink(destination: HistoryView().toolbar(.hidden, for: .navigationBar)) {
+                        leftPanelRow(icon: "clock.arrow.circlepath", label: "History")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink(destination: FavoritesView().toolbar(.hidden, for: .navigationBar)) {
+                        leftPanelRow(icon: "star.fill", label: "Saved")
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink(destination: shareCardsPlaceholder.toolbar(.hidden, for: .navigationBar)) {
+                        leftPanelRow(icon: "square.and.arrow.up.fill", label: "Share Cards")
+                    }
+                    .buttonStyle(.plain)
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.22)) {
+                            showLeftPanel = false
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                            router.presentHomeSheet(.settings)
+                        }
+                    } label: {
+                        leftPanelRow(icon: "gearshape.fill", label: "Settings")
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
+
+                Spacer()
+
+                // ── Search Bar ───────────────────────────────────────
+                HStack(spacing: 12) {
+                    HStack(spacing: 8) {
+                        Image(systemName: "magnifyingglass")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.40))
+                        Text("Search")
+                            .font(.system(size: 15, weight: .regular, design: .default))
+                            .foregroundStyle(.white.opacity(0.35))
+                        Spacer()
+                    }
+                    .padding(.horizontal, 14)
+                    .frame(height: 46)
+                    .background(
+                        RoundedRectangle(cornerRadius: 14, style: .continuous)
+                            .fill(Color.white.opacity(0.07))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(Color.white.opacity(0.09), lineWidth: 0.5)
+                            )
+                    )
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.22)) {
+                            showLeftPanel = false
+                        }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) {
+                            router.presentHomeSheet(.settings)
+                        }
+                    } label: {
+                        Image(systemName: "gearshape.fill")
+                            .font(.system(size: 16, weight: .medium))
+                            .foregroundStyle(.white.opacity(0.60))
+                            .frame(width: 46, height: 46)
+                            .background(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(Color.white.opacity(0.07))
+                            )
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 16)
+                .padding(.bottom, 32)
             }
-            .toolbar(.hidden, for: .navigationBar)
         }
     }
 
