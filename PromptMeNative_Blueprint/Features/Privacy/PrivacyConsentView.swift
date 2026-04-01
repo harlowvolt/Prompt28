@@ -28,7 +28,7 @@ struct PrivacyConsentView: View {
                     .foregroundStyle(PromptTheme.paleLilacWhite)
                     .padding(.bottom, 10)
 
-                Text("Orion Orb uses the following to deliver its service.\nYour privacy matters to us.")
+                Text("Orbit Orb uses the following to deliver its service.\nYour privacy matters to us.")
                     .font(.system(size: 15, weight: .regular, design: .rounded))
                     .foregroundStyle(.white.opacity(0.52))
                     .multilineTextAlignment(.center)
@@ -67,7 +67,7 @@ struct PrivacyConsentView: View {
 
                 // Privacy policy link
                 Button {
-                    if let url = URL(string: "https://prompt28.com/privacy") {
+                    if let url = URL(string: "https://orbitorb.app/privacy") {
                         UIApplication.shared.open(url)
                     }
                 } label: {

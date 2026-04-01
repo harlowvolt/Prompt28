@@ -18,6 +18,13 @@ final class GenerateViewModel {
     var showPaywall = false
     var showCopiedToast = false
 
+    /// When true (Privacy / Ghost Mode is ON): history is NOT saved, session is ephemeral.
+    var privacyMode = false
+
+    /// Optional image attached via the + button.
+    /// Passed as context when supported by the generation backend.
+    var attachedImage: UIImage?
+
     private let authManager: AuthManager
     private let historyStore: any HistoryStoring
     private let preferencesStore: any PreferenceStoring
@@ -205,7 +212,9 @@ final class GenerateViewModel {
                 NotificationService.scheduleLowUsageAlert(remaining: remaining)
             }
 
-            if preferencesStore.preferences.saveHistory {
+            // History is saved only when the user has it enabled AND Privacy Mode is OFF.
+            // When privacyMode is true (Ghost Mode), nothing is written to disk/Supabase.
+            if preferencesStore.preferences.saveHistory && !privacyMode {
                 let item = PromptHistoryItem(
                     mode: selectedMode,
                     input: cleanedInput,

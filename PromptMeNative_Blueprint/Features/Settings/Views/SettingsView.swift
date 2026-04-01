@@ -335,12 +335,12 @@ struct SettingsView: View {
             sectionHeader("Legal")
             VStack(spacing: 0) {
                 legalLinkRow(label: "Privacy Policy", isLast: false) {
-                    if let url = URL(string: "https://prompt28.com/privacy") {
+                    if let url = URL(string: "https://orbitorb.app/privacy") {
                         UIApplication.shared.open(url)
                     }
                 }
                 legalLinkRow(label: "Terms of Service", isLast: true) {
-                    if let url = URL(string: "https://prompt28.com/terms") {
+                    if let url = URL(string: "https://orbitorb.app/terms") {
                         UIApplication.shared.open(url)
                     }
                 }

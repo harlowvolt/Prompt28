@@ -134,7 +134,7 @@ struct RootView: View {
                 Label("Trending", systemImage: "flame.fill")
                     .tag(MainTab.trending as MainTab?)
             }
-            .navigationTitle("PROMPT28")
+            .navigationTitle("Orbit Orb")
             .listStyle(.sidebar)
         } detail: {
             switch router?.selectedTab ?? .home {
@@ -190,59 +190,65 @@ struct RootView: View {
         VStack(spacing: 14) {
             ProgressView()
                 .tint(PromptTheme.softLilac)
-            Text("Loading Orion Orb")
+            Text("Loading Orbit Orb")
                 .font(.footnote.weight(.semibold))
                 .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.9))
         }
     }
 }
 
+/// Full-screen background that exactly mirrors the Orbit Orb logo colour field:
+/// deep navy-indigo base with two concentric radial glows in logo purple.
 struct PromptPremiumBackground: View {
     var body: some View {
         GeometryReader { geo in
             let size = geo.size
 
             ZStack {
-                Color(hex: "#0F1218")
+                // Base — deepest navy from the logo's outer field
+                Color(hex: "#0B0C18")
 
+                // Vertical depth gradient
                 LinearGradient(
                     colors: [
-                        Color(hex: "#1A1D2E"),
-                        Color(hex: "#141728"),
-                        Color(hex: "#0F1220"),
-                        Color(hex: "#0F1218")
+                        Color(hex: "#10122A"),
+                        Color(hex: "#0D0E20"),
+                        Color(hex: "#0B0C18"),
+                        Color(hex: "#090A14")
                     ],
                     startPoint: .top,
                     endPoint: .bottom
                 )
 
-                // Purple ambient glow — matches Figma's violet accent
+                // Primary orbital glow — large soft purple radial (logo ring colour)
                 RadialGradient(
                     colors: [
-                        Color(hex: "#4C1D95").opacity(0.22),
-                        Color(hex: "#2E1065").opacity(0.12),
+                        Color(hex: "#3D2B8A").opacity(0.28),
+                        Color(hex: "#251A5C").opacity(0.14),
                         .clear
                     ],
-                    center: .init(x: 0.50, y: 0.38),
-                    startRadius: 14,
-                    endRadius: size.width * 0.72
+                    center: .init(x: 0.50, y: 0.42),
+                    startRadius: 10,
+                    endRadius: size.width * 0.75
                 )
 
+                // Secondary glow — smaller, offset right; mimics logo's inner burst
                 RadialGradient(
                     colors: [
-                        Color(hex: "#5B21B6").opacity(0.08),
+                        Color(hex: "#6C4BFF").opacity(0.10),
                         .clear
                     ],
-                    center: .init(x: 0.64, y: 0.60),
-                    startRadius: 8,
-                    endRadius: size.width * 0.50
+                    center: .init(x: 0.58, y: 0.52),
+                    startRadius: 6,
+                    endRadius: size.width * 0.44
                 )
 
+                // Subtle top-edge shimmer
                 LinearGradient(
                     colors: [
-                        Color.white.opacity(0.015),
+                        Color.white.opacity(0.012),
                         .clear,
-                        Color.white.opacity(0.01)
+                        Color.white.opacity(0.008)
                     ],
                     startPoint: .topLeading,
                     endPoint: .bottomTrailing
@@ -255,32 +261,71 @@ struct PromptPremiumBackground: View {
     }
 }
 
+// MARK: - Orbit Orb Design System — Single Source of Truth
+//
+// ALL color usage in the app must reference these tokens.
+// Never use inline hex literals; add a new token here instead.
+// See agents.md for full documentation.
 enum PromptTheme {
-    static let backgroundBase = Color(hex: "#02060D")
-    static let deepShadow = Color(hex: "#050A16")
-    static let plum = Color(hex: "#07101E")
-    static let mutedViolet = Color(hex: "#7C3AED")
-    static let softLilac = Color(hex: "#DDD6FE")
-    static let paleLilacWhite = Color(hex: "#EDE9FE")
 
-    static let glassFill = Color(red: 0.13, green: 0.11, blue: 0.20).opacity(0.72)
-    static let glassStroke = Color.white.opacity(0.12)
+    // ── Backgrounds ──────────────────────────────────────────────────────
+    /// Deepest background layer — matches the dark field of the logo
+    static let backgroundBase    = Color(hex: "#0B0C18")
+    /// Mid-depth layer for nested surfaces
+    static let deepShadow        = Color(hex: "#0D0E1E")
+    /// Darkest plum for layered depth
+    static let plum              = Color(hex: "#100C20")
+    /// Full-screen panels, sheets, drawers (replaces the old #02060D)
+    static let panelBackground   = Color(hex: "#0B0C18")
+    /// Dropdown / popover background
+    static let dropdownBackground = Color(hex: "#0D0E1C")
+    /// Input bar fill (text field row)
+    static let inputBarBackground = Color(hex: "#111320")
+    /// Logo preview background (used only in #Preview blocks)
+    static let previewBackground  = Color(hex: "#0B0C18")
 
+    // ── Accents ───────────────────────────────────────────────────────────
+    /// Primary CTA tint — deep logo indigo
+    static let mutedViolet       = Color(hex: "#6C4BFF")
+    /// Orbital ring accent — the periwinkle blue-purple of the logo rings
+    /// Used for active states, glows, borders, badges
+    static let orbAccent         = Color(hex: "#8B8FFF")
+    /// Lighter ring highlight (used for ring1End, shimmer passes)
+    static let orbAccentLight    = Color(hex: "#A78BFA")
+    /// Muted ring tone (avatar gradient start, ring2End)
+    static let orbAccentMuted    = Color(hex: "#5D628A")
+    /// Deep logo tint used for colorMultiply tinting
+    static let logoDimTint       = Color(hex: "#2A1A4A")
+
+    // ── Text ─────────────────────────────────────────────────────────────
+    /// Secondary text / labels / soft accents (lilac)
+    static let softLilac         = Color(hex: "#C4B5FD")
+    /// Primary text — near-white with warm tint
+    static let paleLilacWhite    = Color(hex: "#EDE9FE")
+
+    // ── Glass surfaces ────────────────────────────────────────────────────
+    /// Card and surface fill (use with .ultraThinMaterial overlay)
+    static let glassFill         = Color(red: 0.11, green: 0.09, blue: 0.22).opacity(0.75)
+    /// Card and surface border stroke
+    static let glassStroke       = Color.white.opacity(0.11)
+
+    // ── Orb state glows ───────────────────────────────────────────────────
+    static let orbIdleGlow       = Color(hex: "#6C4BFF")
+    static let orbActiveGlow     = Color(hex: "#9B7BFF")
+    static let orbProcessingGlow = Color(hex: "#C4B5FD")
+
+    // ── Tab bar (UIKit) ───────────────────────────────────────────────────
+    static let tabBackground  = UIColor(red: 0.04, green: 0.04, blue: 0.10, alpha: 0.94)
+    static let tabShadow      = UIColor(red: 0.42, green: 0.29, blue: 1.00, alpha: 0.14)
+    static let tabSelected    = UIColor(red: 0.42, green: 0.29, blue: 1.00, alpha: 1.0)
+    static let tabUnselected  = UIColor.white.withAlphaComponent(0.40)
+
+    // ── Computed ──────────────────────────────────────────────────────────
     static let backgroundGradient = LinearGradient(
         colors: [backgroundBase, deepShadow, plum, backgroundBase],
         startPoint: .top,
         endPoint: .bottom
     )
-
-    static let orbIdleGlow = Color(hex: "#8B5CF6")
-    static let orbActiveGlow = Color(hex: "#A78BFA")
-    static let orbProcessingGlow = Color(hex: "#C4B5FD")
-
-    // Vivid violet tab accent matching Figma design (#818CF8)
-    static let tabBackground = UIColor(red: 0.06, green: 0.05, blue: 0.11, alpha: 0.92)
-    static let tabShadow = UIColor(red: 0.55, green: 0.40, blue: 0.98, alpha: 0.12)
-    static let tabSelected = UIColor(red: 0.51, green: 0.40, blue: 0.98, alpha: 1.0)
-    static let tabUnselected = UIColor.white.withAlphaComponent(0.45)
 
     enum Typography {
         static func rounded(_ size: CGFloat, _ weight: Font.Weight = .regular) -> Font {

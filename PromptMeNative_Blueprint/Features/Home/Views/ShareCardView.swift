@@ -60,11 +60,11 @@ struct ShareCardView: View {
 
             HStack(alignment: .bottom) {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text("ORION ORB")
+                    Text("ORBIT ORB")
                         .font(.system(size: 20, weight: .black, design: .rounded))
                         .foregroundStyle(.white)
 
-                    Text("Refined by Orion Orb")
+                    Text("Refined by Orbit Orb")
                         .font(.system(size: 11, weight: .medium))
                         .foregroundStyle(.white.opacity(0.6))
                 }
@@ -86,8 +86,8 @@ struct ShareCardView: View {
         .background(
             LinearGradient(
                 colors: [
-                    Color(red: 0.08, green: 0.04, blue: 0.12),
-                    Color(red: 0.02, green: 0.01, blue: 0.05)
+                    PromptTheme.plum,
+                    PromptTheme.backgroundBase
                 ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing

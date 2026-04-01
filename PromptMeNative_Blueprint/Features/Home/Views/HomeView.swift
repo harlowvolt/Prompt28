@@ -1,4 +1,5 @@
 import SwiftUI
+import PhotosUI
 @preconcurrency import Supabase
 
 struct HomeView: View {
@@ -15,6 +16,10 @@ struct HomeView: View {
     @State private var showPanel = false
     @State private var showLeftPanel = false
     @State private var ghostMode = false
+    // Image picker state
+    @State private var showImagePicker = false
+    @State private var imagePickerItem: PhotosPickerItem?
+    @State private var attachedImage: UIImage?
     @FocusState private var isInputFocused: Bool
 
     private let authManager: AuthManager
@@ -153,7 +158,7 @@ private struct GhostGlyphShape: Shape {
             panelSheet
                 .presentationDetents([.large])
                 .presentationDragIndicator(.visible)
-                .presentationBackground(Color(hex: "#02060D"))
+                .presentationBackground(PromptTheme.panelBackground)
                 .presentationCornerRadius(32)
         }
         .sheet(item: Binding(
@@ -208,6 +213,13 @@ private struct GhostGlyphShape: Shape {
                 isInputFocused = false
             }
         }
+        .onChange(of: ghostMode) { _, enabled in
+            generateViewModel.privacyMode = enabled
+            if !enabled {
+                // When privacy mode is disabled, nothing special needed —
+                // history resumes from the next generation onwards.
+            }
+        }
         .task {
             settingsViewModel.bind(
                 apiClient: apiClient,
@@ -244,24 +256,24 @@ private struct GhostGlyphShape: Shape {
 
             Spacer()
 
-            // Right: ghost mode toggle
+            // Right: privacy / ghost mode toggle — when active, NO history is saved
             Button {
                 withAnimation(.easeInOut(duration: 0.2)) { ghostMode.toggle() }
-                HapticService.selection()
+                HapticService.impact(ghostMode ? .light : .medium)
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 11, style: .continuous)
                         .fill(ghostMode
-                              ? Color(hex: "#8B8FFF").opacity(0.18)
+                              ? PromptTheme.orbAccent.opacity(0.18)
                               : Color.white.opacity(0.07))
                         .overlay(
                             RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                .fill(ghostMode ? Color(hex: "#8B8FFF").opacity(0.10) : PromptTheme.glassFill)
+                                .fill(ghostMode ? PromptTheme.orbAccent.opacity(0.10) : PromptTheme.glassFill)
                         )
                         .overlay(
                             RoundedRectangle(cornerRadius: 11, style: .continuous)
                                 .stroke(ghostMode
-                                        ? Color(hex: "#8B8FFF").opacity(0.45)
+                                        ? PromptTheme.orbAccent.opacity(0.45)
                                         : Color.white.opacity(0.10),
                                         lineWidth: ghostMode ? 1 : 0.5)
                         )
@@ -269,7 +281,7 @@ private struct GhostGlyphShape: Shape {
                     ghostGlyph(isActive: ghostMode)
                 }
                 .frame(width: 36, height: 36)
-                .shadow(color: ghostMode ? Color(hex: "#8B8FFF").opacity(0.25) : .clear, radius: 8)
+                .shadow(color: ghostMode ? PromptTheme.orbAccent.opacity(0.25) : .clear, radius: 8)
             }
             .buttonStyle(.plain)
             .animation(.easeInOut(duration: 0.2), value: ghostMode)
@@ -313,7 +325,7 @@ private struct GhostGlyphShape: Shape {
             OrbitLogoView()
                 .frame(width: 128, height: 128)
                 .opacity(0.50)
-                .colorMultiply(Color(hex: "#2A1A4A"))
+                .colorMultiply(PromptTheme.logoDimTint)
                 .allowsHitTesting(false)
 
             Spacer()
@@ -341,8 +353,8 @@ private struct GhostGlyphShape: Shape {
                     Capsule()
                         .fill(isOn
                               ? LinearGradient(
-                                    colors: [Color(hex: "#8B8FFF").opacity(0.28),
-                                             Color(hex: "#A78BFA").opacity(0.16)],
+                                    colors: [PromptTheme.orbAccent.opacity(0.28),
+                                             PromptTheme.orbAccentLight.opacity(0.16)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing)
                               : LinearGradient(
@@ -352,12 +364,12 @@ private struct GhostGlyphShape: Shape {
                         .overlay(
                             Capsule()
                                 .stroke(isOn
-                                        ? Color(hex: "#8B8FFF").opacity(0.45)
+                                        ? PromptTheme.orbAccent.opacity(0.45)
                                         : Color.white.opacity(0.08),
                                         lineWidth: 1)
                         )
                 }
-                .shadow(color: isOn ? Color(hex: "#8B8FFF").opacity(0.22) : .clear,
+                .shadow(color: isOn ? PromptTheme.orbAccent.opacity(0.22) : .clear,
                         radius: 14, y: 4)
         }
         .buttonStyle(.plain)
@@ -372,7 +384,7 @@ private struct GhostGlyphShape: Shape {
             HStack(spacing: 7) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Color(hex: "#8B8FFF"))
+                    .foregroundStyle(PromptTheme.orbAccent)
                 Text("Power Prompts")
                     .font(.system(size: 14, weight: .bold, design: .default))
                     .foregroundStyle(.white)
@@ -400,7 +412,7 @@ private struct GhostGlyphShape: Shape {
 
     @ViewBuilder
     private func ghostGlyph(isActive: Bool) -> some View {
-        let ghostColor = isActive ? Color(hex: "#8B8FFF") : Color.white.opacity(0.82)
+        let ghostColor = isActive ? PromptTheme.orbAccent : Color.white.opacity(0.82)
 
         GhostGlyphShape()
             .fill(ghostColor)
@@ -461,14 +473,14 @@ private struct GhostGlyphShape: Shape {
                         if generateViewModel.selectedPlatform == platform {
                             Image(systemName: "checkmark")
                                 .font(.system(size: 12, weight: .bold))
-                                .foregroundStyle(Color(hex: "#8B8FFF"))
+                                .foregroundStyle(PromptTheme.orbAccent)
                         }
                     }
                     .padding(.horizontal, 14)
                     .padding(.vertical, 11)
                     .background(
                         generateViewModel.selectedPlatform == platform
-                            ? Color(hex: "#8B8FFF").opacity(0.10)
+                            ? PromptTheme.orbAccent.opacity(0.10)
                             : Color.clear
                     )
                 }
@@ -493,14 +505,14 @@ private struct GhostGlyphShape: Shape {
         }
         .background(
             RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .fill(Color(hex: "#0D1525"))
+                .fill(PromptTheme.dropdownBackground)
                 .overlay(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
-                        .stroke(Color(hex: "#8B8FFF").opacity(0.20), lineWidth: 1)
+                        .stroke(PromptTheme.orbAccent.opacity(0.20), lineWidth: 1)
                 )
         )
         .shadow(color: .black.opacity(0.5), radius: 20, y: 8)
-        .shadow(color: Color(hex: "#8B8FFF").opacity(0.10), radius: 20, y: 4)
+        .shadow(color: PromptTheme.orbAccent.opacity(0.10), radius: 20, y: 4)
     }
 
     // MARK: - Bottom Area
@@ -528,7 +540,7 @@ private struct GhostGlyphShape: Shape {
             HStack(spacing: 8) {
                 Image(systemName: "chart.line.uptrend.xyaxis")
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundStyle(Color(hex: "#8B8FFF"))
+                    .foregroundStyle(PromptTheme.orbAccent)
                 Text("See What's Trending")
                     .font(.system(size: 13, weight: .bold, design: .default))
                     .foregroundStyle(.white)
@@ -543,7 +555,7 @@ private struct GhostGlyphShape: Shape {
                 Capsule()
                     .fill(.ultraThinMaterial)
                     .overlay(Capsule().fill(PromptTheme.glassFill))
-                    .overlay(Capsule().stroke(Color(hex: "#8B8FFF").opacity(0.20), lineWidth: 1))
+                    .overlay(Capsule().stroke(PromptTheme.orbAccent.opacity(0.20), lineWidth: 1))
             )
         }
         .buttonStyle(.plain)
@@ -573,7 +585,7 @@ private struct GhostGlyphShape: Shape {
             HStack(spacing: 5) {
                 if isTag {
                     Circle()
-                        .fill(Color(hex: "#8B8FFF"))
+                        .fill(PromptTheme.orbAccent)
                         .frame(width: 5, height: 5)
                 }
                 Text(label)
@@ -594,53 +606,120 @@ private struct GhostGlyphShape: Shape {
     }
 
     private var inputBar: some View {
-        HStack(spacing: 12) {
-            Button {
-                isInputFocused = true
-            } label: {
-                Image(systemName: "plus")
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.82))
-                    .frame(width: 36, height: 36)
-                    .background(
+        VStack(spacing: 0) {
+            // Attached image thumbnail row (shown only when image is selected)
+            if let attachedImage {
+                HStack(spacing: 10) {
+                    Image(uiImage: attachedImage)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: 48, height: 48)
+                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                                .stroke(PromptTheme.orbAccent.opacity(0.45), lineWidth: 1)
+                        )
+
+                    Text("Image attached")
+                        .font(.system(size: 13, weight: .medium))
+                        .foregroundStyle(Color.white.opacity(0.72))
+
+                    Spacer()
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.18)) {
+                            self.attachedImage = nil
+                            self.imagePickerItem = nil
+                            generateViewModel.attachedImage = nil
+                        }
+                        HapticService.selection()
+                    } label: {
+                        Image(systemName: "xmark.circle.fill")
+                            .font(.system(size: 18, weight: .medium))
+                            .foregroundStyle(Color.white.opacity(0.55))
+                    }
+                    .buttonStyle(.plain)
+                }
+                .padding(.horizontal, 18)
+                .padding(.top, 12)
+                .padding(.bottom, 8)
+                .transition(.move(edge: .top).combined(with: .opacity))
+            }
+
+            HStack(spacing: 12) {
+                // + button — opens PhotosPicker (Photos + Camera)
+                PhotosPicker(
+                    selection: $imagePickerItem,
+                    matching: .images,
+                    photoLibrary: .shared()
+                ) {
+                    ZStack {
                         RoundedRectangle(cornerRadius: 11, style: .continuous)
-                            .fill(Color.white.opacity(0.06))
+                            .fill(attachedImage != nil
+                                  ? PromptTheme.orbAccent.opacity(0.22)
+                                  : Color.white.opacity(0.06))
                             .overlay(
                                 RoundedRectangle(cornerRadius: 11, style: .continuous)
-                                    .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                                    .stroke(attachedImage != nil
+                                            ? PromptTheme.orbAccent.opacity(0.45)
+                                            : Color.white.opacity(0.08),
+                                            lineWidth: attachedImage != nil ? 1 : 0.5)
                             )
-                    )
-            }
-            .buttonStyle(.plain)
-
-            ZStack(alignment: .leading) {
-                if generateViewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
-                    Text("Just talk. Messy is fine.")
-                        .font(.system(size: 17, weight: .regular, design: .default))
-                        .foregroundStyle(Color.white.opacity(0.34))
-                        .allowsHitTesting(false)
+                        Image(systemName: attachedImage != nil ? "photo.fill" : "plus")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(attachedImage != nil
+                                             ? PromptTheme.orbAccent
+                                             : Color.white.opacity(0.82))
+                    }
+                    .frame(width: 36, height: 36)
+                    .shadow(color: attachedImage != nil
+                            ? PromptTheme.orbAccent.opacity(0.20)
+                            : .clear, radius: 6)
+                }
+                .buttonStyle(.plain)
+                .onChange(of: imagePickerItem) { _, newItem in
+                    Task {
+                        guard let newItem,
+                              let data = try? await newItem.loadTransferable(type: Data.self),
+                              let image = UIImage(data: data) else { return }
+                        withAnimation(.easeInOut(duration: 0.2)) {
+                            attachedImage = image
+                            generateViewModel.attachedImage = image
+                        }
+                        HapticService.impact(.light)
+                    }
                 }
 
-                TextField("", text: $generateViewModel.inputText)
-                    .font(.system(size: 17, weight: .regular, design: .default))
-                    .foregroundStyle(.white.opacity(0.92))
-                    .textInputAutocapitalization(.sentences)
-                    .submitLabel(.go)
-                    .focused($isInputFocused)
-                    .onSubmit {
-                        let trimmed = generateViewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-                        guard !trimmed.isEmpty, !generateViewModel.isGenerating else { return }
-                        Task { await generateViewModel.generate() }
+                ZStack(alignment: .leading) {
+                    if generateViewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+                        Text("Just talk. Messy is fine.")
+                            .font(.system(size: 17, weight: .regular, design: .default))
+                            .foregroundStyle(Color.white.opacity(0.34))
+                            .allowsHitTesting(false)
                     }
+
+                    TextField("", text: $generateViewModel.inputText)
+                        .font(.system(size: 17, weight: .regular, design: .default))
+                        .foregroundStyle(.white.opacity(0.92))
+                        .textInputAutocapitalization(.sentences)
+                        .submitLabel(.go)
+                        .focused($isInputFocused)
+                        .onSubmit {
+                            let trimmed = generateViewModel.inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+                            guard !trimmed.isEmpty, !generateViewModel.isGenerating else { return }
+                            Task { await generateViewModel.generate() }
+                        }
+                }
             }
+            .padding(.horizontal, 18)
+            .padding(.vertical, 16)
         }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 16)
         .background(
             RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .fill(Color(hex: "#131827"))
+                .fill(PromptTheme.inputBarBackground)
                 .shadow(color: .black.opacity(0.24), radius: 14, y: 6)
         )
+        .animation(.easeInOut(duration: 0.2), value: attachedImage != nil)
     }
 
     // MARK: - Result Section
@@ -729,7 +808,7 @@ private struct GhostGlyphShape: Shape {
 
     private var leftPanelContent: some View {
         ZStack {
-            Color(hex: "#02060D").ignoresSafeArea()
+            PromptTheme.panelBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
 
@@ -739,7 +818,7 @@ private struct GhostGlyphShape: Shape {
                     ZStack {
                         Circle()
                             .fill(LinearGradient(
-                                colors: [Color(hex: "#5D628A"), Color(hex: "#8B8FFF")],
+                                colors: [PromptTheme.orbAccentMuted, PromptTheme.orbAccent],
                                 startPoint: .topLeading, endPoint: .bottomTrailing))
                             .frame(width: 40, height: 40)
                         Text("O")
@@ -816,7 +895,7 @@ private struct GhostGlyphShape: Shape {
                 .background(
                     RoundedRectangle(cornerRadius: 18, style: .continuous)
                         .fill(LinearGradient(
-                            colors: [Color(hex: "#5D628A"), Color(hex: "#8B8FFF")],
+                            colors: [PromptTheme.orbAccentMuted, PromptTheme.orbAccent],
                             startPoint: .leading, endPoint: .trailing))
                 )
                 .padding(.horizontal, 16)
@@ -824,11 +903,6 @@ private struct GhostGlyphShape: Shape {
 
                 // ── Nav Rows ─────────────────────────────────────────
                 VStack(spacing: 2) {
-                    NavigationLink(destination: TrendingView().toolbar(.hidden, for: .navigationBar)) {
-                        leftPanelRow(icon: "chart.line.uptrend.xyaxis", label: "Trending")
-                    }
-                    .buttonStyle(.plain)
-
                     NavigationLink(destination: FavoritesView().toolbar(.hidden, for: .navigationBar)) {
                         leftPanelRow(icon: "star.fill", label: "Favorites")
                     }
@@ -989,7 +1063,7 @@ private struct GhostGlyphShape: Shape {
 
             Text(item.mode == .ai ? "AI" : "Human")
                 .font(.system(size: 11, weight: .semibold, design: .rounded))
-                .foregroundStyle(item.mode == .ai ? Color(hex: "#8B8FFF") : .white.opacity(0.72))
+                .foregroundStyle(item.mode == .ai ? PromptTheme.orbAccent : .white.opacity(0.72))
                 .padding(.horizontal, 10)
                 .frame(height: 24)
                 .background(
@@ -1021,7 +1095,7 @@ private struct GhostGlyphShape: Shape {
     private var panelSheet: some View {
         NavigationStack {
             ZStack {
-                Color(hex: "#02060D").ignoresSafeArea()
+                PromptTheme.panelBackground.ignoresSafeArea()
 
                 VStack(spacing: 0) {
                     // Header
@@ -1090,11 +1164,11 @@ private struct GhostGlyphShape: Shape {
         HStack(spacing: 16) {
             ZStack {
                 RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .fill(Color(hex: "#8B8FFF").opacity(0.12))
+                    .fill(PromptTheme.orbAccent.opacity(0.12))
                     .frame(width: 44, height: 44)
                 Image(systemName: icon)
                     .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(Color(hex: "#8B8FFF"))
+                    .foregroundStyle(PromptTheme.orbAccent)
             }
             VStack(alignment: .leading, spacing: 2) {
                 Text(label)
@@ -1204,7 +1278,7 @@ private struct ShareCardsPlaceholderView: View {
 
     var body: some View {
         ZStack {
-            Color(hex: "#02060D").ignoresSafeArea()
+            PromptTheme.panelBackground.ignoresSafeArea()
 
             VStack(spacing: 0) {
                 HStack(spacing: 16) {
@@ -1234,7 +1308,7 @@ private struct ShareCardsPlaceholderView: View {
                 VStack(spacing: 16) {
                     Image(systemName: "square.and.arrow.up.fill")
                         .font(.system(size: 36))
-                        .foregroundStyle(Color(hex: "#8B8FFF").opacity(0.6))
+                        .foregroundStyle(PromptTheme.orbAccent.opacity(0.6))
                     Text("Share Cards")
                         .font(.system(size: 20, weight: .bold, design: .default))
                         .foregroundStyle(.white)

@@ -5,7 +5,7 @@ enum ShareCardFileStore {
         guard let data = image.pngData() else { return nil }
 
         let url = FileManager.default.temporaryDirectory
-            .appendingPathComponent("prompt28-share-card-\(UUID().uuidString).png")
+            .appendingPathComponent("orbit-orb-share-card-\(UUID().uuidString).png")
 
         do {
             try data.write(to: url, options: .atomic)

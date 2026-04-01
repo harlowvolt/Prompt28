@@ -9,7 +9,7 @@ struct OnboardingView: View {
         OnboardingPage(
             icon: "sparkles",
             iconColor: Color(red: 0.81, green: 0.85, blue: 1.0),
-            title: "Welcome to Orion Orb",
+            title: "Welcome to Orbit Orb",
             subtitle: "Turn any idea into an expert AI prompt — in seconds."
         ),
         OnboardingPage(
@@ -28,7 +28,7 @@ struct OnboardingView: View {
             icon: "mic.badge.plus",
             iconColor: Color(red: 0.90, green: 0.78, blue: 1.0),
             title: "Your Privacy Matters",
-            subtitle: "Orion Orb records audio through your microphone to transcribe your voice. Your audio is sent to a third-party AI service to generate prompts and is never stored permanently. You can revoke access at any time in iOS Settings."
+            subtitle: "Orbit Orb records audio through your microphone to transcribe your voice. Your audio is sent to a third-party AI service to generate prompts and is never stored permanently. You can revoke access at any time in iOS Settings."
         )
     ]
 

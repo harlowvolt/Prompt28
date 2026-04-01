@@ -79,7 +79,7 @@ struct TypePromptView: View {
         .padding(.bottom, 14)
         .background(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(Color(hex: "#141828").opacity(0.96))
+                .fill(PromptTheme.panelBackground.opacity(0.97))
                 .overlay(
                     RoundedRectangle(cornerRadius: 28, style: .continuous)
                         .stroke(Color.white.opacity(0.08), lineWidth: 1)

@@ -9,12 +9,12 @@ struct OrbitLogoView: View {
     // Ring 1: lilac → accent purple (tilted -45°)
     private let ring1Start  = Color(hex: "#F2F5FF").opacity(0.85)
     private let ring1Mid    = Color(hex: "#CFD7FF")
-    private let ring1End    = Color(hex: "#8B8FFF")
+    private let ring1End    = PromptTheme.orbAccent
 
     // Ring 2: accent2 → violet (tilted +45°)
-    private let ring2Start  = Color(hex: "#A78BFA")
-    private let ring2Mid    = Color(hex: "#8B8FFF")
-    private let ring2End    = Color(hex: "#5D628A")
+    private let ring2Start  = PromptTheme.orbAccentLight
+    private let ring2Mid    = PromptTheme.orbAccent
+    private let ring2End    = PromptTheme.orbAccentMuted
 
     var body: some View {
         GeometryReader { geo in
@@ -30,7 +30,7 @@ struct OrbitLogoView: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color(hex: "#8B8FFF").opacity(pulse ? 0.11 : 0.07),
+                                PromptTheme.orbAccent.opacity(pulse ? 0.11 : 0.07),
                                 Color.clear
                             ],
                             center: .center,
@@ -73,7 +73,7 @@ struct OrbitLogoView: View {
 
                 // ── ring 2 — glow pass ──────────────────────────────────────
                 EllipseRing(rx: rx, ry: ry)
-                    .stroke(Color(hex: "#A78BFA").opacity(0.18), lineWidth: size * 0.058)
+                    .stroke(PromptTheme.orbAccentLight.opacity(0.18), lineWidth: size * 0.058)
                     .frame(width: geo.size.width, height: geo.size.height)
                     .rotationEffect(.degrees(45))
                     .blur(radius: size * 0.025)
@@ -107,7 +107,7 @@ struct OrbitLogoView: View {
                         RadialGradient(
                             colors: [
                                 Color(hex: "#CFD7FF").opacity(0.75),
-                                Color(hex: "#A78BFA").opacity(0.40),
+                                PromptTheme.orbAccentLight.opacity(0.40),
                                 Color.clear
                             ],
                             center: .center,
@@ -153,7 +153,7 @@ private struct EllipseRing: Shape {
 
 #Preview {
     ZStack {
-        Color(hex: "#02060D").ignoresSafeArea()
+        PromptTheme.previewBackground.ignoresSafeArea()
         OrbitLogoView()
             .frame(width: 200, height: 200)
     }

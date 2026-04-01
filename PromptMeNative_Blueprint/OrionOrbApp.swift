@@ -19,7 +19,7 @@ struct OrionOrbApp: App {
         self._errorState = State(initialValue: isRunningTests ? nil : ErrorState())
         
         // 3. Set the background color so we know the app is running
-        UIWindow.appearance().backgroundColor = UIColor(red: 14/255, green: 12/255, blue: 22/255, alpha: 1)
+        UIWindow.appearance().backgroundColor = UIColor(red: 11/255, green: 12/255, blue: 24/255, alpha: 1)
     }
     
     var body: some Scene {
