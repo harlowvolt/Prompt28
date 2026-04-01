@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CCAB0BA1ASSET00000C29A7E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CCAB0BA12F5D780200C29A7E /* Assets.xcassets */; };
 		CC564D082F5FD40F008BE78E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = CC564D072F5FD40F008BE78E /* GoogleSignIn */; };
 		CC564D0A2F5FD416008BE78E /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = CC564D092F5FD416008BE78E /* GoogleSignInSwift */; };
 		CCA100001122334455667711 /* ShareCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667701 /* ShareCardView.swift */; };
@@ -761,6 +762,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CCAB0BA1ASSET00000C29A7E /* Assets.xcassets in Resources */,
 				CCDE00000000000000000008 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
