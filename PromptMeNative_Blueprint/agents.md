@@ -542,3 +542,5 @@ if privacyMode {
 - Account deletion must remain available from Settings and must call the `delete-account` Supabase Edge Function to remove the user account plus related server-side records before local logout.
 - Result screens should surface one-tap transformation actions prominently (for example: more professional, more detailed, shorter) so the app's refinement value is obvious without extra typing.
 - The templates/trending surface should present broad user-facing categories such as Business, School, Creative, Marketing, and Personal, even if multiple backend categories are grouped underneath.
+- Home and result composition areas must stay constrained to a readable column on iPad (`maxWidth: 800`) rather than stretching edge-to-edge.
+- Share cards must remain lazily rendered in memory and shared with native `ShareLink` so iPad popover anchoring is handled by the system.
