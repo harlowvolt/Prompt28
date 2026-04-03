@@ -1,13 +1,13 @@
 //
-//  Prompt28UITests.swift
-//  Prompt28UITests
+//  OrbitOrbUITests.swift
+//  OrbitOrbUITests
 //
 //  Created by Natalie Whipps on 3/7/26.
 //
 
 import XCTest
 
-final class Prompt28UITests: XCTestCase {
+final class OrbitOrbUITests: XCTestCase {
 
     override func setUpWithError() throws {
         // Put setup code here. This method is called before the invocation of each test method in the class.

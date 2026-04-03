@@ -1,13 +1,13 @@
 //
-//  Prompt28UITestsLaunchTests.swift
-//  Prompt28UITests
+//  OrbitOrbUITestsLaunchTests.swift
+//  OrbitOrbUITests
 //
 //  Created by Natalie Whipps on 3/7/26.
 //
 
 import XCTest
 
-final class Prompt28UITestsLaunchTests: XCTestCase {
+final class OrbitOrbUITestsLaunchTests: XCTestCase {
 
     override class var runsForEachTargetApplicationUIConfiguration: Bool {
         true

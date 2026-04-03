@@ -80,26 +80,21 @@ struct AuthFlowView: View {
     // MARK: - Brand Header
 
     private var brandHeader: some View {
-        VStack(spacing: AppSpacing.element) {
-            HStack(spacing: 0) {
-                Text("Prompt")
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
-                    .foregroundStyle(.white)
-                Text("28")
-                    .font(.system(size: 44, weight: .bold, design: .rounded))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [PromptTheme.softLilac, PromptTheme.mutedViolet],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
+        VStack(spacing: 16) {
+            // Orbital rings logo
+            OrbitLogoView()
+                .frame(width: 88, height: 88)
 
-            Text("Turn your ideas into expert AI prompts")
-                .font(.system(size: 15, weight: .regular, design: .rounded))
-                .foregroundStyle(PromptTheme.softLilac.opacity(0.65))
-                .multilineTextAlignment(.center)
+            VStack(spacing: 6) {
+                Text("Orbit Orb")
+                    .font(.system(size: 36, weight: .bold, design: .rounded))
+                    .foregroundStyle(.white)
+
+                Text("Turn any idea into an expert AI prompt")
+                    .font(.system(size: 15, weight: .regular, design: .rounded))
+                    .foregroundStyle(PromptTheme.softLilac.opacity(0.65))
+                    .multilineTextAlignment(.center)
+            }
         }
     }
 
@@ -342,14 +337,25 @@ struct AuthFlowView: View {
                 .font(.system(size: 12, weight: .regular, design: .rounded))
                 .foregroundStyle(.white.opacity(0.28))
             HStack(spacing: 4) {
-                Text("Terms of Service")
-                    .underline()
+                Button {
+                    if let url = URL(string: "https://orbitorb.app/terms") {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Text("Terms of Service").underline()
+                }
                 Text("and")
-                Text("Privacy Policy")
-                    .underline()
+                Button {
+                    if let url = URL(string: "https://orbitorb.app/privacy") {
+                        UIApplication.shared.open(url)
+                    }
+                } label: {
+                    Text("Privacy Policy").underline()
+                }
             }
             .font(.system(size: 12, weight: .medium, design: .rounded))
             .foregroundStyle(PromptTheme.softLilac.opacity(0.45))
+            .buttonStyle(.plain)
         }
         .multilineTextAlignment(.center)
     }

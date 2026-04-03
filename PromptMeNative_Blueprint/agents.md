@@ -1,140 +1,224 @@
 # Orbit Orb — Agent & Developer Reference
 
+> **Single Source of Truth** — All architecture, design system, naming, and App Store compliance notes live here.
 > Last updated: 2026-03-31
 > Target: iOS 17+, SwiftUI, Swift 6 strict concurrency
 
 ---
 
-## 1. App Architecture
+## 1. App Identity
 
-Orbit Orb follows a **Feature-first MVVM** architecture with a single shared dependency container (`AppEnvironment`).
+| Property | Value |
+|----------|-------|
+| **Brand name** | **Orbit Orb** (two words, title-case, always) |
+| **Bundle ID** | `com.prompt28.app` (App Store Connect — do not change) |
+| `CFBundleDisplayName` | `Orbit Orb` (drives iOS system permission dialogs) |
+| StoreKit product IDs | `com.prompt28.*` (tied to App Store Connect — do not change) |
+| Internal UserDefaults keys | `promptme_*` (changing breaks existing user data — do not rename) |
+| Notification identifiers | `com.prompt28.*` (system-registered — do not change) |
+| Website | `orbitorb.app` |
+| Terms URL | `https://orbitorb.app/terms` |
+| Privacy URL | `https://orbitorb.app/privacy` |
+
+**RULE:** The brand name is always **Orbit Orb** everywhere — in UI text, comments, system dialogs, share cards, analytics events, and this document. Never "Orion Orb", "Prompt28", "PromptMe", or any other variant.
+
+---
+
+## 2. Architecture
+
+Orbit Orb follows **Feature-first MVVM** with a single shared dependency container (`AppEnvironment`).
 
 ```
-OrionOrbApp (entry point)
-└── AppEnvironment  (all services, created once on main actor)
-└── RootView        (routing shell: privacy → onboarding → auth → home)
-    └── HomeView    (primary screen — all prompt-generation logic lives here)
-        ├── GenerateViewModel   (prompt generation, history, privacy gate)
-        ├── OrbEngine           (voice/speech state machine)
-        └── ResultView          (rendered result, copy, share, favorite, refine)
+OrionOrbApp.swift          @main entry point
+└── AppEnvironment          All services created once on @MainActor
+└── RootView                Routing shell: loading → auth gate → home
+    └── HomeView            Primary screen — all prompt generation logic
+        ├── GenerateViewModel   Prompt generation, history, privacy gate
+        ├── OrbEngine           Voice/speech state machine
+        └── ResultView          Rendered result: copy, share, favorite, refine
 ```
 
 ### Key principles
-- **One screen at a time.** The app is effectively a single-screen product. All flows (settings, trending, type-prompt) open as sheets from `HomeView`.
+
+- **One screen at a time.** The app is a single-screen product. All flows open as sheets from `HomeView`.
 - **No global state mutation outside `@MainActor`.** All view models are `@Observable @MainActor`.
-- **Dependency injection via SwiftUI Environment.** `AppEnvironment` seeds all services into the tree via `EnvironmentKey`s in `AppEnvironment.swift`.
+- **Dependency injection via SwiftUI Environment.** `AppEnvironment` seeds all services into the tree via `EnvironmentKey`s defined in `AppEnvironment.swift`.
+- **No inline color literals.** Every color must reference a `PromptTheme` token (see Section 6).
 
 ---
 
-## 2. Key Components
+## 3. User Flow (Approved — App Store Compliant)
+
+```
+App Launch
+    │
+    ▼
+Bootstrap loading (< 1 s)  ← ProgressView spinner, "Loading Orbit Orb" label
+    │
+    ├─ Not authenticated ──▶  AuthFlowView  ──▶  HomeView
+    │                         (T&C + Privacy links in footer)
+    │
+    └─ Authenticated ─────▶  HomeView  (iPhone)
+                              iPadSidebar  (iPad, regular size class)
+```
+
+**Removed screens (do not re-add):**
+- ~~PrivacyConsentView~~ — replaced by T&C + Privacy links in `AuthFlowView` footer (Guideline 5.1.2 compliant)
+- ~~OnboardingView~~ — removed to reduce friction; new users land directly in the app
+
+**Apple App Store compliance:**
+- **Guideline 5.1.2(i):** Privacy disclosure is satisfied by the Terms of Service and Privacy Policy links visible in `AuthFlowView.termsFooter` before the user submits any credentials. This is the same pattern used by Linear, ChatGPT, and Notion.
+- **Guideline 4.8:** Sign In with Apple uses `SignInWithAppleButton` natively (not a custom button).
+- **Guideline 2.1:** App works without any additional gate screens after download.
+
+---
+
+## 4. File Map — Every Source File
+
+### App Layer (`PromptMeNative_Blueprint/App/`)
 
 | File | Role |
 |------|------|
-| `OrionOrbApp.swift` | `@main` entry point; injects `AppEnvironment` into SwiftUI environment |
-| `AppEnvironment.swift` | Dependency container: Supabase, auth, history, preferences, usage, router, telemetry, speech/orb factories |
-| `RootView.swift` | Routing: privacy consent → onboarding → auth gate → `HomeView`; also holds `PromptTheme`, `PromptPremiumBackground`, `Color(hex:)` extension |
-| `HomeView.swift` | Primary UI: nav bar, orb, mode pills, input bar (+/image picker), ghost mode toggle, sheets |
-| `GenerateViewModel.swift` | Prompt generation via Supabase Edge Function; history saving; privacy mode gate; image attachment state |
-| `OrbEngine.swift` | Voice recording state machine (idle → listening → transcribing → done/failure); drives orb animation |
-| `ResultView.swift` | Displays generated prompt; copy, share (ShareLink + ImageRenderer), favorite, feedback, refine |
-| `ShareCardView.swift` | SwiftUI view rendered off-screen to produce the share card image |
-| `ShareCardRenderer.swift` | `ImageRenderer` wrapper — renders `ShareCardView` at @3x into `UIImage` |
-| `ShareCardFileStore.swift` | Writes the share image to a temp file; cleans up on dismiss |
-| `HistoryStore.swift` | `@Observable` local + Supabase-backed prompt history |
-| `PreferencesStore.swift` | `@Observable` user preferences (mode, save-history flag) persisted via `UserDefaults` |
-| `UsageTracker.swift` | Keychain-backed monthly generation counter for freemium gate |
-| `AppRouter.swift` | `@Observable` navigation state: selected tab, active home sheet |
+| `OrionOrbApp.swift` | `@main` entry; injects `AppEnvironment` into SwiftUI environment; sets `UIWindow` background to `#0B0C18` |
+| `AppEnvironment.swift` | DI container: Supabase, auth, history, preferences, usage, router, telemetry, speech/orb factories |
+| `RootView.swift` | Routing shell + `PromptTheme` enum (color token source of truth) + `PromptPremiumBackground` + `Color(hex:)` extension |
+| `AppUI.swift` | Shared UI constants: `AppSpacing`, `AppHeights`, `AppRadii`, `AppGlassField`, `AppPrimaryButton` |
+| `PremiumTabScreen.swift` | Paywall/upgrade tab placeholder |
+| `Routing/AppRouter.swift` | `@Observable` navigation state: `selectedTab`, `activeHomeSheet` |
+
+### Core Layer (`PromptMeNative_Blueprint/Core/`)
+
+| File | Role |
+|------|------|
+| `Auth/AuthManager.swift` | Supabase auth: email login/register, Google OAuth, Apple Sign In, token refresh, `isBootstrapping` flag |
+| `Auth/OAuthCoordinator.swift` | Google OAuth: presents `ASWebAuthenticationSession`, returns ID token |
+| `Auth/KeychainService.swift` | Keychain CRUD wrapper |
+| `Auth/SupabaseConfig.swift` | Reads `SUPABASE_URL` + `SUPABASE_ANON_KEY` from `Info.plist` |
+| `Audio/OrbEngine.swift` | Voice state machine: `idle → listening → transcribing → done/failure`; drives orb animation |
+| `Audio/SpeechRecognizerService.swift` | `SFSpeechRecognizer` wrapper; transcribes live audio to text |
+| `Networking/APIClient.swift` | URLSession wrapper; JWT-authenticated requests to Supabase Edge Functions |
+| `Networking/APIEndpoint.swift` | Endpoint definitions |
+| `Networking/NetworkError.swift` | Typed network error enum |
+| `Networking/RequestBuilder.swift` | Builds `URLRequest` from `APIEndpoint` |
+| `Notifications/NotificationService.swift` | Low-usage nudge notifications (skipped when `privacyMode == true`) |
+| `Storage/HistoryStore.swift` | `@Observable` local + Supabase-backed prompt history; `add()` is guarded by `privacyMode` |
+| `Storage/PreferencesStore.swift` | `@Observable` user preferences (`PromptMode`, `saveHistory`) — persisted via `UserDefaults` |
+| `Storage/SecureStore.swift` | Keychain-backed secure storage wrapper |
+| `Store/StoreManager.swift` | StoreKit 2 subscription management |
+| `Store/StoreConfig.swift` | Product ID constants (`com.prompt28.*`) |
+| `Store/UsageTracker.swift` | Keychain-backed monthly generation counter (freemium gate) |
+| `Utils/AnalyticsService.swift` | `track(.eventName)` — queues events to `events` Supabase table |
+| `Utils/TelemetryService.swift` | Crash/performance telemetry |
+| `Utils/HapticService.swift` | Haptic feedback wrapper |
+| `Utils/JSONCoding.swift` | Shared JSON encoder/decoder |
+| `Utils/Date+Extensions.swift` | `Date` helpers |
+
+### Features Layer (`PromptMeNative_Blueprint/Features/`)
+
+| File | Role |
+|------|------|
+| `Auth/Views/AuthFlowView.swift` | Sign-in/sign-up screen: Google, Apple, email/password; brand header with `OrbitLogoView`; T&C + Privacy footer |
+| `Auth/Views/EmailAuthView.swift` | Email-only auth variant (sheet) |
+| `Auth/ViewModels/AuthViewModel.swift` | Auth screen state |
+| `Home/Views/HomeView.swift` | Primary UI: nav bar, orb, mode pills, input bar (`+` image picker, text field), ghost mode toggle, sheets |
+| `Home/Views/OrbView.swift` | SwiftUI orb animation (fallback) |
+| `Home/Views/MetalOrbView.swift` | GPU shader orb variant (toggled by `ExperimentFlags.Orb.metalOrb`) |
+| `Home/Views/OrbitLogoView.swift` | Orbital rings SVG-style logo — used in `AuthFlowView` header and `HomeView` idle state |
+| `Home/Views/ResultView.swift` | Displays generated prompt; copy, share (`ShareLink`), favorite, feedback, refine |
+| `Home/Views/ShareCardView.swift` | Off-screen view rendered to produce share card image (400×650 pt) |
+| `Home/Views/ShareCardRenderer.swift` | `ImageRenderer` wrapper — renders `ShareCardView` at @3x into `UIImage` |
+| `Home/Views/ShareCardFileStore.swift` | Writes share PNG to `FileManager.temporaryDirectory`; temp file named `orbit-orb-share-card-*.png` |
+| `Home/Views/TypePromptView.swift` | "Type a prompt" sheet presented from `HomeView` |
+| `Home/ViewModels/GenerateViewModel.swift` | Prompt generation: calls Supabase Edge Function, saves to `HistoryStore` if `!privacyMode`, `attachedImage` for future image context |
+| `Home/ViewModels/HomeViewModel.swift` | Additional home-screen state (not the primary VM) |
+| `History/Views/HistoryView.swift` | Prompt history list |
+| `History/Views/FavoritesView.swift` | Favorited prompts list |
+| `History/ViewModels/HistoryViewModel.swift` | History screen state |
+| `Settings/Views/SettingsView.swift` | User settings; links to `orbitorb.app/privacy` and `orbitorb.app/terms` |
+| `Settings/Views/UpgradeView.swift` | Upgrade/paywall screen |
+| `Settings/ViewModels/SettingsViewModel.swift` | Settings screen state |
+| `Trending/Views/TrendingView.swift` | Trending prompts feed |
+| `Trending/Views/PromptDetailView.swift` | Individual trending prompt detail |
+| `Trending/ViewModels/TrendingViewModel.swift` | Trending screen state |
+| `Admin/Views/AdminDashboardView.swift` | Admin dashboard (phone-only; iPad redirects to Home) |
+| `Admin/Views/AdminCategoriesView.swift` | Admin category management |
+| `Admin/Views/AdminPromptsView.swift` | Admin prompt management |
+| `Admin/Views/AdminPromptEditorSheet.swift` | Admin prompt editor sheet |
+| `Admin/Views/AdminTextSettingsView.swift` | Admin text settings |
+| `Admin/Views/AdminUnlockView.swift` | Admin unlock gate |
+| `Admin/ViewModels/AdminViewModel.swift` | Admin screen state |
+| `Onboarding/Views/OnboardingView.swift` | **DEAD CODE** — no longer referenced in routing; safe to delete |
+| `Privacy/PrivacyConsentView.swift` | **DEAD CODE** — no longer referenced in routing; safe to delete |
+
+### Models (`PromptMeNative_Blueprint/Models/`)
+
+| File | Role |
+|------|------|
+| `API/GenerateModels.swift` | `GenerateRequest` / `GenerateResponse` — Supabase Edge Function payload |
+| `API/AuthModels.swift` | Auth request/response types |
+| `API/User.swift` | `User` model |
+| `API/PromptCatalogModels.swift` | Trending/catalog prompt models |
+| `API/SettingsModels.swift` | Settings API models |
+| `Local/AppPreferences.swift` | `AppPreferences` struct persisted by `PreferencesStore` |
+| `Local/PromptHistoryItem.swift` | Local history item model |
+
+### Resources
+
+| Path | Role |
+|------|------|
+| `Resources/Assets.xcassets/AppIcon.appiconset/icon.png` | **App icon** — iOS universal 1024×1024 PNG, Orbit Orb orbital rings logo on `#0B0C18` navy |
+| `Resources/Assets.xcassets/AppIcon.appiconset/Contents.json` | Declares `icon.png` as universal iOS icon |
+| `Resources/Assets.xcassets/AccentColor.colorset/Contents.json` | Accent color `#6C4BFF` (matches `PromptTheme.mutedViolet`) |
+| `Prompt28/Info.plist` | App configuration, API keys, permission usage strings, URL schemes |
+| `Prompt28/PrivacyInfo.xcprivacy` | App Store privacy nutrition label |
+
+### Xcode Project
+
+| Path | Role |
+|------|------|
+| `Prompt28.xcodeproj/project.pbxproj` | Project structure; `Assets.xcassets` must be in `PBXResourcesBuildPhase` for icon to compile |
 
 ---
 
-## 3. State Management
+## 5. State Management
 
-### `@Observable` (Swift Observation framework, iOS 17+)
-All view models and stores use `@Observable` — no `ObservableObject`/`@Published` anywhere.
-Views that consume observable objects use `@State` (for locally owned VMs) or `@Environment` (for shared services).
+### `@Observable` (Swift Observation, iOS 17+)
+All view models and stores use `@Observable`. No `ObservableObject` / `@Published` anywhere.
+Views that consume observable objects use `@State` (locally owned VMs) or `@Environment` (shared services).
 
 ### Environment injection pattern
 ```swift
-// Declare in AppEnvironment.swift
-private struct HistoryStoreKey: EnvironmentKey { ... }
-extension EnvironmentValues { var historyStore: (any HistoryStoring)? { ... } }
+// 1. Declare EnvironmentKey in AppEnvironment.swift
+private struct HistoryStoreKey: EnvironmentKey {
+    static let defaultValue: (any HistoryStoring)? = nil
+}
+extension EnvironmentValues {
+    var historyStore: (any HistoryStoring)? {
+        get { self[HistoryStoreKey.self] }
+        set { self[HistoryStoreKey.self] = newValue }
+    }
+}
 
-// Inject at root (OrionOrbApp.swift)
+// 2. Inject at root in OrionOrbApp.swift
 .environment(\.historyStore, env.historyStore)
 
-// Consume in child view
+// 3. Consume in any child view
 @Environment(\.historyStore) private var historyStore
 ```
 
-### Privacy Mode (Ghost Mode)
-`HomeView` holds `@State private var ghostMode: Bool`.
-On toggle, it sets `generateViewModel.privacyMode = enabled`.
-`GenerateViewModel.runGenerate()` checks `!privacyMode` before writing to `HistoryStore`.
-Nothing is written to disk, Supabase, or notification service when privacy mode is active.
-Visual indicator: ghost icon glows purple + background fill changes on the nav icon.
-
 ---
 
-## 4. Feature Breakdown
+## 6. Design System — Color Token Source of Truth
 
-### 4.1 Input System
-- `HomeView.inputBar` — bottom-anchored input bar containing the `+` (image picker) button and a `TextField`.
-- Placeholder text: *"Just talk. Messy is fine."*
-- `submitLabel(.go)` — pressing Return triggers `generateViewModel.generate()`.
-- Mode pills (AI Mode / Human Mode) above the input bar select `PromptMode` stored in `GenerateViewModel.selectedMode`.
+**ABSOLUTE RULE: No inline hex literals anywhere in the codebase.** Every color must reference a `PromptTheme` token. All tokens are declared in `enum PromptTheme` inside `RootView.swift`.
 
-### 4.2 Image Upload (+ Button)
-- Implemented with `PhotosPicker` (SwiftUI native, iOS 16+, no UIKit required).
-- State: `@State private var imagePickerItem: PhotosPickerItem?` and `@State private var attachedImage: UIImage?`.
-- On selection: loads `Data` via `loadTransferable(type: Data.self)`, converts to `UIImage`, stores in both `HomeView.attachedImage` (for thumbnail) and `GenerateViewModel.attachedImage` (for backend).
-- Thumbnail row appears above the text field when an image is attached.
-- `×` button clears `attachedImage`, `imagePickerItem`, and `generateViewModel.attachedImage`.
-- The + button icon changes to `photo.fill` and glows purple while an image is attached.
-- **To wire image data to generation:** In `GenerateViewModel.runGenerate()`, encode `attachedImage` to base64 and append to the `GenerateRequest` body when the backend supports it.
+If you need a new color, add a named token to `PromptTheme` first, document it here, then use the token.
 
-### 4.3 Privacy Mode
-- Toggle: ghost icon in top-right nav bar.
-- **Active (ghostMode = true):**
-  - `GenerateViewModel.privacyMode = true`
-  - History is NOT written (`HistoryStore.add()` is skipped)
-  - `latestHistoryItemID` remains `nil` (no favorites possible)
-  - Low-usage notification scheduling is skipped
-  - Visual: ghost icon fills with purple glow, background tint changes
-- **Inactive (ghostMode = false):**
-  - Normal history behavior resumes for the next generation
-  - No retroactive deletion of current session output (it was never written)
-
-### 4.4 Prompt Generation
-Flow: `HomeView` → `generateViewModel.generate()` → `runGenerate()` →
-Supabase Edge Function (`SUPABASE_GENERATE_FUNCTION` key in Info.plist) →
-`GenerateResponse` → update `latestResult` → `ResultView` renders output.
-
-Key guards in order:
-1. Input length ≥ 3 characters
-2. Auth token present
-3. Usage count not exhausted (StoreKit plan or starter limit)
-4. Privacy mode does not affect generation, only storage
-
-### 4.5 Share Cards
-- `ResultView` calls `ShareCardRenderer.render(rawInput:generatedPrompt:modeName:)` whenever `latestPromptText` changes.
-- `ShareCardRenderer` uses `ImageRenderer` (iOS 16+) at `scale: 3.0` to render `ShareCardView` (400×650 pt) into a `UIImage`.
-- `ShareCardFileStore` writes the PNG to `FileManager.temporaryDirectory` and returns a `URL`.
-- `ShareLink(item: shareURL, preview: SharePreview("Orbit Orb", image: ...))` triggers the native iOS share sheet.
-- File is cleaned up in `ResultView.onDisappear`.
-
----
-
-## 5. Design System — Color Token Source of Truth
-
-**RULE: No inline hex literals anywhere in the codebase. Every color usage must reference a `PromptTheme` token defined in `RootView.swift`.**
-
-All tokens are declared in `enum PromptTheme` inside `RootView.swift`.
-
-### 5.1 Background Tokens
+### 6.1 Background Tokens
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `PromptTheme.backgroundBase` | `#0B0C18` | Deepest layer — matches the logo's outer dark field |
+| `PromptTheme.backgroundBase` | `#0B0C18` | Deepest layer — matches the logo's outer dark navy field; also `UIWindow` background |
 | `PromptTheme.deepShadow` | `#0D0E1E` | Mid-depth gradient layer |
 | `PromptTheme.plum` | `#100C20` | Darkest plum for layered depth |
 | `PromptTheme.panelBackground` | `#0B0C18` | Full-screen sheets, drawers, left panel, presentation backgrounds |
@@ -142,103 +226,283 @@ All tokens are declared in `enum PromptTheme` inside `RootView.swift`.
 | `PromptTheme.inputBarBackground` | `#111320` | Input bar / text field row fill |
 | `PromptTheme.previewBackground` | `#0B0C18` | `#Preview` blocks only |
 
-### 5.2 Accent & Glow Tokens
+### 6.2 Accent & Glow Tokens
 
 | Token | Hex | Usage |
 |-------|-----|-------|
-| `PromptTheme.mutedViolet` | `#6C4BFF` | Primary CTA buttons, tints |
+| `PromptTheme.mutedViolet` | `#6C4BFF` | Primary CTA buttons, tints, accent color asset |
 | `PromptTheme.orbAccent` | `#8B8FFF` | **Primary UI accent** — active states, ghost mode glow, trending icons, active borders, image-picker glow, mode pill active border |
-| `PromptTheme.orbAccentLight` | `#A78BFA` | Lighter accent — mode pill fill gradient end, ring2Start in OrbitLogoView |
-| `PromptTheme.orbAccentMuted` | `#5D628A` | Muted accent — avatar gradient start, ring2End in OrbitLogoView |
-| `PromptTheme.logoDimTint` | `#2A1A4A` | `colorMultiply` tint on the centered logo in HomeView idle state |
+| `PromptTheme.orbAccentLight` | `#A78BFA` | Lighter accent — mode pill fill gradient end, `ring2Start` in `OrbitLogoView` |
+| `PromptTheme.orbAccentMuted` | `#5D628A` | Muted accent — avatar gradient start, `ring2End` in `OrbitLogoView` |
+| `PromptTheme.logoDimTint` | `#2A1A4A` | `colorMultiply` tint on the centered logo in `HomeView` idle state |
 | `PromptTheme.orbIdleGlow` | `#6C4BFF` | Orb idle pulse glow |
 | `PromptTheme.orbActiveGlow` | `#9B7BFF` | Orb active/listening glow |
 | `PromptTheme.orbProcessingGlow` | `#C4B5FD` | Orb processing/generating glow |
 
-### 5.3 Text Tokens
+### 6.3 Text Tokens
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `PromptTheme.paleLilacWhite` | `#EDE9FE` | Primary text — near-white warm tint |
-| `PromptTheme.softLilac` | `#C4B5FD` | Secondary text, labels, subtle tints |
-| `.white` | system | Most foreground text (direct) |
+| `PromptTheme.paleLilacWhite` | `#EDE9FE` | Primary text — near-white warm tint for body and headings |
+| `PromptTheme.softLilac` | `#C4B5FD` | Secondary text, labels, subtle accent tints |
+| `.white` (system) | — | Most foreground text, used directly |
 
-### 5.4 Glass Surface Tokens
+**RULE: All text must be white or a white-adjacent token.** Never use dark text on the app's dark backgrounds. Never use `Color.black` or any gray for text.
 
-| Token | Value | Usage |
-|-------|-------|-------|
-| `PromptTheme.glassFill` | `rgba(28, 23, 56, 0.75)` | All card/surface fill layers |
-| `PromptTheme.glassStroke` | `white 11%` | All card/surface border strokes |
-| `PromptTheme.premiumMaterial` | `.ultraThinMaterial` | Native material blur base |
-
-### 5.5 Tab Bar Tokens (UIKit)
+### 6.4 Glass Surface Tokens
 
 | Token | Value | Usage |
 |-------|-------|-------|
-| `PromptTheme.tabBackground` | `UIColor rgba(10, 10, 26, 0.94)` | Tab bar background |
+| `PromptTheme.glassFill` | `Color(red:0.11, green:0.09, blue:0.22).opacity(0.75)` | All card / surface fill layers |
+| `PromptTheme.glassStroke` | `Color.white.opacity(0.11)` | All card / surface border strokes |
+| `PromptTheme.premiumMaterial` | `.ultraThinMaterial` | Native material blur base under glass surfaces |
+
+### 6.5 Tab Bar Tokens (UIKit — `RootView.swift` init)
+
+| Token | Value | Usage |
+|-------|-------|-------|
+| `PromptTheme.tabBackground` | `UIColor rgba(10, 10, 26, 0.94)` | Tab bar fill |
+| `PromptTheme.tabShadow` | `UIColor rgba(107, 74, 255, 0.14)` | Tab bar shadow |
 | `PromptTheme.tabSelected` | `UIColor rgba(107, 74, 255, 1.0)` | Selected tab icon + label |
-| `PromptTheme.tabUnselected` | `white 40%` | Unselected tab icons |
+| `PromptTheme.tabUnselected` | `UIColor.white.withAlphaComponent(0.40)` | Unselected tab icons |
 
-### 5.6 Background Component
+### 6.6 Full-Screen Background Component
 
-`PromptPremiumBackground` — full-screen `ZStack` (in `RootView.swift`):
-- Base: `backgroundBase` (`#0B0C18`)
-- Linear depth gradient: `#10122A → #0D0E20 → #0B0C18 → #090A14`
-- Primary radial glow: `#3D2B8A @ 28%` centred at `(0.50, 0.42)`, radius `0.75w`
-- Secondary radial glow: `#6C4BFF @ 10%` offset to `(0.58, 0.52)`, radius `0.44w`
-- Shimmer overlay: `.softLight` blend, `white 1.2%` → clear
+`PromptPremiumBackground` (in `RootView.swift`) — placed outside `TabView` and `NavigationStack` so it fills the full screen including under the status bar and home indicator.
 
-### 5.7 App Icon
+Layer stack (bottom to top):
+1. **Base** — `backgroundBase` (`#0B0C18`) solid fill
+2. **Vertical depth gradient** — `#10122A → #0D0E20 → #0B0C18 → #090A14` (top to bottom)
+3. **Primary orbital glow** — `RadialGradient` with `#3D2B8A @ 28%` opacity, centred at `(0.50, 0.42)`, end radius `0.75 × screen width`
+4. **Secondary glow** — `RadialGradient` with `#6C4BFF @ 10%` opacity, offset to `(0.58, 0.52)`, end radius `0.44 × screen width`
+5. **Shimmer** — `LinearGradient` `.softLight` blend, `white 1.2% → clear → white 0.8%`, top-leading to bottom-trailing
 
-File: `Resources/Assets.xcassets/AppIcon.appiconset/icon.png`
-Format: iOS universal 1024×1024 PNG (`ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon`)
-The icon is the Orbit Orb logo — orbital rings on dark navy background.
+### 6.7 App Icon
 
-### 5.8 Typography
-`PromptTheme.Typography.rounded(_ size: CGFloat, _ weight: Font.Weight)` → `.system(design: .rounded)`.
-**All text must be white** — use `.white`, `paleLilacWhite`, or `softLilac` with opacity.
+| Property | Value |
+|----------|-------|
+| File | `Resources/Assets.xcassets/AppIcon.appiconset/icon.png` |
+| Format | iOS universal 1024×1024 PNG |
+| Setting | `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon` |
+| Visual | Orbital rings on deep navy `#0B0C18` background with purple glow centre |
 
-### 5.9 Glass Card Helper
-`PromptTheme.glassCard(cornerRadius:)` — `.ultraThinMaterial` + `glassFill` fill overlay + `glassStroke` border.
+For the icon to compile into the app bundle, `Assets.xcassets` must appear in `PBXResourcesBuildPhase` inside `project.pbxproj`.
+
+### 6.8 Typography
+
+`PromptTheme.Typography.rounded(_ size: CGFloat, _ weight: Font.Weight)` returns `.system(size:weight:design:.rounded)`.
+
+Use `.rounded` design for all UI text. Match weight to hierarchy: `.bold`/`.semibold` for headings, `.medium` for labels, `.regular` for body.
+
+### 6.9 Spacing & Radius Constants
+
+```swift
+PromptTheme.Spacing.xxs  = 6pt
+PromptTheme.Spacing.xs   = 10pt
+PromptTheme.Spacing.s    = 14pt
+PromptTheme.Spacing.m    = 18pt
+PromptTheme.Spacing.l    = 24pt
+PromptTheme.Spacing.xl   = 32pt
+
+PromptTheme.Radius.medium = 16pt
+PromptTheme.Radius.large  = 24pt
+```
+
+Shared app-wide constants also live in `AppUI.swift`:
+```swift
+AppSpacing.screenTopLarge     // top safe area padding
+AppSpacing.screenHorizontal   // horizontal screen padding
+AppSpacing.section            // major section gap
+AppSpacing.sectionTight       // tighter section gap
+AppSpacing.element            // element-to-element gap
+AppHeights.primaryButton      // standard CTA height
+AppHeights.segmented          // segmented control height
+AppRadii.control              // standard control corner radius
+```
+
+### 6.10 Glass Card Helper
+
+`PromptTheme.glassCard(cornerRadius:)` modifier applies:
+- `.ultraThinMaterial` background
+- `glassFill` fill overlay
+- `glassStroke` border stroke
 
 ---
 
-## 6. Naming Conventions
+## 7. Feature Reference
 
-| Context | Convention |
-|---------|-----------|
-| App brand | **Orbit Orb** (two words, title-case) |
-| Internal storage keys | `promptme_*` (unchanged — modifying breaks existing user data) |
-| StoreKit product IDs | `com.prompt28.*` (unchanged — tied to App Store Connect) |
-| Notification identifiers | `com.prompt28.*` (unchanged — system-registered) |
-| View files | `<Feature>View.swift` in `Features/<Feature>/Views/` |
-| ViewModel files | `<Feature>ViewModel.swift` in `Features/<Feature>/ViewModels/` |
-| Service files | `<Name>Service.swift` or `<Name>Store.swift` in `Core/` |
+### 7.1 Prompt Generation
 
----
+**Flow:** `HomeView` → `generateViewModel.generate()` → `runGenerate()` → Supabase Edge Function → `GenerateResponse` → `latestResult` → `ResultView`
 
-## 7. Future Scalability Notes
+Edge function name is read from `Info.plist["SUPABASE_GENERATE_FUNCTION"]` (currently `"generate"`).
 
-### Adding image generation context
-`GenerateViewModel.attachedImage: UIImage?` is already wired.
-To send to the backend: base64-encode inside `runGenerate()` and add an `imageBase64: String?` field to `GenerateRequest`.
+Guards in order:
+1. Input length ≥ 3 characters
+2. Auth token present (`AuthManager.token != nil`)
+3. Usage count not exhausted (`UsageTracker` — StoreKit plan or starter limit)
+4. Privacy mode does not block generation, only storage
 
-### Extending privacy mode
-Currently blocks `HistoryStore.add()`. To add ephemeral Supabase blocking, add a guard in `invokeEdgeFunction` — pass a `no_log: true` header when `privacyMode == true`.
-
-### Adding a second screen
-Use `AppRouter.selectedTab` + the existing `TabView`/sidebar infrastructure in `RootView`.
-Add a new `MainTab` case and corresponding `View` in `Features/`.
-
-### Supabase Edge Function
-Name is read from `Info.plist["SUPABASE_GENERATE_FUNCTION"]`.
-The function receives `GenerateRequest` (see `Models/API/GenerateModels.swift`) and returns `GenerateResponse`.
+`GenerateRequest` and `GenerateResponse` are defined in `Models/API/GenerateModels.swift`.
 JWT is forwarded automatically by the Supabase Swift client.
 
-### Analytics
-`AnalyticsService.shared.track(.eventName)` — add new events in `AnalyticsService.swift`.
-All events are queued locally and flushed to the `events` Supabase table.
+### 7.2 Image Attachment (+ Button)
 
-### Orb animation
-`OrbEngine` drives the orb state machine (`idle → listening → transcribing → done/failure`).
-`OrbView` renders a SwiftUI fallback; `MetalOrbView` + `Orb.metal` is the GPU shader variant (toggled by `ExperimentFlags.Orb.metalOrb`).
+- Implemented with `PhotosPicker` (PhotosUI, iOS 16+, native, no UIKit required)
+- `HomeView` state: `@State private var imagePickerItem: PhotosPickerItem?` and `@State private var attachedImage: UIImage?`
+- On selection: loads `Data` via `loadTransferable(type: Data.self)`, converts to `UIImage`, stores in `HomeView.attachedImage` (thumbnail) and `GenerateViewModel.attachedImage` (backend)
+- Thumbnail row animates in above the text field when an image is attached; `×` button clears all state
+- `+` icon changes to `photo.fill` and glows `PromptTheme.orbAccent` while an image is attached
+- **To send image to backend:** base64-encode `attachedImage` in `GenerateViewModel.runGenerate()` and add `imageBase64: String?` to `GenerateRequest`
+
+### 7.3 Privacy / Ghost Mode
+
+Toggle: ghost icon (`👻` / `person.fill.viewfinder`) in top-right nav bar of `HomeView`.
+
+**When active (`ghostMode = true`):**
+- `generateViewModel.privacyMode = true` (set via `onChange(of: ghostMode)`)
+- `HistoryStore.add()` is skipped — nothing written to disk or Supabase
+- `latestHistoryItemID` stays `nil` — no favorites possible for that generation
+- `NotificationService` low-usage scheduling is skipped
+- Visual: ghost icon fills with `PromptTheme.orbAccent` glow; background tint changes
+
+**When inactive (`ghostMode = false`):**
+- Normal history behavior resumes on next generation
+- Current session output is never retroactively written (it was never saved)
+
+**Extending privacy mode:** to block Supabase Edge Function logging, add a `no_log: true` header in `GenerateViewModel.invokeEdgeFunction` when `privacyMode == true`.
+
+### 7.4 Share Cards
+
+- `ResultView` calls `ShareCardRenderer.render(rawInput:generatedPrompt:modeName:)` whenever `latestPromptText` changes
+- `ShareCardRenderer` uses `ImageRenderer` (iOS 16+) at `scale: 3.0` to render `ShareCardView` (400×650 pt) → `UIImage`
+- `ShareCardFileStore` writes the PNG to `FileManager.temporaryDirectory` as `orbit-orb-share-card-*.png`
+- `ShareLink(item: shareURL, preview: SharePreview("Orbit Orb", image: ...))` triggers the iOS share sheet
+- File is deleted in `ResultView.onDisappear`
+
+### 7.5 Input System
+
+- `HomeView.inputBar` — bottom-anchored row with `PhotosPicker` (`+` / `photo.fill`) button and `TextField`
+- Placeholder: *"Just talk. Messy is fine."*
+- `submitLabel(.go)` — pressing Return triggers `generateViewModel.generate()`
+- Mode pills above input bar select `PromptMode` stored in `GenerateViewModel.selectedMode`
+
+### 7.6 Voice / Orb
+
+`OrbEngine` drives the voice state machine:
+```
+idle → listening → transcribing → done
+                               → failure
+```
+`OrbView` renders the SwiftUI fallback animation.
+`MetalOrbView` + `Orb.metal` is the GPU shader variant (toggled by `ExperimentFlags.Orb.metalOrb`).
+
+Orb glow colors by state:
+- Idle: `PromptTheme.orbIdleGlow` (`#6C4BFF`)
+- Listening/active: `PromptTheme.orbActiveGlow` (`#9B7BFF`)
+- Processing: `PromptTheme.orbProcessingGlow` (`#C4B5FD`)
+
+### 7.7 Analytics
+
+```swift
+AnalyticsService.shared.track(.eventName)
+```
+Add new event cases in `AnalyticsService.swift`. All events are queued locally and flushed to the `events` Supabase table.
+
+---
+
+## 8. Naming Conventions
+
+| Context | Convention | Example |
+|---------|-----------|---------|
+| Brand (all UI) | "Orbit Orb" | `Text("Orbit Orb")` |
+| View files | `<Feature>View.swift` | `HomeView.swift` |
+| ViewModel files | `<Feature>ViewModel.swift` | `GenerateViewModel.swift` |
+| Service / Store files | `<Name>Service.swift`, `<Name>Store.swift` | `HistoryStore.swift` |
+| Internal storage keys | `promptme_*` | `promptme_preferences` |
+| StoreKit product IDs | `com.prompt28.*` | `com.prompt28.monthly` |
+| Share card temp file | `orbit-orb-share-card-*.png` | — |
+
+---
+
+## 9. Info.plist Keys
+
+| Key | Value | Purpose |
+|-----|-------|---------|
+| `CFBundleDisplayName` | `Orbit Orb` | Name shown under app icon and in system permission dialogs |
+| `GIDClientID` | `225609678073-...` | Google Sign-In client ID |
+| `CFBundleURLSchemes` | `com.googleusercontent.apps.225609678073-...` | Google OAuth redirect |
+| `NSMicrophoneUsageDescription` | "Orbit Orb uses the microphone…" | Required for voice recording |
+| `NSSpeechRecognitionUsageDescription` | "Orbit Orb uses speech recognition…" | Required for transcription |
+| `NSPhotoLibraryUsageDescription` | "Orbit Orb lets you attach a photo…" | Required for `PhotosPicker` |
+| `SUPABASE_URL` | `https://jzwerkqoczhtkyhigigf.supabase.co` | Supabase project URL |
+| `SUPABASE_ANON_KEY` | `sb_publishable_...` | Supabase anon/publishable key |
+| `SUPABASE_GENERATE_FUNCTION` | `generate` | Edge function name for prompt generation |
+
+---
+
+## 10. Files to Delete (Junk — Not Part of the App)
+
+The following files are in the workspace root but are NOT part of the Xcode project and should be deleted:
+
+```
+/Prompt28/home_screen_mockup.html         ← design prototype, not used
+/Prompt28/home_screen_mockup_v2.html      ← design prototype, not used
+/Prompt28/home_screen_mockup_v3.html      ← design prototype, not used
+/Prompt28/home_screen_mockup_v4.html      ← design prototype, not used
+/Prompt28/home_screen_mockup_v5.html      ← design prototype, not used
+/Prompt28/home_screen_mockup_v6.html      ← design prototype, not used
+/Prompt28/home_screen_mockup_v7.html      ← design prototype, not used
+/Prompt28/HANDOFF.md                      ← old handoff doc, superseded by agents.md
+/Prompt28/CURRENT_STATE_CLEAN_ROADMAP.md  ← old roadmap doc, superseded by agents.md
+/Prompt28/AGENTS.md                       ← root-level duplicate; agents.md is in Blueprint/
+/Prompt28/_archive/                       ← old code archive, not referenced anywhere
+/Prompt28/Orion Orb App Concept-2/        ← React/TypeScript web concept, not the iOS app
+```
+
+Dead code inside the Xcode project (safe to delete + remove from `project.pbxproj`):
+```
+Features/Onboarding/Views/OnboardingView.swift    ← removed from routing
+Features/Privacy/PrivacyConsentView.swift         ← removed from routing
+```
+
+Test files with wrong brand name (update or delete):
+```
+OrionOrbTests/Prompt28Tests.swift
+OrionOrbUITests/Prompt28UITests.swift
+OrionOrbUITests/Prompt28UITestsLaunchTests.swift
+```
+
+---
+
+## 11. Future Scalability
+
+### Adding image context to generation
+`GenerateViewModel.attachedImage: UIImage?` is already wired. To send to backend:
+1. Base64-encode in `runGenerate()`: `let base64 = image.jpegData(compressionQuality: 0.8)?.base64EncodedString()`
+2. Add `imageBase64: String?` field to `GenerateRequest` in `GenerateModels.swift`
+3. Update the Supabase Edge Function to accept and process the image field
+
+### Extending privacy mode
+Currently blocks `HistoryStore.add()`. To also block server-side logging:
+```swift
+// In GenerateViewModel.invokeEdgeFunction
+if privacyMode {
+    request.setValue("true", forHTTPHeaderField: "X-No-Log")
+}
+```
+
+### Adding a second screen / tab
+1. Add a new case to `MainTab` in `AppRouter.swift`
+2. Add `Label(...)` row to `iPadSidebar` in `RootView.swift`
+3. Create `Features/<NewFeature>/Views/<Name>View.swift`
+4. Add the case to the `detail` switch in `iPadSidebar`
+
+### Adding analytics events
+1. Add a case to the `AnalyticsEvent` enum in `AnalyticsService.swift`
+2. Call `AnalyticsService.shared.track(.<newEvent>)` at the relevant callsite
+
+### Supabase Edge Functions
+- Function name read from `Info.plist["SUPABASE_GENERATE_FUNCTION"]`
+- JWT forwarded automatically by the Supabase Swift client
+- Add new functions by adding a new key to `Info.plist` and a new `APIEndpoint` case

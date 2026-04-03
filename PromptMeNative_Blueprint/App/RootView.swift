@@ -12,8 +12,6 @@ struct RootView: View {
     @Environment(\.orbEngineFactory) private var scopedOrbEngineFactory
     @Environment(\.storeManager) private var scopedStoreManager
     @Environment(\.supabase) private var scopedSupabase
-    @AppStorage("hasAcceptedPrivacy") private var hasAcceptedPrivacy = false
-    @AppStorage("hasSeenOnboarding") private var hasSeenOnboarding = false
     @State private var didBootstrap = false
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
@@ -53,34 +51,20 @@ struct RootView: View {
                 .ignoresSafeArea()
 
             Group {
-                if scopedAuthManager == nil || appRouter == nil {
-                    launchView
-                } else if !hasAcceptedPrivacy {
-                    // Privacy consent modal — must be accepted before auth or data collection.
-                    // Satisfies App Store Review Guideline 5.1.2(i).
-                    PrivacyConsentView {
-                        withAnimation(.easeInOut(duration: 0.35)) {
-                            hasAcceptedPrivacy = true
-                        }
-                    }
-                } else if !didBootstrap || scopedAuthManager?.isBootstrapping == true {
+                if scopedAuthManager == nil || appRouter == nil || !didBootstrap || scopedAuthManager?.isBootstrapping == true {
+                    // Splash — shown only while services initialise (< 1 second in practice)
                     launchView
                 } else if scopedAuthManager?.isAuthenticated == true {
-                    if !hasSeenOnboarding {
-                        OnboardingView {
-                            withAnimation(.easeInOut(duration: 0.35)) {
-                                hasSeenOnboarding = true
-                            }
-                        }
+                    // Authenticated → straight to app.
+                    // iPad uses sidebar, iPhone uses full-screen home.
+                    if horizontalSizeClass == .regular {
+                        iPadSidebar
                     } else {
-                        // iPad (.regular) gets a sidebar; iPhone (.compact) keeps the tab bar
-                        if horizontalSizeClass == .regular {
-                            iPadSidebar
-                        } else {
-                            mainTabs
-                        }
+                        mainTabs
                     }
                 } else {
+                    // Not authenticated → sign-in screen.
+                    // Privacy disclosure is in the auth screen footer (T&C + Privacy Policy links).
                     AuthFlowView()
                 }
             }

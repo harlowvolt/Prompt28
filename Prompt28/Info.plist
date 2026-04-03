@@ -34,11 +34,13 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>CFBundleDisplayName</key>
-	<string>Orion Orb</string>
+	<string>Orbit Orb</string>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>Orion Orb uses the microphone to capture your voice for prompt generation.</string>
+	<string>Orbit Orb uses the microphone to capture your voice for prompt generation.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
-	<string>Orion Orb uses speech recognition to transcribe your voice into prompts.</string>
+	<string>Orbit Orb uses speech recognition to transcribe your voice into prompts.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Orbit Orb lets you attach a photo to give your prompt more context.</string>
 	<key>SUPABASE_URL</key>
 	<string>https://jzwerkqoczhtkyhigigf.supabase.co</string>
 	<key>SUPABASE_ANON_KEY</key>
