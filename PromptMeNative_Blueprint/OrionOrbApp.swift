@@ -46,6 +46,19 @@ struct OrionOrbApp: App {
                     .onOpenURL { url in
                         GIDSignIn.sharedInstance.handle(url)
                     }
+            } else {
+                ZStack {
+                    PromptPremiumBackground()
+                        .ignoresSafeArea()
+
+                    VStack(spacing: 14) {
+                        ProgressView()
+                            .tint(PromptTheme.softLilac)
+                        Text("Loading Orbit Orb")
+                            .font(.footnote.weight(.semibold))
+                            .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.9))
+                    }
+                }
             }
         }
     }

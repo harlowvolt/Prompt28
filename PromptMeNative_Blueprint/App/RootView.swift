@@ -51,8 +51,8 @@ struct RootView: View {
                 .ignoresSafeArea()
 
             Group {
-                if scopedAuthManager == nil || appRouter == nil || !didBootstrap || scopedAuthManager?.isBootstrapping == true {
-                    // Splash — shown only while services initialise (< 1 second in practice)
+                if scopedAuthManager == nil || appRouter == nil {
+                    // Splash — shown only if core services have not been injected yet.
                     launchView
                 } else if scopedPreferencesStore?.preferences.hasAcceptedAIConsent != true {
                     ConsentView()

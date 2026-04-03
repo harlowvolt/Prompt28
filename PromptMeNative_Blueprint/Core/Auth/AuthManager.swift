@@ -97,7 +97,7 @@ final class AuthManager {
             clearSession()
         case .passwordRecovery:
             break
-        @unknown default:
+        case .mfaChallengeVerified:
             break
         }
     }
@@ -322,7 +322,7 @@ final class AuthManager {
     
     private func isSessionExpiredError(_ error: Error) -> Bool {
         if let authError = error as? AuthError {
-            if case .sessionNotFound = authError {
+            if case .sessionMissing = authError {
                 return true
             }
         }
