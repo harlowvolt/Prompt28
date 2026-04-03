@@ -33,10 +33,16 @@
 	<string>1</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>LSApplicationQueriesSchemes</key>
+	<array>
+		<string>instagram-stories</string>
+	</array>
 	<key>CFBundleDisplayName</key>
 	<string>Orbit Orb</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>Orbit Orb uses the microphone to capture your voice for prompt generation.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>Orbit Orb saves your branded share cards to your photo library when you choose Save to Photos.</string>
 	<key>NSSpeechRecognitionUsageDescription</key>
 	<string>Orbit Orb uses speech recognition to transcribe your voice into prompts.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

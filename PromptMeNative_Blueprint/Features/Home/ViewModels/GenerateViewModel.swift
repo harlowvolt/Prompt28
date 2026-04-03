@@ -15,6 +15,7 @@ final class GenerateViewModel {
     private(set) var latestInput: String = ""
     private(set) var latestHistoryItemID: UUID?
     var generatedShareImage: Image?
+    @ObservationIgnored var generatedShareUIImage: UIImage?
     @ObservationIgnored var generatedShareData: Data?
     var errorMessage: String?
     var showPaywall = false
@@ -129,6 +130,7 @@ final class GenerateViewModel {
         latestInput = ""
         latestHistoryItemID = nil
         generatedShareImage = nil
+        generatedShareUIImage = nil
         generatedShareData = nil
         errorMessage = nil
         showCopiedToast = false
@@ -199,6 +201,7 @@ final class GenerateViewModel {
             latestResult = response
             latestInput = cleanedInput
             generatedShareImage = nil
+            generatedShareUIImage = nil
             generatedShareData = nil
 
             // Analytics: track success
@@ -370,39 +373,64 @@ final class GenerateViewModel {
             web_context_used: nil
         )
         generatedShareImage = nil
+        generatedShareUIImage = nil
         generatedShareData = nil
         errorMessage = nil
     }
 
-    func prepareShareCardIfNeeded() {
-        guard generatedShareData == nil || generatedShareImage == nil else { return }
-        renderShareCard(for: latestPromptText)
+    @discardableResult
+    func prepareShareCardIfNeeded(colorScheme: ColorScheme, force: Bool = false) -> Bool {
+        if !force, generatedShareData != nil, generatedShareImage != nil, generatedShareUIImage != nil {
+            return true
+        }
+
+        return renderShareCard(
+            for: latestPromptText,
+            beforeText: latestInput,
+            colorScheme: colorScheme
+        )
     }
 
-    private func renderShareCard(for promptText: String) {
+    @discardableResult
+    private func renderShareCard(for promptText: String, beforeText: String?, colorScheme: ColorScheme) -> Bool {
         let trimmedPrompt = promptText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmedPrompt.isEmpty else {
             generatedShareImage = nil
+            generatedShareUIImage = nil
             generatedShareData = nil
-            return
+            errorMessage = "There isn't a prompt ready to share yet."
+            return false
         }
 
-        let renderer = ImageRenderer(
-            content: PromptShareCard(
-                promptText: trimmedPrompt,
-                modeName: selectedMode == .ai ? "AI Mode" : "Human Mode"
-            )
-        )
-        renderer.scale = 3.0
-
-        guard let uiImage = renderer.uiImage else {
+        guard let uiImage = PromptShareCardRenderer.renderImage(
+            promptText: trimmedPrompt,
+            beforeText: beforeText,
+            modeName: selectedMode == .ai ? "AI Mode" : "Human Mode",
+            colorScheme: colorScheme
+        ) else {
             generatedShareImage = nil
+            generatedShareUIImage = nil
             generatedShareData = nil
-            return
+            errorMessage = ShareCardError.renderFailed.localizedDescription
+            return false
         }
 
+        generatedShareUIImage = uiImage
         generatedShareImage = Image(uiImage: uiImage)
         generatedShareData = uiImage.pngData()
+
+        if generatedShareData == nil {
+            errorMessage = ShareCardError.renderFailed.localizedDescription
+            return false
+        }
+
+        return true
+    }
+
+    func clearShareCardCache() {
+        generatedShareImage = nil
+        generatedShareUIImage = nil
+        generatedShareData = nil
     }
 
     // MARK: - Edge Function invocation

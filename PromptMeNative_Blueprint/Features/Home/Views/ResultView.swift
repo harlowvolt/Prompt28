@@ -3,8 +3,12 @@ import UIKit
 
 struct ResultView: View {
     @Bindable var viewModel: GenerateViewModel
+    @Environment(\.colorScheme) private var colorScheme
     @State private var copiedInput = false
     @State private var copiedPrompt = false
+    @State private var showShareOptions = false
+    @State private var showSystemShareSheet = false
+    @State private var shareErrorMessage: String?
     @State private var feedbackSubmitted: Bool? = nil  // nil = no feedback, true = 👍, false = 👎
 
     private let quickRefinements = [
@@ -33,6 +37,39 @@ struct ResultView: View {
         }
         .onChange(of: viewModel.latestPromptText) { _, _ in
             feedbackSubmitted = nil
+            viewModel.clearShareCardCache()
+        }
+        .confirmationDialog("Share your Orion Orb card", isPresented: $showShareOptions, titleVisibility: .visible) {
+            if InstagramStoriesShareHelper.canShareToStories {
+                Button("Share to Instagram Stories") {
+                    shareToInstagramStories()
+                }
+            }
+
+            Button("Share via System Share Sheet") {
+                shareViaSystemSheet()
+            }
+
+            Button("Save to Photos") {
+                saveToPhotos()
+            }
+
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Pick where you want to send your branded share card.")
+        }
+        .sheet(isPresented: $showSystemShareSheet) {
+            if let shareImage = viewModel.generatedShareUIImage {
+                ShareSheet(items: [shareImage])
+            }
+        }
+        .alert("Share Card Error", isPresented: Binding(
+            get: { shareErrorMessage != nil },
+            set: { if !$0 { shareErrorMessage = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(shareErrorMessage ?? "Something went wrong while preparing your share card.")
         }
     }
 
@@ -165,40 +202,21 @@ struct ResultView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(PromptTheme.mutedViolet)
 
-                if let shareData = viewModel.generatedShareData,
-                   let shareImage = viewModel.generatedShareImage {
-                    ShareLink(
-                        item: shareData,
-                        preview: SharePreview("Orbit Orb Prompt", image: shareImage)
-                    ) {
-                        HStack(spacing: 6) {
-                            Image(systemName: "square.and.arrow.up")
-                            Text("Share Card")
-                        }
-                            .font(PromptTheme.Typography.rounded(15, .semibold))
-                            .padding(.horizontal, PromptTheme.Spacing.s)
-                            .padding(.vertical, PromptTheme.Spacing.xs)
-                            .frame(maxWidth: .infinity)
-                            .background(PromptTheme.glassFill, in: Capsule())
+                Button {
+                    prepareShareOptions()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: "square.and.arrow.up")
+                        Text("Share Card to Stories / TikTok")
                     }
-                    .buttonStyle(.plain)
-                    .simultaneousGesture(TapGesture().onEnded { viewModel.trackShare() })
-                } else {
-                    Button {
-                        viewModel.prepareShareCardIfNeeded()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "square.and.arrow.up")
-                            Text("Share Card")
-                        }
-                        .font(PromptTheme.Typography.rounded(15, .semibold))
-                        .padding(.horizontal, PromptTheme.Spacing.s)
-                        .padding(.vertical, PromptTheme.Spacing.xs)
-                        .frame(maxWidth: .infinity)
-                        .background(PromptTheme.glassFill, in: Capsule())
-                    }
-                    .buttonStyle(.plain)
+                    .font(PromptTheme.Typography.rounded(15, .semibold))
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal, PromptTheme.Spacing.s)
+                    .padding(.vertical, PromptTheme.Spacing.xs)
+                    .frame(maxWidth: .infinity, minHeight: 46)
+                    .background(PromptTheme.glassFill, in: Capsule())
                 }
+                .buttonStyle(.plain)
 
                 Button {
                     viewModel.toggleFavoriteForLatest()
@@ -356,6 +374,57 @@ struct ResultView: View {
         case "technical":  return PromptTheme.intentTechnical
         case "creative":   return PromptTheme.intentCreative
         default:           return PromptTheme.softLilac
+        }
+    }
+
+    // MARK: - Share helpers
+
+    private func prepareShareOptions() {
+        guard viewModel.prepareShareCardIfNeeded(colorScheme: colorScheme, force: true) else {
+            shareErrorMessage = viewModel.errorMessage ?? ShareCardError.renderFailed.localizedDescription
+            return
+        }
+
+        showShareOptions = true
+    }
+
+    private func shareToInstagramStories() {
+        guard let image = viewModel.generatedShareUIImage else {
+            shareErrorMessage = ShareCardError.renderFailed.localizedDescription
+            return
+        }
+
+        do {
+            try InstagramStoriesShareHelper.share(backgroundImage: image)
+            viewModel.trackShare()
+        } catch {
+            shareErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+        }
+    }
+
+    private func shareViaSystemSheet() {
+        guard viewModel.generatedShareUIImage != nil else {
+            shareErrorMessage = ShareCardError.renderFailed.localizedDescription
+            return
+        }
+
+        showSystemShareSheet = true
+        viewModel.trackShare()
+    }
+
+    private func saveToPhotos() {
+        guard let image = viewModel.generatedShareUIImage else {
+            shareErrorMessage = ShareCardError.renderFailed.localizedDescription
+            return
+        }
+
+        Task {
+            do {
+                try await ShareCardPhotoSaver.save(image)
+                viewModel.trackShare()
+            } catch {
+                shareErrorMessage = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
+            }
         }
     }
 

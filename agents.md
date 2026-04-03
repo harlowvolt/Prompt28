@@ -53,3 +53,10 @@ Status: Completed
 Dead code cleanup: Completed
 
 Repository ready for App Store submission: Yes
+
+## Share Cards
+
+- Story-ready share cards live under `Features/Share`.
+- Share cards must render in-memory with `ImageRenderer` at story resolution using Orbit Orb branding.
+- Story sharing should support Instagram Stories deep-link sharing, system share sheet export, and Save to Photos.
+- Shared cards should include tasteful Orbit Orb watermarking and handle long prompts gracefully.

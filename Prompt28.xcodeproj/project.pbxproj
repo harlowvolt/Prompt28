@@ -10,6 +10,10 @@
 		CC564D082F5FD40F008BE78E /* GoogleSignIn in Frameworks */ = {isa = PBXBuildFile; productRef = CC564D072F5FD40F008BE78E /* GoogleSignIn */; };
 		CC564D0A2F5FD416008BE78E /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = CC564D092F5FD416008BE78E /* GoogleSignInSwift */; };
 		CCA100001122334455667711 /* PromptShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667701 /* PromptShareCard.swift */; };
+		CCA100001122334455667719 /* PromptShareCardRenderer.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667709 /* PromptShareCardRenderer.swift */; };
+		CCA100001122334455667720 /* InstagramStoriesShareHelper.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667710 /* InstagramStoriesShareHelper.swift */; };
+		CCA100001122334455667721 /* ShareCardPhotoSaver.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667712 /* ShareCardPhotoSaver.swift */; };
+		CCA100001122334455667722 /* ShareSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667713 /* ShareSheet.swift */; };
 		CCA100001122334455667714 /* PremiumTabScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667704 /* PremiumTabScreen.swift */; };
 		CCA100001122334455667716 /* ConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667706 /* ConsentView.swift */; };
 		CCAA00001100000000000011 /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000001 /* SupabaseConfig.swift */; };
@@ -98,6 +102,10 @@
 		CCA100001122334455667701 /* PromptShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptShareCard.swift; sourceTree = "<group>"; };
 		CCA100001122334455667704 /* PremiumTabScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumTabScreen.swift; sourceTree = "<group>"; };
 		CCA100001122334455667706 /* ConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ../../Prompt28/ConsentView.swift; sourceTree = "<group>"; };
+		CCA100001122334455667709 /* PromptShareCardRenderer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptShareCardRenderer.swift; sourceTree = "<group>"; };
+		CCA100001122334455667710 /* InstagramStoriesShareHelper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = InstagramStoriesShareHelper.swift; sourceTree = "<group>"; };
+		CCA100001122334455667712 /* ShareCardPhotoSaver.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareCardPhotoSaver.swift; sourceTree = "<group>"; };
+		CCA100001122334455667713 /* ShareSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShareSheet.swift; sourceTree = "<group>"; };
 		CCAA00001100000000000001 /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
 		CCAA00001100000000000004 /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 		CCAB0B512F5D780200C29A7E /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
@@ -408,7 +416,6 @@
 				CCAB0B842F5D780200C29A7E /* OrbView.swift */,
 				CCAB0C002F5D780200C29A7E /* MetalOrbView.swift */,
 				CCAB0B852F5D780200C29A7E /* ResultView.swift */,
-				CCA100001122334455667701 /* PromptShareCard.swift */,
 			);
 			path = Views;
 			sourceTree = "<group>";
@@ -474,6 +481,34 @@
 			path = Trending;
 			sourceTree = "<group>";
 		};
+		CCA100001122334455667723 /* Support */ = {
+			isa = PBXGroup;
+			children = (
+				CCA100001122334455667710 /* InstagramStoriesShareHelper.swift */,
+				CCA100001122334455667709 /* PromptShareCardRenderer.swift */,
+				CCA100001122334455667712 /* ShareCardPhotoSaver.swift */,
+				CCA100001122334455667713 /* ShareSheet.swift */,
+			);
+			path = Support;
+			sourceTree = "<group>";
+		};
+		CCA100001122334455667724 /* Views */ = {
+			isa = PBXGroup;
+			children = (
+				CCA100001122334455667701 /* PromptShareCard.swift */,
+			);
+			path = Views;
+			sourceTree = "<group>";
+		};
+		CCA100001122334455667725 /* Share */ = {
+			isa = PBXGroup;
+			children = (
+				CCA100001122334455667723 /* Support */,
+				CCA100001122334455667724 /* Views */,
+			);
+			path = Share;
+			sourceTree = "<group>";
+		};
 		CCAB0B952F5D780200C29A7E /* Features */ = {
 			isa = PBXGroup;
 			children = (
@@ -481,6 +516,7 @@
 				CCAB0B792F5D780200C29A7E /* Auth */,
 				CCAB0B7F2F5D780200C29A7E /* History */,
 				CCAB0B882F5D780200C29A7E /* Home */,
+				CCA100001122334455667725 /* Share */,
 				CCAB0B8E2F5D780200C29A7E /* Settings */,
 				CCAB0B942F5D780200C29A7E /* Trending */,
 			);
@@ -747,6 +783,10 @@
 				CCA100001122334455667714 /* PremiumTabScreen.swift in Sources */,
 				CCA100001122334455667716 /* ConsentView.swift in Sources */,
 				CCA100001122334455667711 /* PromptShareCard.swift in Sources */,
+				CCA100001122334455667720 /* InstagramStoriesShareHelper.swift in Sources */,
+				CCA100001122334455667719 /* PromptShareCardRenderer.swift in Sources */,
+				CCA100001122334455667721 /* ShareCardPhotoSaver.swift in Sources */,
+				CCA100001122334455667722 /* ShareSheet.swift in Sources */,
 				CCAB0BAF2F5D780200C29A7E /* HistoryView.swift in Sources */,
 				CCAB0BB02F5D780200C29A7E /* FavoritesView.swift in Sources */,
 				CCAB0BB12F5D780200C29A7E /* UpgradeView.swift in Sources */,
