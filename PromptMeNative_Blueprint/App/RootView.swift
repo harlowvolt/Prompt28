@@ -54,6 +54,8 @@ struct RootView: View {
                 if scopedAuthManager == nil || appRouter == nil || !didBootstrap || scopedAuthManager?.isBootstrapping == true {
                     // Splash — shown only while services initialise (< 1 second in practice)
                     launchView
+                } else if scopedPreferencesStore?.preferences.hasAcceptedAIConsent != true {
+                    ConsentView()
                 } else {
                     // Guest-first flow: everyone lands in the app immediately.
                     if horizontalSizeClass == .regular {

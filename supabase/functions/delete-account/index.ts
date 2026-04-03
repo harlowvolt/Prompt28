@@ -2,9 +2,10 @@
 //
 // Deletes the authenticated user's account completely:
 //   1. Verifies the caller's Supabase JWT
-//   2. Deletes all rows in `prompts` table for this user (CASCADE also handles it,
-//      but explicit deletion gives a clear audit trail)
-//   3. Calls supabase.auth.admin.deleteUser() — requires service role key
+//   2. Deletes related user rows (`prompts`, `prompt_feedback`, `events`,
+//      `telemetry_errors`) so analytics and generated content are fully removed
+//   3. Calls supabase.auth.admin.deleteUser() — requires service role key.
+//      Deleting the auth user also removes any linked Sign in with Apple identity.
 //
 // The `prompts` table has `ON DELETE CASCADE` from auth.users, so step 2 is
 // belt-and-suspenders; the auth deletion alone would clean up child rows.
@@ -59,19 +60,24 @@ Deno.serve(async (req: Request) => {
 
     const userId = user.id;
 
-    // ── Step 1: delete all prompt records for this user ──────────────────────
-    // auth.users ON DELETE CASCADE would handle this, but explicit deletion
-    // ensures the `prompts` table is clean before auth row removal and avoids
-    // any FK constraint timing issues on some Postgres configurations.
-    const { error: promptsError } = await supabase
-      .from("prompts")
-      .delete()
-      .eq("user_id", userId);
+    const deleteRelatedData = async (table: string) => {
+      const { error } = await supabase
+        .from(table)
+        .delete()
+        .eq("user_id", userId);
 
-    if (promptsError) {
-      console.error("Failed to delete prompts for user:", userId, promptsError);
-      // Non-fatal — proceed to auth deletion; CASCADE will clean up residuals.
-    }
+      if (error) {
+        console.error(`Failed to delete ${table} rows for user:`, userId, error);
+      }
+    };
+
+    // ── Step 1: delete related rows for this user ────────────────────────────
+    // Some tables already cascade, but explicit deletion keeps the data-removal
+    // behavior predictable for App Review and for nullable analytics tables.
+    await deleteRelatedData("prompts");
+    await deleteRelatedData("prompt_feedback");
+    await deleteRelatedData("events");
+    await deleteRelatedData("telemetry_errors");
 
     // ── Step 2: delete the auth user (service role required) ─────────────────
     const { error: deleteError } = await supabase.auth.admin.deleteUser(userId);

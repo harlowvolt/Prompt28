@@ -282,6 +282,11 @@ struct ResultView: View {
                 .buttonStyle(.plain)
                 .disabled(viewModel.isGenerating || viewModel.refinementText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
+
+            Text("AI-generated content may be inaccurate or inappropriate.")
+                .font(PromptTheme.Typography.rounded(12, .medium))
+                .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
+                .frame(maxWidth: .infinity, alignment: .leading)
         }
         .frame(maxWidth: .infinity)
         .padding(PromptTheme.Spacing.s)

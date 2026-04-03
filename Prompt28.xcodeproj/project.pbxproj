@@ -11,6 +11,7 @@
 		CC564D0A2F5FD416008BE78E /* GoogleSignInSwift in Frameworks */ = {isa = PBXBuildFile; productRef = CC564D092F5FD416008BE78E /* GoogleSignInSwift */; };
 		CCA100001122334455667711 /* PromptShareCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667701 /* PromptShareCard.swift */; };
 		CCA100001122334455667714 /* PremiumTabScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667704 /* PremiumTabScreen.swift */; };
+		CCA100001122334455667716 /* ConsentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCA100001122334455667706 /* ConsentView.swift */; };
 		CCAA00001100000000000011 /* SupabaseConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000001 /* SupabaseConfig.swift */; };
 		CCAA00001100000000000014 /* TelemetryService.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCAA00001100000000000004 /* TelemetryService.swift */; };
 		CCAB0BA1ASSET00000C29A7E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = CCAB0BA12F5D780200C29A7E /* Assets.xcassets */; };
@@ -96,6 +97,7 @@
 /* Begin PBXFileReference section */
 		CCA100001122334455667701 /* PromptShareCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromptShareCard.swift; sourceTree = "<group>"; };
 		CCA100001122334455667704 /* PremiumTabScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PremiumTabScreen.swift; sourceTree = "<group>"; };
+		CCA100001122334455667706 /* ConsentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ConsentView.swift; sourceTree = "<group>"; };
 		CCAA00001100000000000001 /* SupabaseConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SupabaseConfig.swift; sourceTree = "<group>"; };
 		CCAA00001100000000000004 /* TelemetryService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TelemetryService.swift; sourceTree = "<group>"; };
 		CCAB0B512F5D780200C29A7E /* AppRouter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppRouter.swift; sourceTree = "<group>"; };
@@ -232,6 +234,7 @@
 				CCAB0B522F5D780200C29A7E /* Routing */,
 				CCAB0B532F5D780200C29A7E /* AppEnvironment.swift */,
 				CCA100001122334455667704 /* PremiumTabScreen.swift */,
+				CCA100001122334455667706 /* ConsentView.swift */,
 				CCAB0B542F5D780200C29A7E /* RootView.swift */,
 				CCAB0BF02F5D780200C29A7E /* AppUI.swift */,
 			);
@@ -742,6 +745,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CCA100001122334455667714 /* PremiumTabScreen.swift in Sources */,
+				CCA100001122334455667716 /* ConsentView.swift in Sources */,
 				CCA100001122334455667711 /* PromptShareCard.swift in Sources */,
 				CCAB0BAF2F5D780200C29A7E /* HistoryView.swift in Sources */,
 				CCAB0BB02F5D780200C29A7E /* FavoritesView.swift in Sources */,

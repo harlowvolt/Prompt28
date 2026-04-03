@@ -530,3 +530,13 @@ if privacyMode {
 - Function name read from `Info.plist["SUPABASE_GENERATE_FUNCTION"]`
 - JWT forwarded automatically by the Supabase Swift client
 - Add new functions by adding a new key to `Info.plist` and a new `APIEndpoint` case
+
+---
+
+## 12. Apple Compliance Additions (April 2026)
+
+- AI consent is a hard gate before the main app experience. `RootView` must show a dedicated `ConsentView` until `AppPreferences.hasAcceptedAIConsent == true`.
+- The AI consent disclosure text must remain verbatim in the UI: `Your prompt and any personal information it contains will be sent to third-party AI providers (Anthropic and/or OpenAI) to generate a response. This data is processed only for your request and not stored by the AI provider beyond the generation step.`
+- Generated-output surfaces must include the footer text `AI-generated content may be inaccurate or inappropriate.`
+- Authentication options must include native Sign in with Apple alongside the other providers in `AuthFlowView`.
+- Account deletion must remain available from Settings and must call the `delete-account` Supabase Edge Function to remove the user account plus related server-side records before local logout.
