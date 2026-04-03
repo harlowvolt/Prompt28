@@ -175,10 +175,20 @@ struct ResultView: View {
                     .buttonStyle(.plain)
                     .simultaneousGesture(TapGesture().onEnded { viewModel.trackShare() })
                 } else {
-                    Label("Preparing...", systemImage: "hourglass")
+                    Button {
+                        viewModel.prepareShareCardIfNeeded()
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: "square.and.arrow.up")
+                            Text("Share Card")
+                        }
                         .font(PromptTheme.Typography.rounded(15, .semibold))
-                        .foregroundStyle(PromptTheme.softLilac.opacity(0.75))
+                        .padding(.horizontal, PromptTheme.Spacing.s)
+                        .padding(.vertical, PromptTheme.Spacing.xs)
                         .frame(maxWidth: .infinity)
+                        .background(PromptTheme.glassFill, in: Capsule())
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 Button {

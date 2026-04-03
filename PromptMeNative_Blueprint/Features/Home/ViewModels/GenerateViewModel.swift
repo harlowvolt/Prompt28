@@ -192,7 +192,8 @@ final class GenerateViewModel {
 
             latestResult = response
             latestInput = cleanedInput
-            renderShareCard(for: response.professional)
+            generatedShareImage = nil
+            generatedShareData = nil
 
             // Analytics: track success
             let wordCount = promptText.split(separator: " ").count
@@ -362,8 +363,14 @@ final class GenerateViewModel {
             latency_ms: nil,
             web_context_used: nil
         )
-        renderShareCard(for: item.professional)
+        generatedShareImage = nil
+        generatedShareData = nil
         errorMessage = nil
+    }
+
+    func prepareShareCardIfNeeded() {
+        guard generatedShareData == nil || generatedShareImage == nil else { return }
+        renderShareCard(for: latestPromptText)
     }
 
     private func renderShareCard(for promptText: String) {

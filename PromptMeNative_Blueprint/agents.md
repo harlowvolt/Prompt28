@@ -385,6 +385,8 @@ Toggle: ghost icon (`👻` / `person.fill.viewfinder`) in top-right nav bar of `
 - The generated image is held in memory on the view model and shared with native `ShareLink`
 - Do not use file-backed temporary share-card stores or custom UIKit share-sheet wrappers
 - This is required for safe iPad popover behavior and frictionless universal sharing
+- Shareable assets must be rendered in-memory using `ImageRenderer` and shared via native `ShareLink`
+- Do not create "Coming Soon" or placeholder share screens for shipping functionality
 
 ### 7.5 Input System
 
