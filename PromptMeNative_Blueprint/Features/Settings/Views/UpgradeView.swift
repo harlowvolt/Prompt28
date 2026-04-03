@@ -25,6 +25,7 @@ struct UpgradeView: View {
                         productList
                         restoreButton
                         devSection
+                        legalFooter
                     }
                     .padding(.horizontal, AppSpacing.screenHorizontal)
                     .padding(.top, 24)
@@ -212,6 +213,20 @@ struct UpgradeView: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         #endif
+    }
+
+    private var legalFooter: some View {
+        VStack(spacing: 8) {
+            Divider()
+                .overlay(PromptTheme.softLilac.opacity(0.16))
+
+            HStack(spacing: 16) {
+                Link("Terms of Use", destination: URL(string: "https://orbitorb.app/terms")!)
+                Link("Privacy Policy", destination: URL(string: "https://orbitorb.app/privacy")!)
+            }
+            .font(.system(size: 12, weight: .medium, design: .rounded))
+            .foregroundStyle(PromptTheme.softLilac.opacity(0.76))
+        }
     }
 }
 

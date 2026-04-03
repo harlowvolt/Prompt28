@@ -1,6 +1,5 @@
 import Foundation
 import SwiftUI
-import Combine
 import Speech
 import AVFoundation
 
@@ -11,12 +10,11 @@ protocol SpeechRecognizing: AnyObject {
     var finalTranscript: String { get }
     var permissionStatus: SpeechRecognizerService.PermissionStatus { get }
     var audioLevel: CGFloat { get }
-
-    var isRecordingPublisher: AnyPublisher<Bool, Never> { get }
-    var transcriptPublisher: AnyPublisher<String, Never> { get }
-    var finalTranscriptPublisher: AnyPublisher<String, Never> { get }
-    var permissionStatusPublisher: AnyPublisher<SpeechRecognizerService.PermissionStatus, Never> { get }
-    var audioLevelPublisher: AnyPublisher<CGFloat, Never> { get }
+    var onRecordingChange: ((Bool) -> Void)? { get set }
+    var onTranscriptChange: ((String) -> Void)? { get set }
+    var onFinalTranscriptChange: ((String) -> Void)? { get set }
+    var onPermissionStatusChange: ((SpeechRecognizerService.PermissionStatus) -> Void)? { get set }
+    var onAudioLevelChange: ((CGFloat) -> Void)? { get set }
 
     func startRecording()
     func stopRecording()
@@ -34,8 +32,9 @@ struct LiveSpeechRecognizerFactory: SpeechRecognizerFactoryProtocol {
     }
 }
 
+@Observable
 @MainActor
-final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizing {
+final class SpeechRecognizerService: NSObject, SpeechRecognizing {
 
     enum PermissionStatus: Equatable {
         case notDetermined
@@ -47,17 +46,27 @@ final class SpeechRecognizerService: NSObject, ObservableObject, SpeechRecognizi
         case error(String)
     }
 
-    @Published private(set) var isRecording: Bool = false
-    @Published private(set) var transcript: String = ""
-    @Published private(set) var finalTranscript: String = ""
-    @Published private(set) var permissionStatus: PermissionStatus = .notDetermined
-    @Published private(set) var audioLevel: CGFloat = 0
+    private(set) var isRecording: Bool = false {
+        didSet { onRecordingChange?(isRecording) }
+    }
+    private(set) var transcript: String = "" {
+        didSet { onTranscriptChange?(transcript) }
+    }
+    private(set) var finalTranscript: String = "" {
+        didSet { onFinalTranscriptChange?(finalTranscript) }
+    }
+    private(set) var permissionStatus: PermissionStatus = .notDetermined {
+        didSet { onPermissionStatusChange?(permissionStatus) }
+    }
+    private(set) var audioLevel: CGFloat = 0 {
+        didSet { onAudioLevelChange?(audioLevel) }
+    }
 
-    var isRecordingPublisher: AnyPublisher<Bool, Never> { $isRecording.eraseToAnyPublisher() }
-    var transcriptPublisher: AnyPublisher<String, Never> { $transcript.eraseToAnyPublisher() }
-    var finalTranscriptPublisher: AnyPublisher<String, Never> { $finalTranscript.eraseToAnyPublisher() }
-    var permissionStatusPublisher: AnyPublisher<PermissionStatus, Never> { $permissionStatus.eraseToAnyPublisher() }
-    var audioLevelPublisher: AnyPublisher<CGFloat, Never> { $audioLevel.eraseToAnyPublisher() }
+    @ObservationIgnored var onRecordingChange: ((Bool) -> Void)?
+    @ObservationIgnored var onTranscriptChange: ((String) -> Void)?
+    @ObservationIgnored var onFinalTranscriptChange: ((String) -> Void)?
+    @ObservationIgnored var onPermissionStatusChange: ((PermissionStatus) -> Void)?
+    @ObservationIgnored var onAudioLevelChange: ((CGFloat) -> Void)?
 
     /// Dedicated serial queue for all audio-buffer processing (RMS / future FFT).
     /// AVAudioEngine's tap callback fires on this queue; the computed float is

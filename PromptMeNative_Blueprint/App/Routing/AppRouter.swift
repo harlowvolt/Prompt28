@@ -20,7 +20,6 @@ enum AppDestination: Hashable {
 }
 
 enum HomeSheet: String, Identifiable, Hashable {
-    case typePrompt
     case settings
     case upgrade
 
@@ -34,6 +33,7 @@ final class AppRouter {
     var selectedTab: MainTab = .home
     var path = NavigationPath()
     var homeSheet: HomeSheet?
+    var isAuthSheetPresented = false
 
     func switchTab(_ tab: MainTab) {
         selectedTab = tab
@@ -53,6 +53,14 @@ final class AppRouter {
 
     func dismissHomeSheet() {
         homeSheet = nil
+    }
+
+    func presentAuthSheet() {
+        isAuthSheetPresented = true
+    }
+
+    func dismissAuthSheet() {
+        isAuthSheetPresented = false
     }
 }
 

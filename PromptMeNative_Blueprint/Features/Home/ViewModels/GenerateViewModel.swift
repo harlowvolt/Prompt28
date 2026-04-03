@@ -14,6 +14,8 @@ final class GenerateViewModel {
     private(set) var latestResult: GenerateResponse?
     private(set) var latestInput: String = ""
     private(set) var latestHistoryItemID: UUID?
+    var generatedShareImage: Image?
+    @ObservationIgnored var generatedShareData: Data?
     var errorMessage: String?
     var showPaywall = false
     var showCopiedToast = false
@@ -26,6 +28,7 @@ final class GenerateViewModel {
     var attachedImage: UIImage?
 
     private let authManager: AuthManager
+    private let router: AppRouter
     private let historyStore: any HistoryStoring
     private let preferencesStore: any PreferenceStoring
     private let usageTracker: UsageTracker
@@ -43,6 +46,7 @@ final class GenerateViewModel {
 
     init(
         authManager: AuthManager,
+        router: AppRouter,
         historyStore: any HistoryStoring,
         preferencesStore: any PreferenceStoring,
         usageTracker: UsageTracker,
@@ -50,6 +54,7 @@ final class GenerateViewModel {
         supabase: SupabaseClient? = nil
     ) {
         self.authManager = authManager
+        self.router = router
         self.historyStore = historyStore
         self.preferencesStore = preferencesStore
         self.usageTracker = usageTracker
@@ -117,6 +122,8 @@ final class GenerateViewModel {
         latestResult = nil
         latestInput = ""
         latestHistoryItemID = nil
+        generatedShareImage = nil
+        generatedShareData = nil
         errorMessage = nil
         showCopiedToast = false
     }
@@ -129,8 +136,10 @@ final class GenerateViewModel {
             return
         }
 
-        guard authManager.token != nil else {
-            errorMessage = "Please sign in to generate prompts."
+        let isGuestUser = authManager.isAuthenticated == false
+        if isGuestUser, usageTracker.guestCount >= UsageTracker.freeMonthlyLimit {
+            router.presentAuthSheet()
+            errorMessage = "Sign in to keep generating after your free guest prompts."
             return
         }
 
@@ -183,6 +192,7 @@ final class GenerateViewModel {
 
             latestResult = response
             latestInput = cleanedInput
+            renderShareCard(for: response.professional)
 
             // Analytics: track success
             let wordCount = promptText.split(separator: " ").count
@@ -232,7 +242,11 @@ final class GenerateViewModel {
                 latestHistoryItemID = nil
             }
 
-            await authManager.refreshMe()
+            if authManager.isAuthenticated {
+                await authManager.refreshMe()
+            } else if usageTracker.guestCount >= UsageTracker.freeMonthlyLimit {
+                router.presentAuthSheet()
+            }
         } catch {
             HapticService.notification(.error)
             if let network = error as? NetworkError {
@@ -348,7 +362,34 @@ final class GenerateViewModel {
             latency_ms: nil,
             web_context_used: nil
         )
+        renderShareCard(for: item.professional)
         errorMessage = nil
+    }
+
+    private func renderShareCard(for promptText: String) {
+        let trimmedPrompt = promptText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmedPrompt.isEmpty else {
+            generatedShareImage = nil
+            generatedShareData = nil
+            return
+        }
+
+        let renderer = ImageRenderer(
+            content: PromptShareCard(
+                promptText: trimmedPrompt,
+                modeName: selectedMode == .ai ? "AI Mode" : "Human Mode"
+            )
+        )
+        renderer.scale = 3.0
+
+        guard let uiImage = renderer.uiImage else {
+            generatedShareImage = nil
+            generatedShareData = nil
+            return
+        }
+
+        generatedShareImage = Image(uiImage: uiImage)
+        generatedShareData = uiImage.pngData()
     }
 
     // MARK: - Edge Function invocation

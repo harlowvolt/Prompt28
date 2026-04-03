@@ -425,6 +425,7 @@ struct AuthFlowView: View {
             authManager.lastError = nil
             appRouter?.switchTab(.home)
             appRouter?.popToRoot()
+            appRouter?.dismissAuthSheet()
         }
     }
 

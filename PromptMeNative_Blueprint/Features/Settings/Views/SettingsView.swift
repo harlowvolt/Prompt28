@@ -273,7 +273,7 @@ struct SettingsView: View {
                             RoundedRectangle(cornerRadius: 22, style: .continuous)
                                 .fill(
                                     LinearGradient(
-                                        colors: [Color(hex: "#7F7FD5"), Color(hex: "#6E55D8")],
+                                        colors: [PromptTheme.subscriptionBarStart, PromptTheme.subscriptionBarEnd],
                                         startPoint: .leading,
                                         endPoint: .trailing
                                     )

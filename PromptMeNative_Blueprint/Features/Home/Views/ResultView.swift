@@ -5,8 +5,6 @@ struct ResultView: View {
     @Bindable var viewModel: GenerateViewModel
     @State private var copiedInput = false
     @State private var copiedPrompt = false
-    @State private var shareImage: UIImage?
-    @State private var shareURL: URL?
     @State private var feedbackSubmitted: Bool? = nil  // nil = no feedback, true = 👍, false = 👎
 
     var body: some View {
@@ -24,21 +22,8 @@ struct ResultView: View {
                 emptyCard
             }
         }
-        .onChange(of: viewModel.latestPromptText) { _, newPrompt in
+        .onChange(of: viewModel.latestPromptText) { _, _ in
             feedbackSubmitted = nil
-            Task { @MainActor in
-                regenerateShareCard(using: newPrompt)
-            }
-        }
-        .onAppear {
-            Task { @MainActor in
-                regenerateShareCard(using: viewModel.latestPromptText)
-            }
-        }
-        .onDisappear {
-            ShareCardFileStore.removeFileIfNeeded(at: shareURL)
-            shareURL = nil
-            shareImage = nil
         }
     }
 
@@ -171,19 +156,23 @@ struct ResultView: View {
                 .buttonStyle(.borderedProminent)
                 .tint(PromptTheme.mutedViolet)
 
-                if let shareURL, let shareImage {
+                if let shareData = viewModel.generatedShareData,
+                   let shareImage = viewModel.generatedShareImage {
                     ShareLink(
-                        item: shareURL,
-                        preview: SharePreview("Orbit Orb", image: Image(uiImage: shareImage))
+                        item: shareData,
+                        preview: SharePreview("Orbit Orb Prompt", image: shareImage)
                     ) {
-                        Label("Share", systemImage: "square.and.arrow.up")
+                        HStack(spacing: 6) {
+                            Image(systemName: "square.and.arrow.up")
+                            Text("Share Card")
+                        }
                             .font(PromptTheme.Typography.rounded(15, .semibold))
                             .padding(.horizontal, PromptTheme.Spacing.s)
                             .padding(.vertical, PromptTheme.Spacing.xs)
                             .frame(maxWidth: .infinity)
+                            .background(PromptTheme.glassFill, in: Capsule())
                     }
-                    .buttonStyle(.bordered)
-                    .tint(PromptTheme.softLilac.opacity(0.86))
+                    .buttonStyle(.plain)
                     .simultaneousGesture(TapGesture().onEnded { viewModel.trackShare() })
                 } else {
                     Label("Preparing...", systemImage: "hourglass")
@@ -295,12 +284,12 @@ struct ResultView: View {
     /// Returns a distinct accent color per intent category for the intent badge.
     private func intentBadgeColor(for intent: String) -> Color {
         switch intent {
-        case "work":       return Color(hex: "#7EB8F7")   // soft blue
-        case "school":     return Color(hex: "#A8E6CF")   // mint green
-        case "business":   return Color(hex: "#F7C59F")   // warm amber
-        case "fitness":    return Color(hex: "#F97E7E")   // coral red
-        case "technical":  return Color(hex: "#C9A9F5")   // lavender
-        case "creative":   return Color(hex: "#FFD97D")   // golden yellow
+        case "work":       return PromptTheme.intentWork
+        case "school":     return PromptTheme.intentSchool
+        case "business":   return PromptTheme.intentBusiness
+        case "fitness":    return PromptTheme.intentFitness
+        case "technical":  return PromptTheme.intentTechnical
+        case "creative":   return PromptTheme.intentCreative
         default:           return PromptTheme.softLilac
         }
     }
@@ -321,32 +310,4 @@ struct ResultView: View {
         .background { PromptTheme.glassCard(cornerRadius: PromptTheme.Radius.large) }
     }
 
-    // MARK: - Share Card
-
-    @MainActor
-    private func regenerateShareCard(using promptText: String) {
-        let cleanedPrompt = promptText.trimmingCharacters(in: .whitespacesAndNewlines)
-
-        guard !cleanedPrompt.isEmpty else {
-            ShareCardFileStore.removeFileIfNeeded(at: shareURL)
-            shareImage = nil
-            shareURL = nil
-            return
-        }
-
-        let image = ShareCardRenderer.render(
-            rawInput: viewModel.latestInput,
-            generatedPrompt: cleanedPrompt,
-            modeName: viewModel.selectedMode == .ai ? "AI Mode" : "Human Mode"
-        )
-
-        ShareCardFileStore.removeFileIfNeeded(at: shareURL)
-        shareImage = image
-
-        if let image {
-            shareURL = ShareCardFileStore.writePNG(image)
-        } else {
-            shareURL = nil
-        }
-    }
 }

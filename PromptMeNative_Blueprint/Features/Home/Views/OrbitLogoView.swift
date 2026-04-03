@@ -7,8 +7,8 @@ struct OrbitLogoView: View {
     @State private var pulse = false
 
     // Ring 1: lilac → accent purple (tilted -45°)
-    private let ring1Start  = Color(hex: "#F2F5FF").opacity(0.85)
-    private let ring1Mid    = Color(hex: "#CFD7FF")
+    private let ring1Start  = PromptTheme.logoRingHighlight.opacity(0.85)
+    private let ring1Mid    = PromptTheme.logoRingSoft
     private let ring1End    = PromptTheme.orbAccent
 
     // Ring 2: accent2 → violet (tilted +45°)
@@ -44,7 +44,7 @@ struct OrbitLogoView: View {
 
                 // ── ring 1 — glow pass (blurred, low opacity) ──────────────
                 EllipseRing(rx: rx, ry: ry)
-                    .stroke(Color(hex: "#CFD7FF").opacity(0.20), lineWidth: size * 0.058)
+                    .stroke(PromptTheme.logoRingSoft.opacity(0.20), lineWidth: size * 0.058)
                     .frame(width: geo.size.width, height: geo.size.height)
                     .rotationEffect(.degrees(-45))
                     .blur(radius: size * 0.025)
@@ -64,7 +64,7 @@ struct OrbitLogoView: View {
                 // ── ring 1 — shimmer dash ───────────────────────────────────
                 EllipseRing(rx: rx, ry: ry)
                     .stroke(
-                        Color(hex: "#F2F5FF").opacity(0.45),
+                        PromptTheme.logoRingHighlight.opacity(0.45),
                         style: StrokeStyle(lineWidth: size * 0.007, lineCap: .round,
                                            dash: [size * 0.12, size * 0.88])
                     )
@@ -93,7 +93,7 @@ struct OrbitLogoView: View {
                 // ── ring 2 — shimmer dash ───────────────────────────────────
                 EllipseRing(rx: rx, ry: ry)
                     .stroke(
-                        Color(hex: "#CFD7FF").opacity(0.35),
+                        PromptTheme.logoRingSoft.opacity(0.35),
                         style: StrokeStyle(lineWidth: size * 0.007, lineCap: .round,
                                            dash: [size * 0.10, size * 0.90],
                                            dashPhase: size * 0.30)
@@ -106,7 +106,7 @@ struct OrbitLogoView: View {
                     .fill(
                         RadialGradient(
                             colors: [
-                                Color(hex: "#CFD7FF").opacity(0.75),
+                                PromptTheme.logoRingSoft.opacity(0.75),
                                 PromptTheme.orbAccentLight.opacity(0.40),
                                 Color.clear
                             ],
@@ -122,7 +122,7 @@ struct OrbitLogoView: View {
 
                 // tiny bright core dot
                 Circle()
-                    .fill(Color(hex: "#F2F5FF").opacity(0.80))
+                    .fill(PromptTheme.logoRingHighlight.opacity(0.80))
                     .frame(width: size * 0.030, height: size * 0.030)
                     .position(x: cx, y: cy)
                     .blur(radius: 1)

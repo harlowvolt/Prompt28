@@ -50,6 +50,7 @@ struct HomeView: View {
         self._generateViewModel = State(
             wrappedValue: GenerateViewModel(
                 authManager: authManager,
+                router: router,
                 historyStore: historyStore,
                 preferencesStore: preferencesStore,
                 usageTracker: usageTracker,
@@ -166,8 +167,6 @@ private struct GhostGlyphShape: Shape {
             set: { router.homeSheet = $0 }
         )) { sheet in
             switch sheet {
-            case .typePrompt:
-                TypePromptView(viewModel: generateViewModel)
             case .settings:
                 SettingsView { router.dismissHomeSheet() }
                     .presentationDetents([.large])
@@ -330,6 +329,8 @@ private struct GhostGlyphShape: Shape {
 
             Spacer()
         }
+        .frame(maxWidth: 800)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Top Center Action
@@ -464,7 +465,7 @@ private struct GhostGlyphShape: Shape {
                 } label: {
                     HStack(spacing: 11) {
                         Circle()
-                            .fill(Color(hex: platform.accentHex))
+                            .fill(platform.accentColor)
                             .frame(width: 9, height: 9)
                         Text(platform.displayName)
                             .font(.system(size: 14, weight: .semibold, design: .default))
@@ -524,8 +525,10 @@ private struct GhostGlyphShape: Shape {
             }
             inputBar
         }
+        .frame(maxWidth: 800)
+        .frame(maxWidth: .infinity)
         .padding(.horizontal, 15)
-        .padding(.bottom, isInputFocused ? 10 : 28)
+        .padding(.bottom, 16)
     }
 
     private var modePillRow: some View {
@@ -698,9 +701,10 @@ private struct GhostGlyphShape: Shape {
                             .allowsHitTesting(false)
                     }
 
-                    TextField("", text: $generateViewModel.inputText)
+                    TextField("", text: $generateViewModel.inputText, axis: .vertical)
                         .font(.system(size: 17, weight: .regular, design: .default))
                         .foregroundStyle(.white.opacity(0.92))
+                        .lineLimit(1...6)
                         .textInputAutocapitalization(.sentences)
                         .submitLabel(.go)
                         .focused($isInputFocused)
@@ -734,6 +738,8 @@ private struct GhostGlyphShape: Shape {
                 Color.clear.frame(height: 20)
             }
             .padding(.top, AppSpacing.element)
+            .frame(maxWidth: 800)
+            .frame(maxWidth: .infinity)
         }
     }
 
@@ -905,11 +911,6 @@ private struct GhostGlyphShape: Shape {
                 VStack(spacing: 2) {
                     NavigationLink(destination: FavoritesView().toolbar(.hidden, for: .navigationBar)) {
                         leftPanelRow(icon: "star.fill", label: "Favorites")
-                    }
-                    .buttonStyle(.plain)
-
-                    NavigationLink(destination: ShareCardsPlaceholderView().toolbar(.hidden, for: .navigationBar)) {
-                        leftPanelRow(icon: "square.and.arrow.up.fill", label: "Share Cards")
                     }
                     .buttonStyle(.plain)
                 }
@@ -1130,12 +1131,6 @@ private struct GhostGlyphShape: Shape {
                                      subtitle: "Bookmarked prompts")
                         }
                         .buttonStyle(.plain)
-
-                        NavigationLink(destination: ShareCardsPlaceholderView().toolbar(.hidden, for: .navigationBar)) {
-                            panelRow(icon: "square.and.arrow.up.fill", label: "Share Cards",
-                                     subtitle: "Cards from your prompts")
-                        }
-                        .buttonStyle(.plain)
                     }
                     .padding(.horizontal, 16)
 
@@ -1270,56 +1265,5 @@ private struct GhostGlyphShape: Shape {
                     in: RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous))
         .overlay(RoundedRectangle(cornerRadius: PromptTheme.Radius.large, style: .continuous)
             .stroke(Color.white.opacity(0.12), lineWidth: 1))
-    }
-}
-
-private struct ShareCardsPlaceholderView: View {
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        ZStack {
-            PromptTheme.panelBackground.ignoresSafeArea()
-
-            VStack(spacing: 0) {
-                HStack(spacing: 16) {
-                    Button {
-                        dismiss()
-                    } label: {
-                        Image(systemName: "arrow.left")
-                            .font(.system(size: 20, weight: .medium))
-                            .foregroundStyle(.white.opacity(0.82))
-                            .frame(width: 44, height: 44)
-                            .background(
-                                Circle()
-                                    .fill(.ultraThinMaterial)
-                                    .overlay(Circle().stroke(Color.white.opacity(0.18), lineWidth: 0.7))
-                            )
-                            .contentShape(Circle())
-                    }
-                    .buttonStyle(.plain)
-
-                    Spacer()
-                }
-                .padding(.horizontal, 24)
-                .padding(.top, 8)
-
-                Spacer()
-
-                VStack(spacing: 16) {
-                    Image(systemName: "square.and.arrow.up.fill")
-                        .font(.system(size: 36))
-                        .foregroundStyle(PromptTheme.orbAccent.opacity(0.6))
-                    Text("Share Cards")
-                        .font(.system(size: 20, weight: .bold, design: .default))
-                        .foregroundStyle(.white)
-                    Text("Generate a prompt to create\na shareable card.")
-                        .font(.system(size: 14, weight: .regular, design: .default))
-                        .foregroundStyle(.white.opacity(0.55))
-                        .multilineTextAlignment(.center)
-                }
-
-                Spacer()
-            }
-        }
     }
 }

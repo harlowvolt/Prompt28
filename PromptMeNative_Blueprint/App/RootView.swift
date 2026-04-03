@@ -54,18 +54,13 @@ struct RootView: View {
                 if scopedAuthManager == nil || appRouter == nil || !didBootstrap || scopedAuthManager?.isBootstrapping == true {
                     // Splash — shown only while services initialise (< 1 second in practice)
                     launchView
-                } else if scopedAuthManager?.isAuthenticated == true {
-                    // Authenticated → straight to app.
-                    // iPad uses sidebar, iPhone uses full-screen home.
+                } else {
+                    // Guest-first flow: everyone lands in the app immediately.
                     if horizontalSizeClass == .regular {
                         iPadSidebar
                     } else {
                         mainTabs
                     }
-                } else {
-                    // Not authenticated → sign-in screen.
-                    // Privacy disclosure is in the auth screen footer (T&C + Privacy Policy links).
-                    AuthFlowView()
                 }
             }
         }
@@ -80,6 +75,31 @@ struct RootView: View {
                 appRouter?.switchTab(.home)
                 appRouter?.popToRoot()
             }
+        }
+        .sheet(
+            isPresented: Binding(
+                get: { appRouter?.isAuthSheetPresented ?? false },
+                set: { isPresented in
+                    guard let appRouter else { return }
+                    appRouter.isAuthSheetPresented = isPresented
+                }
+            )
+        ) {
+            NavigationStack {
+                AuthFlowView()
+                    .toolbar {
+                        ToolbarItem(placement: .cancellationAction) {
+                            Button("Close") {
+                                appRouter?.dismissAuthSheet()
+                            }
+                            .foregroundStyle(PromptTheme.softLilac)
+                        }
+                    }
+            }
+            .presentationDetents([.large])
+            .presentationDragIndicator(.visible)
+            .presentationBackground(PromptTheme.panelBackground)
+            .presentationCornerRadius(32)
         }
         .alert(item: Binding(
             get: { errorState?.presented },
@@ -190,15 +210,15 @@ struct PromptPremiumBackground: View {
 
             ZStack {
                 // Base — deepest navy from the logo's outer field
-                Color(hex: "#0B0C18")
+                PromptTheme.backgroundBase
 
                 // Vertical depth gradient
                 LinearGradient(
                     colors: [
-                        Color(hex: "#10122A"),
-                        Color(hex: "#0D0E20"),
-                        Color(hex: "#0B0C18"),
-                        Color(hex: "#090A14")
+                        PromptTheme.backgroundGradientTop,
+                        PromptTheme.backgroundGradientUpperMid,
+                        PromptTheme.backgroundBase,
+                        PromptTheme.backgroundGradientBottom
                     ],
                     startPoint: .top,
                     endPoint: .bottom
@@ -207,8 +227,8 @@ struct PromptPremiumBackground: View {
                 // Primary orbital glow — large soft purple radial (logo ring colour)
                 RadialGradient(
                     colors: [
-                        Color(hex: "#3D2B8A").opacity(0.28),
-                        Color(hex: "#251A5C").opacity(0.14),
+                        PromptTheme.primaryOrbGlow.opacity(0.28),
+                        PromptTheme.primaryOrbGlowInner.opacity(0.14),
                         .clear
                     ],
                     center: .init(x: 0.50, y: 0.42),
@@ -219,7 +239,7 @@ struct PromptPremiumBackground: View {
                 // Secondary glow — smaller, offset right; mimics logo's inner burst
                 RadialGradient(
                     colors: [
-                        Color(hex: "#6C4BFF").opacity(0.10),
+                        PromptTheme.secondaryOrbGlow.opacity(0.10),
                         .clear
                     ],
                     center: .init(x: 0.58, y: 0.52),
@@ -267,6 +287,9 @@ enum PromptTheme {
     static let inputBarBackground = Color(hex: "#111320")
     /// Logo preview background (used only in #Preview blocks)
     static let previewBackground  = Color(hex: "#0B0C18")
+    static let backgroundGradientTop = Color(hex: "#10122A")
+    static let backgroundGradientUpperMid = Color(hex: "#0D0E20")
+    static let backgroundGradientBottom = Color(hex: "#090A14")
 
     // ── Accents ───────────────────────────────────────────────────────────
     /// Primary CTA tint — deep logo indigo
@@ -280,6 +303,40 @@ enum PromptTheme {
     static let orbAccentMuted    = Color(hex: "#5D628A")
     /// Deep logo tint used for colorMultiply tinting
     static let logoDimTint       = Color(hex: "#2A1A4A")
+    static let primaryOrbGlow    = Color(hex: "#3D2B8A")
+    static let primaryOrbGlowInner = Color(hex: "#251A5C")
+    static let secondaryOrbGlow  = Color(hex: "#6C4BFF")
+    static let platformChatGPT   = Color(hex: "#19C37D")
+    static let platformGemini    = Color(hex: "#4A9EFF")
+    static let textMutedBlue     = Color(hex: "#8A97C3")
+    static let buttonSlateStart  = Color(hex: "#586389")
+    static let buttonSlateEnd    = Color(hex: "#3D4665")
+    static let buttonSlateShadow = Color(hex: "#52618A")
+    static let trendingChipStart = Color(hex: "#5A638A")
+    static let trendingChipEnd   = Color(hex: "#3F4766")
+    static let trendingChipShadow = Color(hex: "#5E6E9B")
+    static let logoRingHighlight = Color(hex: "#F2F5FF")
+    static let logoRingSoft      = Color(hex: "#CFD7FF")
+    static let orbPaletteIdleOuter = Color(hex: "#202A4A")
+    static let orbPaletteIdleMid = Color(hex: "#111A34")
+    static let orbPaletteIdleInner = Color(hex: "#070D22")
+    static let orbPaletteIdleCore = Color(hex: "#02050F")
+    static let orbPaletteListeningOuter = Color(hex: "#263359")
+    static let orbPaletteListeningMid = Color(hex: "#131D3D")
+    static let orbPaletteListeningInner = Color(hex: "#08102A")
+    static let orbPaletteListeningCore = Color(hex: "#020612")
+    static let orbPaletteGeneratingOuter = Color(hex: "#2B3960")
+    static let orbPaletteGeneratingMid = Color(hex: "#162246")
+    static let orbPaletteGeneratingInner = Color(hex: "#0A1330")
+    static let orbPaletteGeneratingCore = Color(hex: "#030712")
+    static let intentWork = Color(hex: "#7EB8F7")
+    static let intentSchool = Color(hex: "#A8E6CF")
+    static let intentBusiness = Color(hex: "#F7C59F")
+    static let intentFitness = Color(hex: "#F97E7E")
+    static let intentTechnical = Color(hex: "#C9A9F5")
+    static let intentCreative = Color(hex: "#FFD97D")
+    static let subscriptionBarStart = Color(hex: "#7F7FD5")
+    static let subscriptionBarEnd = Color(hex: "#6E55D8")
 
     // ── Text ─────────────────────────────────────────────────────────────
     /// Secondary text / labels / soft accents (lilac)

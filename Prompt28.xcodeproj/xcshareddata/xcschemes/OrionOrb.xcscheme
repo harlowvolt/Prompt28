@@ -36,8 +36,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "CCD1CE072F5C55FC00566BCF"
-               BuildableName = "Prompt28Tests.xctest"
-               BlueprintName = "Prompt28Tests"
+               BuildableName = "OrionOrbTests.xctest"
+               BlueprintName = "OrionOrbTests"
                ReferencedContainer = "container:Prompt28.xcodeproj">
             </BuildableReference>
          </TestableReference>

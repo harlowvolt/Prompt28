@@ -260,7 +260,7 @@ struct TrendingView: View {
                 } label: {
                     Text(isExpanded ? "Collapse" : "Expand")
                         .font(.system(size: 16, weight: .medium, design: .rounded))
-                        .foregroundStyle(Color(hex: "#8A97C3"))
+                        .foregroundStyle(PromptTheme.textMutedBlue)
                 }
                 .buttonStyle(.plain)
             }
@@ -313,12 +313,12 @@ struct TrendingView: View {
                         Capsule()
                             .fill(
                                 LinearGradient(
-                                    colors: [Color(hex: "#586389"), Color(hex: "#3D4665")],
+                                    colors: [PromptTheme.buttonSlateStart, PromptTheme.buttonSlateEnd],
                                     startPoint: .topLeading, endPoint: .bottomTrailing
                                 )
                             )
                             .overlay(Capsule().stroke(Color.white.opacity(0.14), lineWidth: 0.5))
-                            .shadow(color: Color(hex: "#52618A").opacity(0.24), radius: 12, y: 5)
+                            .shadow(color: PromptTheme.buttonSlateShadow.opacity(0.24), radius: 12, y: 5)
                     )
                 }
                 .buttonStyle(.plain)
@@ -363,13 +363,13 @@ struct TrendingView: View {
                         Capsule()
                             .fill(
                                 LinearGradient(
-                                    colors: [Color(hex: "#5A638A").opacity(0.90), Color(hex: "#3F4766").opacity(0.88)],
+                                    colors: [PromptTheme.trendingChipStart.opacity(0.90), PromptTheme.trendingChipEnd.opacity(0.88)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
                             )
                             .overlay(Capsule().stroke(Color.white.opacity(0.20), lineWidth: 0.8))
-                            .shadow(color: Color(hex: "#5E6E9B").opacity(0.20), radius: 10)
+                            .shadow(color: PromptTheme.trendingChipShadow.opacity(0.20), radius: 10)
                     } else {
                         Capsule()
                             .fill(PromptTheme.glassFill)

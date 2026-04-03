@@ -1,7 +1,7 @@
 # Orbit Orb — Agent & Developer Reference
 
 > **Single Source of Truth** — All architecture, design system, naming, and App Store compliance notes live here.
-> Last updated: 2026-03-31
+> Last updated: 2026-04-03
 > Target: iOS 17+, SwiftUI, Swift 6 strict concurrency
 
 ---
@@ -42,8 +42,12 @@ OrionOrbApp.swift          @main entry point
 
 - **One screen at a time.** The app is a single-screen product. All flows open as sheets from `HomeView`.
 - **No global state mutation outside `@MainActor`.** All view models are `@Observable @MainActor`.
+- **Observation Framework:** All state management must use iOS 17 `@Observable`. No `ObservableObject`, no `@Published`, and no Combine `AnyPublisher`-driven view state.
 - **Dependency injection via SwiftUI Environment.** `AppEnvironment` seeds all services into the tree via `EnvironmentKey`s defined in `AppEnvironment.swift`.
-- **No inline color literals.** Every color must reference a `PromptTheme` token (see Section 6).
+- **Design System Strictness:** No inline hex colors or ad hoc `Color(hex:)` usage are allowed in Views or Models. Every app color must reference a named `PromptTheme` token (see Section 6).
+- **Frictionless Input:** Prompt typing must happen inline in `HomeView` using native `TextField(axis: .vertical)` fields. Do not present modal typing sheets.
+- **iPad Support (Universal App):** All major content surfaces must constrain readable width on iPad, use native SwiftUI presentation APIs, and respect `.horizontalSizeClass`.
+- **Guest Mode First:** The app never hard-blocks launch with a forced login wall. All users can start in local guest mode; authentication is requested only when the user explicitly needs sync/account features or hits the free guest limit.
 
 ---
 
@@ -55,11 +59,12 @@ App Launch
     ▼
 Bootstrap loading (< 1 s)  ← ProgressView spinner, "Loading Orbit Orb" label
     │
-    ├─ Not authenticated ──▶  AuthFlowView  ──▶  HomeView
-    │                         (T&C + Privacy links in footer)
+    ▼
+HomeView opens immediately in guest mode
     │
-    └─ Authenticated ─────▶  HomeView  (iPhone)
-                              iPadSidebar  (iPad, regular size class)
+    ├─ Guest under local limit ──▶ Continue using app normally
+    ├─ User taps a sync/account action ──▶ AuthFlowView sheet
+    └─ Guest hits free limit ──▶ AuthFlowView sheet
 ```
 
 **Removed screens (do not re-add):**
@@ -70,6 +75,7 @@ Bootstrap loading (< 1 s)  ← ProgressView spinner, "Loading Orbit Orb" label
 - **Guideline 5.1.2(i):** Privacy disclosure is satisfied by the Terms of Service and Privacy Policy links visible in `AuthFlowView.termsFooter` before the user submits any credentials. This is the same pattern used by Linear, ChatGPT, and Notion.
 - **Guideline 4.8:** Sign In with Apple uses `SignInWithAppleButton` natively (not a custom button).
 - **Guideline 2.1:** App works without any additional gate screens after download.
+- **Guideline 2.1 / iPad UX:** Share flows must prefer native `ShareLink`, and iPad layouts must use constrained readable columns instead of full-width stretched composition surfaces.
 
 ---
 
@@ -84,7 +90,7 @@ Bootstrap loading (< 1 s)  ← ProgressView spinner, "Loading Orbit Orb" label
 | `RootView.swift` | Routing shell + `PromptTheme` enum (color token source of truth) + `PromptPremiumBackground` + `Color(hex:)` extension |
 | `AppUI.swift` | Shared UI constants: `AppSpacing`, `AppHeights`, `AppRadii`, `AppGlassField`, `AppPrimaryButton` |
 | `PremiumTabScreen.swift` | Paywall/upgrade tab placeholder |
-| `Routing/AppRouter.swift` | `@Observable` navigation state: `selectedTab`, `activeHomeSheet` |
+| `Routing/AppRouter.swift` | `@Observable` navigation state: `selectedTab`, `activeHomeSheet`, auth/paywall sheet routing |
 
 ### Core Layer (`PromptMeNative_Blueprint/Core/`)
 
@@ -125,10 +131,7 @@ Bootstrap loading (< 1 s)  ← ProgressView spinner, "Loading Orbit Orb" label
 | `Home/Views/MetalOrbView.swift` | GPU shader orb variant (toggled by `ExperimentFlags.Orb.metalOrb`) |
 | `Home/Views/OrbitLogoView.swift` | Orbital rings SVG-style logo — used in `AuthFlowView` header and `HomeView` idle state |
 | `Home/Views/ResultView.swift` | Displays generated prompt; copy, share (`ShareLink`), favorite, feedback, refine |
-| `Home/Views/ShareCardView.swift` | Off-screen view rendered to produce share card image (400×650 pt) |
-| `Home/Views/ShareCardRenderer.swift` | `ImageRenderer` wrapper — renders `ShareCardView` at @3x into `UIImage` |
-| `Home/Views/ShareCardFileStore.swift` | Writes share PNG to `FileManager.temporaryDirectory`; temp file named `orbit-orb-share-card-*.png` |
-| `Home/Views/TypePromptView.swift` | "Type a prompt" sheet presented from `HomeView` |
+| `Home/Views/PromptShareCard.swift` | On-demand SwiftUI share-card view rendered with `ImageRenderer` for sharing |
 | `Home/ViewModels/GenerateViewModel.swift` | Prompt generation: calls Supabase Edge Function, saves to `HistoryStore` if `!privacyMode`, `attachedImage` for future image context |
 | `Home/ViewModels/HomeViewModel.swift` | Additional home-screen state (not the primary VM) |
 | `History/Views/HistoryView.swift` | Prompt history list |
@@ -183,8 +186,10 @@ Bootstrap loading (< 1 s)  ← ProgressView spinner, "Loading Orbit Orb" label
 ## 5. State Management
 
 ### `@Observable` (Swift Observation, iOS 17+)
-All view models and stores use `@Observable`. No `ObservableObject` / `@Published` anywhere.
+All view models and stores use `@Observable`. No `ObservableObject` / `@Published` anywhere, and no Combine `AnyPublisher` view-state bridge layers are allowed.
 Views that consume observable objects use `@State` (locally owned VMs) or `@Environment` (shared services).
+
+Types that must stay outside observation, such as rendered share images or platform framework helpers, should use `@ObservationIgnored` where appropriate.
 
 ### Environment injection pattern
 ```swift
@@ -213,6 +218,8 @@ extension EnvironmentValues {
 **ABSOLUTE RULE: No inline hex literals anywhere in the codebase.** Every color must reference a `PromptTheme` token. All tokens are declared in `enum PromptTheme` inside `RootView.swift`.
 
 If you need a new color, add a named token to `PromptTheme` first, document it here, then use the token.
+
+Views and models may not store raw hex strings as styling data. If a feature needs a semantic color, add a named theme token or a semantic mapping that returns theme tokens.
 
 ### 6.1 Background Tokens
 
@@ -374,20 +381,27 @@ Toggle: ghost icon (`👻` / `person.fill.viewfinder`) in top-right nav bar of `
 
 ### 7.4 Share Cards
 
-- `ResultView` calls `ShareCardRenderer.render(rawInput:generatedPrompt:modeName:)` whenever `latestPromptText` changes
-- `ShareCardRenderer` uses `ImageRenderer` (iOS 16+) at `scale: 3.0` to render `ShareCardView` (400×650 pt) → `UIImage`
-- `ShareCardFileStore` writes the PNG to `FileManager.temporaryDirectory` as `orbit-orb-share-card-*.png`
-- `ShareLink(item: shareURL, preview: SharePreview("Orbit Orb", image: ...))` triggers the iOS share sheet
-- File is deleted in `ResultView.onDisappear`
+- Share cards are rendered on demand with `ImageRenderer` from a SwiftUI `PromptShareCard` view
+- The generated image is held in memory on the view model and shared with native `ShareLink`
+- Do not use file-backed temporary share-card stores or custom UIKit share-sheet wrappers
+- This is required for safe iPad popover behavior and frictionless universal sharing
 
 ### 7.5 Input System
 
 - `HomeView.inputBar` — bottom-anchored row with `PhotosPicker` (`+` / `photo.fill`) button and `TextField`
 - Placeholder: *"Just talk. Messy is fine."*
+- Prompt typing happens inline, not in a separate modal sheet
+- Use `TextField(axis: .vertical)` with a bounded line limit for expanding composition
 - `submitLabel(.go)` — pressing Return triggers `generateViewModel.generate()`
 - Mode pills above input bar select `PromptMode` stored in `GenerateViewModel.selectedMode`
 
-### 7.6 Voice / Orb
+### 7.6 iPad Layout
+
+- Constrain primary readable content on iPad to a centered column; avoid full-width edge-to-edge composition surfaces
+- `HomeView` input and result content should use a readable max width (currently `800pt`)
+- Prefer native SwiftUI APIs (`ShareLink`, sheets, `NavigationStack`, `NavigationSplitView`) so iPad behavior is correct by default
+
+### 7.7 Voice / Orb
 
 `OrbEngine` drives the voice state machine:
 ```
@@ -402,7 +416,7 @@ Orb glow colors by state:
 - Listening/active: `PromptTheme.orbActiveGlow` (`#9B7BFF`)
 - Processing: `PromptTheme.orbProcessingGlow` (`#C4B5FD`)
 
-### 7.7 Analytics
+### 7.8 Analytics
 
 ```swift
 AnalyticsService.shared.track(.eventName)
@@ -471,6 +485,14 @@ Test files with wrong brand name (update or delete):
 OrionOrbTests/Prompt28Tests.swift
 OrionOrbUITests/Prompt28UITests.swift
 OrionOrbUITests/Prompt28UITestsLaunchTests.swift
+```
+
+Legacy share-card files to remove:
+```
+Features/Home/Views/ShareCardView.swift
+Features/Home/Views/ShareCardRenderer.swift
+Features/Home/Views/ShareCardFileStore.swift
+Features/Home/Views/TypePromptView.swift
 ```
 
 ---

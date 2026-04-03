@@ -1,4 +1,5 @@
 import Foundation
+import SwiftUI
 
 enum PromptMode: String, Codable, CaseIterable {
 	case ai
@@ -24,12 +25,12 @@ enum TargetPlatform: String, Codable, CaseIterable, Identifiable {
     }
 
     /// Accent colour for each platform's indicator dot.
-    var accentHex: String {
+    var accentColor: Color {
         switch self {
-        case .claude:  return "#8B8FFF"
-        case .chatgpt: return "#19C37D"
-        case .gemini:  return "#4A9EFF"
-        case .grok:    return "#A78BFA"
+        case .claude:  return PromptTheme.orbAccent
+        case .chatgpt: return PromptTheme.platformChatGPT
+        case .gemini:  return PromptTheme.platformGemini
+        case .grok:    return PromptTheme.orbAccentLight
         }
     }
 }

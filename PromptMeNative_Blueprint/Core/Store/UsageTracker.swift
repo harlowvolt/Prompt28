@@ -41,6 +41,11 @@ final class UsageTracker {
         return storedCount
     }
 
+    /// Guest-mode usage mirrors the local freemium counter until the user signs in.
+    var guestCount: Int {
+        count
+    }
+
     /// `true` when the user may generate without hitting the free-tier wall.
     /// Always `true` for paid plans — pass a non-starter plan to bypass the gate.
     func canGenerate(for plan: PlanType) -> Bool {

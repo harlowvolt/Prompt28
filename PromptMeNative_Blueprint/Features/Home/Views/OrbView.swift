@@ -283,11 +283,11 @@ struct OrbView: View {
     private var orbGradientColors: [Color] {
         switch visualState {
         case .idle:
-            return [Color(hex: "#202A4A"), Color(hex: "#111A34"), Color(hex: "#070D22"), Color(hex: "#02050F")]
+            return [PromptTheme.orbPaletteIdleOuter, PromptTheme.orbPaletteIdleMid, PromptTheme.orbPaletteIdleInner, PromptTheme.orbPaletteIdleCore]
         case .listening:
-            return [Color(hex: "#263359"), Color(hex: "#131D3D"), Color(hex: "#08102A"), Color(hex: "#020612")]
+            return [PromptTheme.orbPaletteListeningOuter, PromptTheme.orbPaletteListeningMid, PromptTheme.orbPaletteListeningInner, PromptTheme.orbPaletteListeningCore]
         case .processing:
-            return [Color(hex: "#2B3960"), Color(hex: "#162246"), Color(hex: "#0A1330"), Color(hex: "#030712")]
+            return [PromptTheme.orbPaletteGeneratingOuter, PromptTheme.orbPaletteGeneratingMid, PromptTheme.orbPaletteGeneratingInner, PromptTheme.orbPaletteGeneratingCore]
         case .error:
             return [Color.white.opacity(0.22), Color.red.opacity(0.64), Color.red.opacity(0.9), Color.black.opacity(0.92)]
         }

@@ -1,4 +1,3 @@
-import Combine
 import CoreGraphics
 import Foundation
 
@@ -73,9 +72,6 @@ final class OrbEngine {
     private let finalTranscriptPollingAttempts = 30
     private let finalTranscriptPollingSleepNanoseconds: UInt64 = 50_000_000
     private let transcriptTrimCharacterSet = CharacterSet.whitespacesAndNewlines
-    // Combine is kept internally to bridge SpeechRecognizing's thread-safe publishers.
-    private var cancellables: Set<AnyCancellable> = []
-
     init(speech: SpeechRecognizing) {
         self.speech = speech
         bindSpeechState()
@@ -319,56 +315,27 @@ final class OrbEngine {
     }
 
     private func bindSpeechState() {
-        bindRecordingPublisher()
-        bindTranscriptPublisher()
-        bindFinalTranscriptPublisher()
-        bindPermissionStatusPublisher()
-        bindAudioLevelPublisher()
-    }
+        speech.onRecordingChange = { [weak self] value in
+            self?.handleRecordingChange(value)
+        }
+        speech.onTranscriptChange = { [weak self] value in
+            self?.handleTranscriptChange(value)
+        }
+        speech.onFinalTranscriptChange = { [weak self] value in
+            self?.handleFinalTranscriptChange(value)
+        }
+        speech.onPermissionStatusChange = { [weak self] status in
+            self?.handlePermissionStatusChange(status)
+        }
+        speech.onAudioLevelChange = { [weak self] value in
+            self?.handleAudioLevelChange(value)
+        }
 
-    private func bindRecordingPublisher() {
-        speech.isRecordingPublisher
-            .sink { [weak self] value in
-                guard let self else { return }
-                self.handleRecordingChange(value)
-            }
-            .store(in: &cancellables)
-    }
-
-    private func bindTranscriptPublisher() {
-        speech.transcriptPublisher
-            .sink { [weak self] value in
-                guard let self else { return }
-                self.handleTranscriptChange(value)
-            }
-            .store(in: &cancellables)
-    }
-
-    private func bindFinalTranscriptPublisher() {
-        speech.finalTranscriptPublisher
-            .sink { [weak self] value in
-                guard let self else { return }
-                self.handleFinalTranscriptChange(value)
-            }
-            .store(in: &cancellables)
-    }
-
-    private func bindPermissionStatusPublisher() {
-        speech.permissionStatusPublisher
-            .sink { [weak self] status in
-                guard let self else { return }
-                self.handlePermissionStatusChange(status)
-            }
-            .store(in: &cancellables)
-    }
-
-    private func bindAudioLevelPublisher() {
-        speech.audioLevelPublisher
-            .receive(on: RunLoop.main)
-            .sink { [weak self] value in
-                self?.handleAudioLevelChange(value)
-            }
-            .store(in: &cancellables)
+        handleRecordingChange(speech.isRecording)
+        handleTranscriptChange(speech.transcript)
+        handleFinalTranscriptChange(speech.finalTranscript)
+        handlePermissionStatusChange(speech.permissionStatus)
+        handleAudioLevelChange(speech.audioLevel)
     }
 
 }
