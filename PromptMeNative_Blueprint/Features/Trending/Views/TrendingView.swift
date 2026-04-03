@@ -100,6 +100,17 @@ struct TrendingView: View {
                             searchBar
                                 .padding(.top, 10)
 
+                            VStack(alignment: .leading, spacing: 6) {
+                                Text("USE CASES")
+                                    .font(.system(size: 12, weight: .bold, design: .rounded))
+                                    .foregroundStyle(.white.opacity(0.42))
+
+                                Text("Business, School, Creative, Marketing, and Personal prompts in one library.")
+                                    .font(.system(size: 14, weight: .medium, design: .rounded))
+                                    .foregroundStyle(PromptTheme.softLilac.opacity(0.72))
+                            }
+                            .padding(.top, 18)
+
                             content
 
                             Color.clear.frame(height: AppHeights.tabBarClearance)

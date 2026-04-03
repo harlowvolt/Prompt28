@@ -11,7 +11,9 @@ struct ResultView: View {
         "Make more professional",
         "Make more detailed",
         "Make shorter",
-        "Add examples"
+        "Add examples",
+        "Make more persuasive",
+        "Simplify the tone"
     ]
 
     var body: some View {
@@ -256,31 +258,37 @@ struct ResultView: View {
                     .font(PromptTheme.Typography.rounded(13, .semibold))
                     .foregroundStyle(PromptTheme.softLilac.opacity(0.78))
 
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 10) {
-                        ForEach(quickRefinements, id: \.self) { instruction in
-                            Button {
-                                Task { await viewModel.applyQuickRefinement(instruction) }
-                            } label: {
-                                Text(instruction)
-                                    .font(PromptTheme.Typography.rounded(14, .semibold))
-                                    .foregroundStyle(PromptTheme.paleLilacWhite)
-                                    .padding(.horizontal, 14)
-                                    .frame(height: 42)
-                                    .background(
-                                        Capsule()
-                                            .fill(PromptTheme.mutedViolet.opacity(0.38))
-                                            .overlay(
-                                                Capsule()
-                                                    .stroke(PromptTheme.softLilac.opacity(0.28), lineWidth: 1)
-                                            )
-                                    )
-                            }
-                            .buttonStyle(.plain)
-                            .disabled(viewModel.isGenerating)
+                Text("One tap, then Orbit Orb rewrites the prompt for you.")
+                    .font(PromptTheme.Typography.rounded(12, .regular))
+                    .foregroundStyle(PromptTheme.softLilac.opacity(0.62))
+
+                LazyVGrid(
+                    columns: [GridItem(.adaptive(minimum: 150), spacing: 10)],
+                    alignment: .leading,
+                    spacing: 10
+                ) {
+                    ForEach(quickRefinements, id: \.self) { instruction in
+                        Button {
+                            Task { await viewModel.applyQuickRefinement(instruction) }
+                        } label: {
+                            Text(instruction)
+                                .font(PromptTheme.Typography.rounded(14, .semibold))
+                                .foregroundStyle(PromptTheme.paleLilacWhite)
+                                .multilineTextAlignment(.center)
+                                .frame(maxWidth: .infinity, minHeight: 48)
+                                .padding(.horizontal, 12)
+                                .background(
+                                    RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                        .fill(PromptTheme.mutedViolet.opacity(0.38))
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                                                .stroke(PromptTheme.softLilac.opacity(0.28), lineWidth: 1)
+                                        )
+                                )
                         }
+                        .buttonStyle(.plain)
+                        .disabled(viewModel.isGenerating)
                     }
-                    .padding(.vertical, 2)
                 }
             }
 
