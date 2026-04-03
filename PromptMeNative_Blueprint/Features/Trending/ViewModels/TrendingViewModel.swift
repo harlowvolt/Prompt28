@@ -4,9 +4,10 @@ import Foundation
 enum TrendingCategory: String, CaseIterable {
 	case all = "All"
 	case school = "School"
-	case work = "Work"
 	case business = "Business"
-	case fitness = "Fitness"
+	case creative = "Creative"
+	case marketing = "Marketing"
+	case personal = "Personal"
 }
 
 @Observable
@@ -41,9 +42,25 @@ final class TrendingViewModel {
 		if selectedCategory == .all {
 			return prompts
 		}
-		let key = selectedCategory.rawValue.lowercased()
+
+		let allowedKeys: Set<String>
+		switch selectedCategory {
+		case .all:
+			allowedKeys = []
+		case .school:
+			allowedKeys = ["school"]
+		case .business:
+			allowedKeys = ["business", "work", "productivity"]
+		case .creative:
+			allowedKeys = ["creative"]
+		case .marketing:
+			allowedKeys = ["marketing", "content"]
+		case .personal:
+			allowedKeys = ["personal", "fitness"]
+		}
+
 		return categories
-			.filter { $0.key.lowercased() == key }
+			.filter { allowedKeys.contains($0.key.lowercased()) }
 			.flatMap(\.items)
 	}
 

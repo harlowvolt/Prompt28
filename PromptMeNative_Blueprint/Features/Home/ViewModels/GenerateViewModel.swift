@@ -116,6 +116,12 @@ final class GenerateViewModel {
         await runGenerate(input: latestResult.professional, refinement: refinementText)
     }
 
+    func applyQuickRefinement(_ instruction: String) async {
+        guard latestResult != nil else { return }
+        refinementText = instruction
+        await refine()
+    }
+
     func resetConversation() {
         inputText = ""
         refinementText = ""

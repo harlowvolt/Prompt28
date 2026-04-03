@@ -87,12 +87,12 @@ struct TrendingView: View {
                             }
                             .padding(.top, 8)
 
-                            Text("Trending")
+                            Text("Templates")
                                 .font(.system(size: 34, weight: .bold, design: .rounded))
                                 .foregroundStyle(PromptTheme.paleLilacWhite)
                                 .padding(.top, 4)
 
-                            Text("Copy-paste prompts people actually use")
+                            Text("Browse proven prompt ideas by use case")
                                 .font(.system(size: 16, weight: .regular, design: .rounded))
                                 .foregroundStyle(PromptTheme.paleLilacWhite.opacity(0.68))
                                 .padding(.top, 6)

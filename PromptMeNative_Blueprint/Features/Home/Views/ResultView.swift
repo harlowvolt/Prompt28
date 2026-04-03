@@ -7,6 +7,13 @@ struct ResultView: View {
     @State private var copiedPrompt = false
     @State private var feedbackSubmitted: Bool? = nil  // nil = no feedback, true = 👍, false = 👎
 
+    private let quickRefinements = [
+        "Make more professional",
+        "Make more detailed",
+        "Make shorter",
+        "Add examples"
+    ]
+
     var body: some View {
         Group {
             if viewModel.isGenerating {
@@ -240,6 +247,41 @@ struct ResultView: View {
                 }
                 .buttonStyle(.plain)
                 .animation(.easeInOut(duration: 0.15), value: feedbackSubmitted)
+            }
+
+            Divider().overlay(PromptTheme.softLilac.opacity(0.22))
+
+            VStack(alignment: .leading, spacing: 10) {
+                Text("Refine Instantly")
+                    .font(PromptTheme.Typography.rounded(13, .semibold))
+                    .foregroundStyle(PromptTheme.softLilac.opacity(0.78))
+
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 10) {
+                        ForEach(quickRefinements, id: \.self) { instruction in
+                            Button {
+                                Task { await viewModel.applyQuickRefinement(instruction) }
+                            } label: {
+                                Text(instruction)
+                                    .font(PromptTheme.Typography.rounded(14, .semibold))
+                                    .foregroundStyle(PromptTheme.paleLilacWhite)
+                                    .padding(.horizontal, 14)
+                                    .frame(height: 42)
+                                    .background(
+                                        Capsule()
+                                            .fill(PromptTheme.mutedViolet.opacity(0.38))
+                                            .overlay(
+                                                Capsule()
+                                                    .stroke(PromptTheme.softLilac.opacity(0.28), lineWidth: 1)
+                                            )
+                                    )
+                            }
+                            .buttonStyle(.plain)
+                            .disabled(viewModel.isGenerating)
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
             }
 
             Divider().overlay(PromptTheme.softLilac.opacity(0.22))

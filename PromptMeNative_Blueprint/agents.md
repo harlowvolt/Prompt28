@@ -540,3 +540,5 @@ if privacyMode {
 - Generated-output surfaces must include the footer text `AI-generated content may be inaccurate or inappropriate.`
 - Authentication options must include native Sign in with Apple alongside the other providers in `AuthFlowView`.
 - Account deletion must remain available from Settings and must call the `delete-account` Supabase Edge Function to remove the user account plus related server-side records before local logout.
+- Result screens should surface one-tap transformation actions prominently (for example: more professional, more detailed, shorter) so the app's refinement value is obvious without extra typing.
+- The templates/trending surface should present broad user-facing categories such as Business, School, Creative, Marketing, and Personal, even if multiple backend categories are grouped underneath.
